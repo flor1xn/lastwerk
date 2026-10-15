@@ -1,0 +1,5 @@
+# Geprüfte Ausnahmen für check-privacy.sh und check-history.sh (T38).
+# Ein Pfad pro Zeile, genau wie im Repository (ohne führendes ./). Zeilen mit # sind Kommentare.
+# Gilt für Magic Bytes (Archive) und für die Mustersuche. FIT- und SQLite-Inhalte lässt auch
+# die Liste nicht zu: Testdaten entstehen zur Laufzeit aus crates/testkit.
+# Jeder Eintrag braucht eine Begründung in einer Kommentarzeile darüber.

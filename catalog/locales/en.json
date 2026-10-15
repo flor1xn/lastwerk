@@ -1,0 +1,1345 @@
+{
+  "app": {
+    "name": "Lastwerk",
+    "tagline": "Local tool for endurance training"
+  },
+  "common": {
+    "loading": "Loading …",
+    "error": "Error",
+    "not_computable": "not computable"
+  },
+  "ui": {
+    "estimated": "estimated",
+    "estimated_hint": "Estimated value (formula or rule of thumb), not a measurement.",
+    "nav": {
+      "label": "Main navigation",
+      "today": "Today",
+      "week": "Week",
+      "activities": "Activities",
+      "detail": "Detail",
+      "settings": "Settings",
+      "plan": "Plan",
+      "progress": "Progress",
+      "performance": "Performance",
+      "calendar": "Calendar",
+      "recovery": "Recovery"
+    },
+    "sport": {
+      "all": "All sports",
+      "cycling": "Cycling",
+      "running": "Running",
+      "swimming": "Swimming",
+      "strength": "Strength",
+      "other": "Other"
+    },
+    "theme": {
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
+    },
+    "language": {
+      "de": "Deutsch",
+      "en": "English"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "language": "Language",
+      "theme": "Theme"
+    },
+    "load": {
+      "method": {
+        "tss": "TSS",
+        "hr_tss": "hrTSS",
+        "r_tss": "rTSS",
+        "s_tss": "sTSS",
+        "session_rpe": "Session RPE"
+      },
+      "status": {
+        "missing_threshold": "Threshold missing, the load cannot be computed.",
+        "missing_channel": "Measurement channel missing (for example no power or no RPE).",
+        "implausible": "Implausible measurements, the load cannot be computed.",
+        "unknown": "No computation available."
+      },
+      "if": "IF",
+      "if_hint": "Intensity factor"
+    },
+    "error": {
+      "invalid_date": "Invalid date.",
+      "invalid_value": "Invalid value.",
+      "invalid_sport": "This threshold does not fit the sport.",
+      "invalid_year": "Invalid birth year (1900 up to the current year).",
+      "invalid_setting": "Invalid setting.",
+      "not_a_directory": "The folder does not exist or is not a folder.",
+      "not_found": "Entry not found.",
+      "database": "Error accessing the database.",
+      "database_too_new": "The database comes from a newer version of Lastwerk.",
+      "database_io": "The database could not be created or read.",
+      "dialog_failed": "The file dialog failed.",
+      "internal": "Internal error.",
+      "not_monday": "The plan must start on a Monday.",
+      "plan_failed": "The planner could not create a plan from these inputs.",
+      "plan_invalid": "The plan violates the schema or a hard rule.",
+      "export_failed": "The file could not be written.",
+      "restore_invalid": "The file is not a valid Lastwerk backup.",
+      "unconfirmed": "Confirmation is missing.",
+      "update_failed": "The update check failed or the signature does not match.",
+      "no_update": "No update is available.",
+      "busy": "A sync is already running. Please wait until it has finished.",
+      "coach_busy": "The coach is still answering your last message.",
+      "garmin_not_connected": "Not connected to Garmin. Please connect first.",
+      "garmin_auth_failed": "Garmin rejected the sign-in. Please connect again.",
+      "garmin_throttled": "Garmin is throttling requests. Please try again later.",
+      "garmin_locked": "Requests to Garmin are paused for now because Garmin throttled several times.",
+      "garmin_not_available": "Garmin did not deliver this data.",
+      "garmin_network": "Garmin cannot be reached. Please check the internet connection.",
+      "garmin_invalid_response": "Garmin sent an unexpected response.",
+      "garmin_store_failed": "The system keychain is not available. On Linux, Lastwerk needs a running Secret Service (for example GNOME Keyring or KWallet).",
+      "garmin_invalid_input": "The request to Garmin was invalid.",
+      "garmin_window_failed": "The sign-in window could not be opened.",
+      "garmin_io": "The files from Garmin could not be stored in the data folder.",
+      "too_little_time": "That is too little time for that many days. Pick fewer days or more hours.",
+      "no_plan": "There is no plan yet. Create one first with the three questions.",
+      "empty_message": "The message is empty.",
+      "message_too_long": "The message is too long, at most 1000 characters are allowed.",
+      "coach_unavailable": "No local model is reachable. Is Ollama running?",
+      "coach_timeout": "The model did not answer in time.",
+      "coach_unreachable": "The model server was not reachable or gave an unusable answer.",
+      "coach_invalid_output": "Even after the allowed corrections the model's answer could not be read.",
+      "coach_cancelled": "Cancelled.",
+      "proposal_stale": "The plan has changed since the proposal. Ask the coach again.",
+      "fit_root_io": "The data folder for FIT files cannot be written to.",
+      "coach_setup_busy": "A setup or download is already running. Please wait until it is done.",
+      "coach_setup_unsupported": "Automatic setup is only available on Windows. Install Ollama from ollama.com and then load a model here.",
+      "coach_setup_missing_script": "The setup script is missing in this installation. Install Ollama from ollama.com by hand.",
+      "coach_setup_failed": "Setting up Ollama failed.",
+      "coach_setup_timeout": "Setting up Ollama took too long and was stopped.",
+      "coach_setup_no_windows": "Automatic setup only runs on Windows.",
+      "coach_setup_winget_failed": "Installing through winget failed.",
+      "coach_setup_download_failed": "Downloading Ollama failed. Please check the internet connection.",
+      "coach_setup_signature_invalid": "The signature of the downloaded installer was invalid. Lastwerk did not run it.",
+      "coach_setup_install_failed": "Installing Ollama failed.",
+      "coach_setup_start_timeout": "Ollama is installed but does not answer. Start Ollama by hand and check again.",
+      "coach_setup_pull_failed": "The model could not be loaded.",
+      "coach_setup_bad_args": "The setup script did not accept its parameters.",
+      "coach_pull_invalid_model": "Lastwerk cannot load this model.",
+      "coach_pull_cancelled": "Cancelled.",
+      "coach_pull_timeout": "The download has been stuck for minutes. Please try again, parts already loaded are kept.",
+      "coach_pull_unreachable": "Ollama does not answer. Is it running?",
+      "coach_pull_bad_response": "Ollama gave an unexpected answer.",
+      "coach_pull_model_not_found": "Ollama does not have this model.",
+      "coach_pull_disk_full": "There is not enough space on the drive for the model.",
+      "coach_pull_network": "Ollama cannot reach its model library. Please check the internet connection.",
+      "coach_pull_failed": "The model could not be loaded."
+    },
+    "week": {
+      "previous": "Previous week",
+      "next": "Next week",
+      "current": "This week",
+      "range": "{from} to {to}",
+      "load_title": "Load per day and sport",
+      "bars_label": "Bar chart of daily load",
+      "total": "Weekly load",
+      "no_load": "No computable load in this week.",
+      "not_computable": "Activities without computable load (not in the sum): {n}",
+      "pmc_title": "Fitness, fatigue, form",
+      "no_pmc": "No curve for this period (future or no load yet).",
+      "pmc_date": "Date",
+      "ctl": "Fitness (CTL)",
+      "atl": "Fatigue (ATL)",
+      "tsb": "Form (TSB)",
+      "pmc_start_note": "The curve starts on {date} with the start values. The first weeks are not reliable."
+    },
+    "activities": {
+      "title": "Activities",
+      "from": "From",
+      "to": "To",
+      "sport": "Sport",
+      "show_duplicates": "Show duplicates",
+      "count": "{n} entries",
+      "empty": "No activities in the chosen period.",
+      "date": "Date",
+      "duration": "Duration",
+      "distance": "Distance",
+      "load": "Load",
+      "flags": "Note",
+      "duplicate": "Duplicate",
+      "duplicate_hint": "Same session as another recording, not counted in the load (duplicate rule)."
+    },
+    "detail": {
+      "none": "There is no activity in the period.",
+      "to_list": "To the list",
+      "back": "To the list",
+      "metrics": "Metrics",
+      "duration": "Duration",
+      "moving": "Moving time",
+      "distance": "Distance",
+      "avg_hr": "Avg heart rate",
+      "max_hr": "Max heart rate",
+      "avg_power": "Avg power",
+      "np": "Normalized power",
+      "load": "Load",
+      "device": "Device",
+      "best_power": "Best power",
+      "no_best_power": "No power data.",
+      "series_title": "Power and heart rate",
+      "time": "Time",
+      "power": "Power (W)",
+      "heart_rate": "Heart rate (bpm)",
+      "zones": "Time in zones",
+      "no_zones": "No zones computable (threshold or measurement channel missing).",
+      "series_file_missing": "The FIT file was not found.",
+      "series_file_changed": "The FIT file has changed since the import. Please import again.",
+      "series_unreadable": "The FIT file could not be read.",
+      "series_no_channels": "The activity contains neither power nor heart rate.",
+      "steady_title": "Steadiness",
+      "decoupling_label": "Aerobic decoupling",
+      "decoupling_hint": "Power per heartbeat, first half against second half. Meaningful for steady sessions. Limit 5 % (rule of thumb, Q16 secondary source only).",
+      "ef_label": "Efficiency factor",
+      "ef_hint": "Normalized power divided by average heart rate, cycling from 45 minutes only (Q16, secondary source only).",
+      "ef_none": "Only for rides of 45 minutes or more with power and heart rate.",
+      "statement": {
+        "decoupling": {
+          "no_data": "Decoupling needs at least 45 minutes with power and heart rate.",
+          "coupled": "Power and heart rate kept the same ratio until the end.",
+          "decoupled": "In the second half the same power took more heartbeats."
+        }
+      },
+      "laps_title": "Laps",
+      "laps_statement": "{n} laps from the file, averages from the recording.",
+      "lap": "Lap",
+      "pace": "Pace",
+      "speed": "Speed",
+      "pace_series": "Pace (min/km)",
+      "series_title_run": "Pace, power and heart rate"
+    },
+    "settings": {
+      "data": "Data",
+      "sync_warning": "The database lives in a folder that a cloud service synchronizes. This can corrupt SQLite. The local data folder is better.",
+      "statement": "Lastwerk stores all FIT files itself. You do not have to choose a folder.",
+      "location": "Location",
+      "location_hint": "Next to the database in this app's data folder, separate from the program folder. Updates leave it untouched.",
+      "rescan": "Read again",
+      "rescan_hint": "Reads all stored files once more. New and changed ones are picked up.",
+      "add_files": "Add FIT files",
+      "add_files_hint": "For files from an Edge device or a USB stick that do not come through Garmin Connect. Lastwerk copies them into its data folder and reads them in.",
+      "add_result": "{selected} selected: {copied} added, {present} already there, {rejected} skipped.",
+      "add_rejected": "Files without the .fit extension, unreadable files and files over 64 MiB are skipped."
+    },
+    "import": {
+      "progress": "File {done} of {total}",
+      "summary": "{found} files found: {fresh} new, {updated} changed, {unchanged} unchanged.",
+      "activities": "Counted activities: {primary}, duplicates: {duplicates}.",
+      "loads": "Load computed: {ok}. Not computable: {threshold} without threshold, {channel} without measurement channel, {implausible} implausible.",
+      "not_activity": "Files without an activity (for example daily monitoring): {n}",
+      "errors": "Faulty files: {n}",
+      "error_code": {
+        "empty_file": "Empty file",
+        "too_large": "File too large",
+        "invalid_header": "Invalid file header",
+        "crc_mismatch": "Checksum mismatch",
+        "truncated": "File truncated",
+        "unsupported_version": "Unknown FIT version",
+        "no_activity": "No activity",
+        "malformed": "Corrupt content",
+        "io": "Read error"
+      }
+    },
+    "threshold": {
+      "title": "Thresholds",
+      "hint": "A value applies from its date until the next value of the same kind. Earlier activities keep their load.",
+      "none": "No thresholds yet. Without a threshold the load is not computable.",
+      "col_kind": "Kind",
+      "sport": "Sport",
+      "value": "Value",
+      "valid": "Valid",
+      "note": "Note",
+      "valid_range": "{from} to {until}",
+      "open": "open",
+      "hr_max_estimate": "Maximum heart rate from age (208 minus 0.7 times age): {bpm} bpm",
+      "add": "Add threshold",
+      "valid_from": "Valid from",
+      "save": "Save",
+      "saved_not_applied": "Saved. There are no FIT files yet; the value applies to everything you read in later.",
+      "saved_recomputed": "Saved. {n} of {total} activities recomputed.",
+      "files_skipped": "Skipped because the file is missing or was changed: {n}",
+      "kind": {
+        "ftp_w": "FTP",
+        "lthr_bpm": "Lactate threshold heart rate (LTHR)",
+        "hr_max_bpm": "Maximum heart rate",
+        "hr_rest_bpm": "Resting heart rate",
+        "run_speed_mps": "Running threshold speed",
+        "css_mps": "Critical swim speed (CSS)"
+      },
+      "unit": {
+        "ftp_w": "W",
+        "lthr_bpm": "bpm",
+        "hr_max_bpm": "bpm",
+        "hr_rest_bpm": "bpm",
+        "run_speed_mps": "m/s",
+        "css_mps": "m/s"
+      }
+    },
+    "athlete": {
+      "title": "Athlete",
+      "hint": "Sex only selects the constants of the heart rate load (TRIMP). The birth year is only used to estimate the maximum heart rate.",
+      "sex": "Sex",
+      "unset": "Not specified",
+      "male": "Male",
+      "female": "Female",
+      "birth_year": "Birth year",
+      "save": "Save"
+    },
+    "pmc": {
+      "title": "Curve: fitness, fatigue, form",
+      "hint": "Time constants in days (default 42 and 7, common practice) and start values on the first day with load.",
+      "tau_ctl": "Time constant fitness (days)",
+      "tau_atl": "Time constant fatigue (days)",
+      "ctl0": "Start value fitness",
+      "atl0": "Start value fatigue",
+      "save": "Save",
+      "saved": "Saved."
+    },
+    "onboarding": {
+      "step_of": "Step {n} of {total}",
+      "back": "Back",
+      "next": "Next",
+      "skip": "Skip",
+      "finish": "Finish setup",
+      "language": {
+        "title": "Language and appearance",
+        "lead": "Choose language and theme. You can change both later in the settings."
+      },
+      "thresholds": {
+        "title": "Thresholds and personal details",
+        "lead": "Thresholds (for example FTP or resting heart rate) and personal details make the load computable.",
+        "if_skipped": "Without thresholds, load per sport stays not computable. You can add them later."
+      },
+      "goal": {
+        "title": "Goal and availability",
+        "lead": "A goal and your time per weekday are the basis of the weekly plan.",
+        "if_skipped": "Without a goal and availability, Lastwerk cannot create a plan."
+      },
+      "garmin": {
+        "title": "Connect Garmin (optional)",
+        "lead": "Lastwerk can fetch activities and recovery values directly from Garmin.",
+        "explain": "You sign in on the Garmin page in a separate window, and Lastwerk sees neither password nor code. Afterwards Lastwerk fetches new activities and recovery values to this computer, read only.",
+        "if_skipped": "Without Garmin, recovery values are missing. Activities still come from your own FIT files, and you can connect later in the settings."
+      },
+      "coach": {
+        "title": "Local coach (optional)",
+        "lead": "A language model on your computer can adjust and explain your plan. It never calculates.",
+        "if_skipped": "The planner stays fully usable without the coach. You can set it up later in the settings."
+      }
+    },
+    "lead": {
+      "today": "Your session for today and how recovered you are for it.",
+      "week": "What was done this week and how the load is distributed.",
+      "plan": "Three answers are enough for a weekly plan, the rest you work out in conversation with the coach.",
+      "activities": "All imported activities, duplicates are marked.",
+      "detail": "Metrics, zones and course of this activity.",
+      "settings": "Data, thresholds, appearance and version.",
+      "progress": "Volume and load across weeks, months and years.",
+      "performance": "Your best values per duration and how they develop."
+    },
+    "about": {
+      "title": "About Lastwerk",
+      "version": "Installed version: {version}",
+      "whats_new": "New in this version",
+      "none": "There are no notes for this version.",
+      "repeat": "Repeat setup",
+      "repeat_hint": "Walks through language, thresholds, goal and Garmin once more. Existing data is kept."
+    },
+    "update": {
+      "title": "Update",
+      "hint": "Lastwerk only looks for a new version when you click, on the project's GitHub releases. There is no background check and none of your data is sent. The install verifies a signature.",
+      "current": "Installed version: {version}",
+      "check": "Check for updates",
+      "checking": "Checking …",
+      "none": "Lastwerk is up to date.",
+      "available": "New version {version} available.",
+      "install": "Download and install",
+      "installing": "Downloading and installing, then Lastwerk restarts …",
+      "confirm": "The app will close and restart. Your data is kept."
+    },
+    "mcp": {
+      "title": "Claude as a client (MCP server)",
+      "hint": "The Lastwerk MCP server is read-only and only runs when a client such as Claude Desktop starts it (see the README).",
+      "recovery": "Allow recovery values for the MCP server",
+      "state_on": "Allowed: get_recovery_days returns HRV, resting heart rate and sleep duration.",
+      "state_off": "Blocked: get_recovery_days returns nothing (default).",
+      "recovery_hint": "Allowed values (HRV, resting heart rate, sleep duration) become part of the conversation with the client and go to its provider. They cannot be taken back afterwards.",
+      "confirm": "Allow them? Every answer with recovery values becomes part of the conversation with the client and cannot be taken back.",
+      "confirm_yes": "Allow",
+      "confirm_no": "Cancel"
+    },
+    "plan": {
+      "goal": {
+        "title": "Goal",
+        "kind": "Type",
+        "kind_event": "Event",
+        "kind_continuous": "Ongoing",
+        "date": "Date",
+        "sport": "Sport",
+        "sport_auto": "Automatic",
+        "priority": "Priority",
+        "label": "Label",
+        "label_hint": "Stays local and never goes to a language model.",
+        "save": "Set goal",
+        "saved": "Goal set.",
+        "none": "No goal set. The plan runs on an ongoing basis.",
+        "active": "active",
+        "event": "Event {date}, {sport}, priority {priority}",
+        "event_plain": "Event {date}",
+        "continuous": "Ongoing",
+        "past": "The event of the active goal is before the plan start. The plan then runs on an ongoing basis."
+      },
+      "avail": {
+        "title": "Availability",
+        "hint": "Longest training time per weekday. Days without a setting count as {minutes} minutes with hard sessions allowed.",
+        "minutes": "Minutes",
+        "hard": "Hard allowed",
+        "rest": "Rest day",
+        "save": "Save availability",
+        "saved": "Availability saved.",
+        "unset": "Nothing is set for {n} weekdays, the default applies there.",
+        "weekday": {
+          "mon": "Monday",
+          "tue": "Tuesday",
+          "wed": "Wednesday",
+          "thu": "Thursday",
+          "fri": "Friday",
+          "sat": "Saturday",
+          "sun": "Sunday"
+        }
+      },
+      "generate": {
+        "title": "Create plan",
+        "week_start": "Start (Monday)",
+        "weeks": "Weeks",
+        "weeks_hint": "Empty: up to the week of the event, otherwise 8 weeks.",
+        "sports": "Sports",
+        "sports_hint": "No selection: the sports of the last twelve weeks, cycling without history.",
+        "strength": "Strength sessions per week",
+        "run": "Create plan",
+        "running": "Creating …",
+        "done": "Plan created and saved as a draft."
+      },
+      "list": {
+        "title": "Saved plans",
+        "empty": "No plan saved yet.",
+        "row": "{start} to {end}, {weeks} weeks",
+        "created": "created {date}",
+        "open": "Show",
+        "activate": "Activate",
+        "archive": "Archive",
+        "shown": "shown"
+      },
+      "status": {
+        "draft": "Draft",
+        "active": "Active",
+        "archived": "Archived"
+      },
+      "source": {
+        "rules": "Rules",
+        "llm": "Language model"
+      },
+      "phase": {
+        "base": "Base",
+        "build": "Build",
+        "peak": "Peak",
+        "taper": "Taper",
+        "recovery": "Recovery",
+        "race": "Race"
+      },
+      "slot": {
+        "am": "morning",
+        "pm": "afternoon"
+      },
+      "view": {
+        "empty": "Select a plan or create a new one.",
+        "goal_event": "Goal: event {date}",
+        "goal_continuous": "Goal: ongoing",
+        "meta_sport": "Sport {sport}",
+        "meta_priority": "Priority {priority}",
+        "meta_rules": "Rules version {version}",
+        "meta_source": "Source: {source}",
+        "week": "Week {n}",
+        "week_range": "{from} to {to}",
+        "target": "Target load",
+        "planned": "Planned load",
+        "minutes": "{n} min",
+        "load": "Load {n}",
+        "hard": "hard",
+        "easy": "easy",
+        "rest_day": "Rest day",
+        "reasons": "Reasons",
+        "explanation": "Explanation",
+        "totals": "{sessions} sessions, {minutes} minutes, planned load {load}"
+      },
+      "warnings": {
+        "title": "Warnings",
+        "none": "No warnings.",
+        "info": "Note",
+        "warn": "Warning",
+        "unknown_rule": "Rule {code}"
+      },
+      "validation": {
+        "title": "Check",
+        "ok": "Schema valid, no hard violation.",
+        "schema_failed": "The schema is violated ({n}).",
+        "hard": "Hard violations: {n}",
+        "soft": "Soft violations: {n}"
+      },
+      "projection": {
+        "title": "Fitness, fatigue, form of the plan weeks",
+        "hint": "Forecast from the planned daily loads, starting the day before with fitness {ctl} and fatigue {atl}."
+      }
+    },
+    "export": {
+      "title": "Export and backup",
+      "ics": "Calendar (ICS)",
+      "plan_json": "Plan (JSON)",
+      "backup": "Backup of user data",
+      "restore": "Restore …",
+      "need_plan": "Select a plan first for ICS and JSON.",
+      "ics_hint": "The ICS file contains title, time and duration, no places.",
+      "privacy": "Backup and plan can contain personal details, for example the label of the goal. The files do not belong in a public repository.",
+      "ics_done": "ICS saved: {n} events.",
+      "json_done": "Plan saved.",
+      "backup_done": "Backup saved: {counts}.",
+      "cancelled": "Cancelled, nothing was written.",
+      "restore_confirm": "Restoring replaces all user data (thresholds, goals, availability, plans, settings) with the content of the chosen file. Activities and figures stay unchanged.",
+      "restore_yes": "Yes, choose file and replace",
+      "restore_no": "Cancel",
+      "restored": "Restored: {counts}.",
+      "restored_hint": "Then read the files again in the settings under Data or run `lastwerk rebuild --dir <folder>` on the command line so that activities and figures match the thresholds again.",
+      "counts": "{thresholds} thresholds, {goals} goals, {availability} availability entries, {plans} plans, {settings} settings, {recovery_days} recovery days"
+    },
+    "today": {
+      "eyebrow": "Recommendation for today",
+      "minutes": "{n} minutes",
+      "hard": "Hard session",
+      "easy": "Not a hard session",
+      "rest_title": "Rest day",
+      "rest_hint": "No session is planned for today.",
+      "no_plan_title": "No active plan yet",
+      "no_plan_hint": "Set a goal in the plan view and activate a plan. Today's session then appears here.",
+      "open_plan": "Go to plan",
+      "form_title": "Form",
+      "week_title": "This week",
+      "week_planned": "planned",
+      "load_unit": "Load",
+      "all_sessions": "More sessions today",
+      "not_covered": "The active plan does not cover today"
+    },
+    "form": {
+      "label": "Form state",
+      "fresh": "Fresh",
+      "balanced": "Balanced",
+      "loaded": "Loaded",
+      "overloaded": "Overreached",
+      "fresh_hint": "You are rested. Hard sessions pay off.",
+      "balanced_hint": "Load and recovery are in balance.",
+      "loaded_hint": "You are carrying fatigue. That is normal in a build.",
+      "overloaded_hint": "Fatigue is high. Stay easy and recover.",
+      "rule_note": "Limits are a rule of thumb, the limit at -30 matches R10."
+    },
+    "dash": {
+      "today": "Today",
+      "projection": "Projection",
+      "lead": {
+        "form": {
+          "fresh": "your form is fresh",
+          "balanced": "your form is balanced",
+          "loaded": "your form is loaded",
+          "overloaded": "your form is overloaded"
+        },
+        "readiness": {
+          "normal": "your recovery values are within your usual range",
+          "low": "your recovery values are below your average"
+        },
+        "plan_hard": "today's plan has a hard session",
+        "plan_easy": "today's plan has an easy session",
+        "plan_rest": "today is a rest day in the plan",
+        "and": "and"
+      },
+      "statement": {
+        "ramp": {
+          "no_data": "The ramp needs one more week of history.",
+          "falling": "Your fitness is falling by {value} points per week.",
+          "steady": "Your fitness is staying about the same.",
+          "building": "Your fitness is rising by {value} points per week, within the plan limit of {limit}.",
+          "steep": "Your fitness is rising by {value} points per week, faster than the plan limit of {limit}."
+        },
+        "distribution": {
+          "no_data": "There is not enough time in zones yet for a statement, at least one hour in 28 days.",
+          "easy_dominant": "{share} % of your time in zones is in zone 1 and 2, the plan asks for at least {min} %.",
+          "intensity_heavy": "Only {share} % of your time in zones is in zone 1 and 2, the plan asks for at least {min} %."
+        },
+        "adherence": {
+          "no_data": "No load was planned for this week up to yesterday.",
+          "under": "You have done {ratio} % of the load planned up to yesterday, less than planned.",
+          "on_track": "You have done {ratio} % of the load planned up to yesterday, in line with the plan.",
+          "over": "You have done {ratio} % of the load planned up to yesterday, more than planned."
+        },
+        "efficiency": {
+          "no_data": "The trend needs longer rides with power and heart rate.",
+          "falling": "Your power per heartbeat has fallen by {change} % compared with the 28 days before.",
+          "flat": "Your power per heartbeat is unchanged compared with the 28 days before.",
+          "rising": "Your power per heartbeat has risen by {change} % compared with the 28 days before."
+        },
+        "power_curve": {
+          "no_data": "The comparison needs power data from both periods.",
+          "falling": "Your best efforts are below those of the 90 days before. That can be due to missing maximal efforts.",
+          "flat": "Your best efforts are about the same as in the 90 days before.",
+          "rising": "Your best efforts of the last 90 days are above those of the 90 days before."
+        },
+        "readiness": {
+          "no_data": "The recovery values are not enough yet for a comparison with your average.",
+          "normal": "HRV and sleep duration are within your average of the last seven days.",
+          "low": "Your recovery values are clearly below your average of the last seven days."
+        }
+      },
+      "form": {
+        "title": "Form history",
+        "empty": "No load computed yet. Import activities and set thresholds, then your history appears here.",
+        "projection_note": "The projection uses the planned load of the active plan.",
+        "week_ahead": "In seven days according to the plan: {tsb}"
+      },
+      "readiness": {
+        "title": "Readiness",
+        "empty": "Connect Garmin for recovery values, then HRV, resting heart rate and sleep appear here against your own average.",
+        "stale": "The latest recovery value is from {date}, too old for a statement about today.",
+        "short_baseline": "Comparing with your average needs more days with recovery values.",
+        "plan_adjusted": "Lastwerk adjusted: the first hard session of the plan was replaced by an easy one.",
+        "stand": "As of {date}",
+        "hrv": "HRV",
+        "resting_hr": "Resting HR",
+        "sleep": "Sleep",
+        "body_battery": "Body Battery",
+        "battery_low": "Low {value}",
+        "unit_hrv": "ms",
+        "unit_resting_hr": "bpm",
+        "unit_sleep": "h",
+        "vs_baseline": "{value} vs baseline",
+        "baseline": "Baseline {value}",
+        "no_baseline": "no baseline yet",
+        "spark_label": "{name}, last 60 days"
+      },
+      "ramp": {
+        "title": "Ramp",
+        "label": "Fitness per week",
+        "unit": "points",
+        "chart_label": "Ramp of the last twelve weeks",
+        "limit": "Limit {value}",
+        "date": "Date"
+      },
+      "distribution": {
+        "title": "Distribution",
+        "label": "Zone 1 and 2, 28 days",
+        "chart_label": "Share of easy zones per week",
+        "easy": "Zone 1 and 2",
+        "hard": "Zone 3 and higher",
+        "week_axis": "Week start",
+        "limit": "Plan {value} %",
+        "week_title": "Week from {date}: {share} % easy, {hours} h in zones",
+        "week_empty": "Week from {date}: no time in zones"
+      },
+      "adherence": {
+        "title": "Plan adherence",
+        "label": "up to yesterday",
+        "no_plan": "Without an active plan there is nothing to compare.",
+        "chart_label": "Done against planned load per plan week",
+        "done": "load done",
+        "planned": "planned load of the week",
+        "so_far": "planned up to yesterday",
+        "week_title": "Week from {date}: {done} done, {planned} planned up to yesterday, {total} in total"
+      },
+      "efficiency": {
+        "title": "Efficiency",
+        "label": "Watts per heartbeat, 28 days",
+        "unit": "W/bpm",
+        "vs_before": "{value} vs the 28 days before",
+        "sessions": "{n} rides in 90 days",
+        "chart_label": "Efficiency factor, rolling mean of the last 90 days",
+        "series": "Efficiency (EF)",
+        "date": "Date"
+      },
+      "power": {
+        "title": "Power curve",
+        "chart_label": "Best power per duration, last 90 days against the 90 before",
+        "now": "last 90 days",
+        "before": "90 days before"
+      },
+      "calendar": {
+        "title": "Load calendar",
+        "statement": "{days} training days with {total} load in total over the last twelve months.",
+        "empty": "No computed load in the calendar yet. Import activities and set thresholds.",
+        "hint": "Hover a cell for the value of the day.",
+        "no_load": "no load",
+        "load": "Load {value}",
+        "less": "less",
+        "more": "more",
+        "scale": "Levels of daily load",
+        "days": "Training days",
+        "total": "Total load",
+        "best_week": "Strongest week",
+        "chart_label": "Daily load of the last 365 days as a calendar"
+      }
+    },
+    "garmin": {
+      "window_title": "Sign in to Garmin",
+      "title": "Garmin",
+      "statement": "Activities and recovery values straight from Garmin, without a companion program.",
+      "risk": "Unofficial access: Garmin offers no open interface to private users. Lastwerk uses the path of the Garmin app, and Garmin can change or block it at any time.",
+      "connect": "Connect with Garmin",
+      "waiting": "The Garmin sign-in window is open. You enter password and code only there.",
+      "connected": "Connected",
+      "not_connected": "Not connected",
+      "last_sync": "Last sync: {date}",
+      "never_synced": "No sync yet",
+      "sync_on_start": "Sync when the app starts",
+      "sync_on_start_hint": "Once after opening, only when connected. No schedule, nothing in the background.",
+      "sync_now": "Sync now",
+      "disconnect": "Disconnect",
+      "disconnect_confirm": "Disconnect? Lastwerk deletes the sign-in data from the keychain. To revoke access completely, also do so in your Garmin account settings.",
+      "disconnect_yes": "Disconnect",
+      "disconnect_no": "Cancel",
+      "disconnected": "Disconnected. To revoke access completely, also do so in your Garmin account settings.",
+      "locked_until": "Requests paused until {time} because Garmin throttled several times.",
+      "advanced": "Advanced",
+      "bridge_title": "Companion program bridge/",
+      "bridge_hint": "Only for the frozen companion program: what is in the exchange folder?",
+      "bridge_has_data": "The companion program delivers data: {days} days of recovery, {files} FIT files.",
+      "bridge_no_data": "No data in the exchange folder.",
+      "bridge_refresh": "Check status",
+      "code": {
+        "connected": "Signed in to Garmin.",
+        "cancelled": "Sign-in cancelled. The window was closed.",
+        "unexpected_redirect": "After sign-in, Garmin redirected differently than expected. Please try again later."
+      },
+      "sync": {
+        "label": "Garmin",
+        "running": "Sync running",
+        "phase_activities": "Activities {done}",
+        "phase_activities_total": "Activities {done} of {total}",
+        "phase_recovery": "Recovery {done} of {total}",
+        "phase_import": "Import {done} of {total}",
+        "done": "New activities: {count}",
+        "done_detail": "New activities: {count}, recovery days: {days}",
+        "aborted": "Sync incomplete"
+      }
+    },
+    "planner": {
+      "title": "Your plan in three questions",
+      "q_goal": "What are you training for?",
+      "goal_event": "Race",
+      "goal_fit": "Stay fit",
+      "goal_date": "Date",
+      "goal_sport": "Sport",
+      "q_hours": "How many hours per week?",
+      "hours_unit": "h",
+      "hours_hint": "The ceiling for the whole week. The planner spreads it evenly over your training days.",
+      "q_days": "On which days can you train?",
+      "days_none": "Pick at least one day.",
+      "days_one": "1 training day, about {minutes} minutes",
+      "days_many": "{count} training days, about {minutes} minutes each",
+      "start": "The plan starts on {date}.",
+      "submit": "Create plan",
+      "running": "Creating …",
+      "done": "The plan is created and active.",
+      "fine_title": "Fine-tuning and export",
+      "fine_hint": "Goal with a name, time per day, sports, plan list, export and backup.",
+      "weekday_short": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
+    },
+    "coach": {
+      "title": "Coach",
+      "statement": "Say what you would like to change. The coach suggests, only what you confirm is applied.",
+      "checking": "Checking whether a model is running …",
+      "model": "Model",
+      "model_auto": "Chosen automatically",
+      "reset": "Start over",
+      "you": "You",
+      "coach": "Coach",
+      "placeholder": "What should change?",
+      "send": "Send",
+      "thinking": "The coach is thinking …",
+      "cancel": "Cancel",
+      "counter": "{n} of {max}",
+      "empty_title": "Ask the coach",
+      "empty_hint": "For example:",
+      "suggestion": {
+        "busy_day": "I have no time on Tuesday",
+        "more_running": "I would like to run more",
+        "low_form": "Why is my form so low?"
+      },
+      "setup": {
+        "title": "The coach needs a local model",
+        "lead": "It runs entirely on your computer, nothing goes online. The planner works without it.",
+        "step_install": "Install Ollama (ollama.com) and start it.",
+        "step_pull": "Download a model, for example:",
+        "command": "ollama pull qwen3:4b",
+        "step_check": "Then check again here.",
+        "recheck": "Check again",
+        "checking": "Checking …",
+        "reason": {
+          "no_server": "No Ollama answers at {url}.",
+          "no_model": "Ollama is running at {url} but has no model yet.",
+          "bad_url": "The address {url} is not allowed. The coach only talks to your own computer.",
+          "not_configured": "The model server is not set up yet."
+        },
+        "open_settings": "Go to the setup in the settings"
+      },
+      "seen": "What does the coach see?",
+      "seen_close": "Close",
+      "preview": {
+        "title": "This goes to the model",
+        "target": "{provider} at {url}, model {model}. Nothing leaves your computer.",
+        "model_auto": "chosen when sending",
+        "note": "Exactly this text goes to the model: instructions, plan and rounded figures, plus your conversation. No names, paths or files.",
+        "loading": "Loading …",
+        "role": {
+          "system": "Instructions and input",
+          "user": "You",
+          "assistant": "Coach"
+        }
+      },
+      "proposal": {
+        "plan_edit": "Proposal: changes to the plan",
+        "planning_change": "Proposal: new plan",
+        "changes": "Changes",
+        "compare": "Before and after",
+        "week": "Week of",
+        "minutes": "Minutes",
+        "hard": "Hard",
+        "load": "Load",
+        "warnings": "The new plan carries {n} rule warnings.",
+        "accept": "Apply",
+        "applying": "Applying …",
+        "dismiss": "Dismiss",
+        "applied": "Applied. The new plan is now active.",
+        "dismissed": "Dismissed.",
+        "rejected": "The proposal did not pass the rules and was discarded: {codes}.",
+        "edit_replace": "{date} ({slot}): {template}, {minutes} min",
+        "edit_move": "Move {date} ({slot}) to {to} ({to_slot})",
+        "edit_remove": "{date} ({slot}) is removed",
+        "slot_am": "morning",
+        "slot_pm": "afternoon",
+        "change_start": "Start: {date}",
+        "change_weeks": "Length: {n} weeks",
+        "change_strength": "Strength: {n} per week",
+        "change_sports": "Sports: {list}",
+        "change_day_rest": "{day}: off",
+        "change_day_minutes": "{day}: up to {minutes} min",
+        "change_day_easy": "{day}: up to {minutes} min, easy only"
+      },
+      "consent": {
+        "title": "Before you start",
+        "text": "Your messages and your plan with rounded figures go to the model {model} on this computer. Nothing leaves it, and nothing changes until you apply a proposal. You can see exactly what is sent at any time under “What does the coach see?”.",
+        "accept": "Understood, start the conversation"
+      }
+    },
+    "migration": {
+      "title": "Earlier FIT folder taken over",
+      "title_missing": "Earlier FIT folder not found",
+      "done": "Lastwerk copied the files from your previous FIT folder into its own data folder: {copied} new, {identical} were already there. Nothing in the old folder was changed.",
+      "conflicts": "Left unchanged because a different file already existed at the same path: {n}.",
+      "failed": "Not copied: {n}. Lastwerk tries again on the next start.",
+      "missing": "Your previous FIT folder was not found, perhaps the drive is not connected. Its files stay there. Under Settings, Data you can add them with \"Add FIT files\".",
+      "dismiss": "Dismiss"
+    },
+    "coach_setup": {
+      "title": "Local coach",
+      "statement": "The coach runs with Ollama entirely on your computer. Only downloading Ollama and the models goes over the network, and only after you click.",
+      "state": {
+        "running": "Ollama is running",
+        "installed": "Ollama is installed but not running",
+        "missing": "Ollama is not installed"
+      },
+      "model_active": "Model in use: {model}",
+      "no_model": "No model loaded yet",
+      "ready": "The coach is ready.",
+      "hardware": "Your computer: {ram} GB memory, no NVIDIA graphics card found",
+      "hardware_gpu": "Your computer: {ram} GB memory, {vram} GB graphics memory",
+      "install": "Set up now",
+      "install_hint": "Lastwerk installs Ollama through winget or from ollama.com, checks the signature and starts it. Downloading takes a few minutes depending on your connection. Then you pick a model.",
+      "installing": "Setting up Ollama …",
+      "install_phase": {
+        "detect_found": "Ollama found",
+        "detect_missing": "Ollama not found",
+        "detect_running": "Ollama is already running",
+        "install_winget": "Installing through winget …",
+        "install_download": "Downloading the installer from ollama.com …",
+        "install_verify_ok": "Signature checked, installing …",
+        "install_skipped": "Ollama was already installed",
+        "start_ok": "Ollama started",
+        "start_timeout": "Ollama does not answer",
+        "pull_start": "Loading the model …",
+        "pull_progress": "Loading the model: {percent} %",
+        "pull_done": "Model loaded",
+        "pull_skipped": "Model was already there",
+        "done_ok": "Done",
+        "error_unknown": "Error during setup"
+      },
+      "declined": "You declined the setup in the installer. You can do it here at any time.",
+      "last_error": "The last setup failed:",
+      "manual": {
+        "title": "Install Ollama by hand",
+        "step_install": "Download Ollama from ollama.com and install it.",
+        "step_start": "Start Ollama.",
+        "step_pick": "Then pick a model here and load it."
+      },
+      "recheck": "Check again",
+      "checking": "Checking …",
+      "models_title": "Choose a model",
+      "model": {
+        "qwen3_1_7b": "Small and fast, for weak computers",
+        "qwen3_4b": "Starter model: a good mix of speed and quality",
+        "qwen3_8b": "Understands more, needs more memory",
+        "qwen3_14b": "Best, but only with lots of memory or a strong graphics card"
+      },
+      "size": "{size} GB",
+      "badge": {
+        "recommended": "Recommended for your PC",
+        "slow": "slow on this PC",
+        "too_big": "too big for this PC",
+        "installed": "loaded",
+        "active": "in use"
+      },
+      "fit_hint": {
+        "slow": "Fits in memory, but answers slowly without a suitable graphics card.",
+        "too_big": "Needs more memory than your computer has. You can still load it."
+      },
+      "load": "Load",
+      "use": "Use",
+      "pulling": "Loading {name}",
+      "progress": "{done} of {total} GB",
+      "pull_phase": {
+        "manifest": "Checking the model …",
+        "download": "Downloading …",
+        "verify": "Checking the files …",
+        "write": "Finishing …",
+        "done": "Done",
+        "other": "Working …"
+      },
+      "background": "You can carry on, the download keeps running in the background.",
+      "cancel": "Cancel",
+      "pulled": "{name} is loaded and used by the coach.",
+      "fits_all": "All sizes are rules of thumb and were not measured."
+    },
+    "progress": {
+      "lead": {
+        "empty": "No activities yet. As soon as Lastwerk has data, the comparison with last year appears here.",
+        "first": "{value} this year. There is no data for last year up to this day.",
+        "compare": "{value} this year, {change} compared with last year up to the same day."
+      },
+      "metric_label": "Measure",
+      "metric": {
+        "duration": "Time",
+        "distance": "Distance",
+        "load": "Load"
+      },
+      "sport_label": "Sport",
+      "load_unit": "load",
+      "vs_previous": "{value} vs last year",
+      "load_missing": "{n} sessions without a computable load are not included here.",
+      "none": "No activities in this period.",
+      "year": {
+        "title": "Year {year}",
+        "statement": "Total since January 1st, dashed the previous year until year end.",
+        "current": "So far",
+        "previous": "{year} up to the same day",
+        "sessions": "Sessions",
+        "day": "Day",
+        "chart_label": "Running total of this year and last year across the year"
+      },
+      "weeks": {
+        "title": "Weeks",
+        "statement": "The last 52 weeks, stacked by sport.",
+        "chart_label": "Volume per week by sport, 52 weeks",
+        "week_of": "Week of {date}",
+        "hint": "Point at a bar for the week's values."
+      },
+      "months": {
+        "title": "Months",
+        "statement": "The last 24 months, newest first.",
+        "month": "Month",
+        "sessions": "Sessions"
+      }
+    },
+    "perf": {
+      "range_label": "Period",
+      "range": {
+        "42": "6 weeks",
+        "90": "90 days",
+        "365": "1 year",
+        "all": "All"
+      },
+      "range_long": {
+        "42": "last 6 weeks",
+        "90": "last 90 days",
+        "365": "last year",
+        "all": "all time"
+      },
+      "open_activity": "Open activity",
+      "power": {
+        "title": "Power curve",
+        "empty": "No rides with power in this period.",
+        "all": "Your best values since recording began, each with its day.",
+        "no_previous": "There is no power data in the previous period to compare with.",
+        "statement": {
+          "power_curve": {
+            "rising": "At {rising} of {known} durations you are above the previous period.",
+            "flat": "Your best values are about the same as in the previous period.",
+            "falling": "Your best values are below the previous period. This can be due to missing maximal efforts."
+          }
+        },
+        "duration": "Duration",
+        "best": "Best",
+        "date": "Day",
+        "previous": "Previous period",
+        "change": "Change",
+        "chart_label": "Best average power per duration from 1 second to 2 hours",
+        "hint": "Point at the curve for the value of a duration.",
+        "note": "Rides only. The curve shows what you rode, not an estimate. A drop can be due to missing maximal efforts."
+      },
+      "run": {
+        "title": "Running best times",
+        "empty": "No runs with speed data in this period.",
+        "all": "Your fastest times within runs, not only from races.",
+        "plain": "Your fastest times within runs in this period.",
+        "statement": "On {faster} of {compared} distances you were faster than in the previous period.",
+        "distance_label": "Distance",
+        "time": "Time",
+        "diff": "Difference",
+        "note": "From the speed per second, rounded up to whole seconds, never across a pause. Values above 43 km/h count as measurement errors (rule of thumb).",
+        "distance": {
+          "d1000": "1 km",
+          "d5000": "5 km",
+          "d10000": "10 km",
+          "d21097": "Half marathon",
+          "d42195": "Marathon"
+        }
+      },
+      "thr": {
+        "title": "Thresholds",
+        "empty": "No thresholds yet and no ride with 20 minutes of power. Set them in the settings.",
+        "others": "No FTP set; the other thresholds are listed below.",
+        "no_ftp": "No FTP set yet. The suggestion from {month} would be {value}.",
+        "current": "Your FTP is {value}, valid since {date}.",
+        "above": "The suggestion from {month} at {value} is above your FTP of {ftp}.",
+        "to_settings": "Go to thresholds",
+        "suggestion": "Monthly suggestion",
+        "chart_label": "FTP over time with the monthly suggestions",
+        "origin_label": "Origin",
+        "origin": {
+          "manual": "manual",
+          "suggested_accepted": "suggestion accepted"
+        },
+        "note": "Suggestion: 95 % of the month's best 20-minute power (rule of thumb, Q16 secondary source only). It holds only if the 20 minutes were ridden all out, and is never applied by itself."
+      }
+    },
+    "cal": {
+      "lead": {
+        "plan": "{month}: {done} of {planned} planned sessions done up to yesterday, {missed} days missed.",
+        "sessions": "{month}: {n} sessions, the plan starts later or lies ahead.",
+        "no_plan": "{month}: {n} sessions. Without an active plan the calendar only shows what you did.",
+        "empty": "{month}: no sessions."
+      },
+      "previous": "Previous month",
+      "next": "Next month",
+      "today": "This month",
+      "to_plan": "Create a plan",
+      "week": "Week",
+      "load": "Load",
+      "time": "Time",
+      "state": {
+        "missed": "missed",
+        "partial": "partly",
+        "extra": "extra"
+      },
+      "legend": {
+        "planned": "planned",
+        "done": "done",
+        "sum": "Week column: actual / planned"
+      }
+    },
+    "rec": {
+      "lead": {
+        "empty": "No recovery values yet. Once Garmin is connected, HRV, resting heart rate, sleep and Body Battery appear here.",
+        "low": "The latest day is below your lower bound. Days below it in the last {days} days: {n}.",
+        "normal": "The latest day is within your own range. Days below the lower bound in the last {days} days: {n}.",
+        "stale": "Last values from {date}. Comparing with your own baseline needs recent values."
+      },
+      "range": {
+        "30": "30 days",
+        "90": "90 days",
+        "365": "1 year"
+      },
+      "none": "There are no recovery values in this period.",
+      "to_settings": "Go to Garmin in the settings",
+      "recent": "{metric}, 7-day avg",
+      "vs_period": "{change} vs period avg ({value})",
+      "hint": "Point at a chart for the values of a day.",
+      "base": "own baseline (avg of the 7 days before)",
+      "floor": "lower bound per R12",
+      "low_day": "below the lower bound",
+      "load": "Daily load",
+      "metric": {
+        "hrv": "HRV",
+        "resting_hr": "Resting HR",
+        "sleep": "Sleep",
+        "sleep_score": "Sleep score",
+        "body_battery_high": "Body Battery high",
+        "body_battery": "Body Battery"
+      },
+      "battery_high": "High",
+      "battery_low": "Low",
+      "hrv_statement": "Overnight HRV against the mean of the seven days before; from {pct} % below, the planner adjusts the next hard session.",
+      "rhr_statement": "Resting heart rate against the mean of the seven days before. It is shown but triggers nothing.",
+      "sleep_statement": "Sleep duration against the mean of the seven days before; from {pct} % below, the same rule applies.",
+      "battery_statement": "Daily high and low as reported by Garmin; without a reading of its own.",
+      "load_statement": "Daily load on the same time axis, so you see recovery and training side by side.",
+      "legend": {
+        "value": "Daily value"
+      },
+      "note": "Baseline and bounds follow rule R12 (Q6, 7-day mean secondary source only, thresholds rule of thumb). The values describe training data and are not a medical statement."
+    }
+  },
+  "sport": {
+    "cycling": "Cycling",
+    "running": "Running",
+    "swimming": "Swimming",
+    "strength": "Strength",
+    "rest": "Rest"
+  },
+  "zones": {
+    "power7": {
+      "name": "Power zones (7 zones)",
+      "z1": "Active recovery",
+      "z2": "Endurance",
+      "z3": "Tempo",
+      "z4": "Threshold",
+      "z5": "VO2max",
+      "z6": "Anaerobic capacity",
+      "z7": "Neuromuscular power"
+    },
+    "hr_lthr5": {
+      "name": "Heart rate zones by threshold (5 zones)",
+      "z1": "Recovery",
+      "z2": "Endurance",
+      "z3": "Tempo",
+      "z4": "Threshold",
+      "z5": "Above threshold"
+    },
+    "hr_karvonen": {
+      "name": "Heart rate zones by reserve (5 zones)",
+      "z1": "Very easy",
+      "z2": "Easy",
+      "z3": "Moderate",
+      "z4": "Hard",
+      "z5": "Maximal"
+    },
+    "run_speed5": {
+      "name": "Running pace zones (5 zones)",
+      "z1": "Easy",
+      "z2": "Endurance",
+      "z3": "Tempo",
+      "z4": "Threshold",
+      "z5": "Above threshold"
+    },
+    "swim_css5": {
+      "name": "Swimming zones by CSS (5 zones)",
+      "z1": "Easy",
+      "z2": "Endurance",
+      "z3": "Tempo",
+      "z4": "Threshold",
+      "z5": "Above threshold"
+    },
+    "estimated_hr_max": "Maximum heart rate estimated",
+    "source": "Source",
+    "status": "Verification status"
+  },
+  "template": {
+    "bike": {
+      "endurance": {
+        "steady": {
+          "name": "Steady endurance ride",
+          "description": "Even effort in zone 2, relaxed and sustainable."
+        }
+      },
+      "recovery": {
+        "spin": {
+          "name": "Recovery spin",
+          "description": "Very easy in zone 1, to recover."
+        }
+      },
+      "tempo": {
+        "blocks": {
+          "name": "Tempo blocks",
+          "description": "Blocks in zone 3 with easy breaks."
+        }
+      },
+      "threshold": {
+        "2x20": {
+          "name": "Threshold 2 by 20",
+          "description": "Two blocks of 20 minutes in zone 4, 5 minutes easy in between."
+        }
+      },
+      "vo2": {
+        "5x4": {
+          "name": "VO2max 5 by 4",
+          "description": "Five intervals of 4 minutes in zone 5, 4 minutes easy in between."
+        }
+      }
+    },
+    "run": {
+      "easy": {
+        "steady": {
+          "name": "Easy steady run",
+          "description": "Even and easy in zone 2."
+        }
+      },
+      "long": {
+        "steady": {
+          "name": "Long run",
+          "description": "Long, even run in zone 2."
+        }
+      },
+      "tempo": {
+        "continuous": {
+          "name": "Continuous tempo run",
+          "description": "Continuous run at threshold in zone 4."
+        }
+      },
+      "intervals": {
+        "6x3": {
+          "name": "Intervals 6 by 3",
+          "description": "Six fast intervals of 3 minutes in zone 5, 2 minutes jog in between."
+        }
+      }
+    },
+    "swim": {
+      "technique": {
+        "easy": {
+          "name": "Technique and easy swim",
+          "description": "Technique drills and relaxed swimming."
+        }
+      },
+      "threshold": {
+        "sets": {
+          "name": "Threshold sets",
+          "description": "Sets near critical speed in zone 4."
+        }
+      }
+    },
+    "strength": {
+      "general": {
+        "a": {
+          "name": "Strength, program A",
+          "description": "General program A, by time and RPE."
+        },
+        "b": {
+          "name": "Strength, program B",
+          "description": "General program B, by time and RPE."
+        }
+      }
+    },
+    "rest": {
+      "day": {
+        "name": "Rest day",
+        "description": "No session, recovery."
+      }
+    }
+  },
+  "reason": {
+    "week": {
+      "phase_base": "Base phase: build aerobic endurance.",
+      "phase_build": "Build phase: raise volume and intensity.",
+      "phase_peak": "Peak phase: high intensity, hold volume.",
+      "phase_taper": "Taper: volume drops, intensity stays.",
+      "phase_recovery": "Recovery week after the load weeks.",
+      "phase_race": "Race week.",
+      "growth": "The weekly target rises moderately over the previous week.",
+      "start_from_ctl": "Without a previous week the plan starts at the weekly load that matches current fitness.",
+      "recovery_block": "The weekly target drops to a fraction of the last load week (R6).",
+      "taper_reduction": "The weekly target drops, intensity stays (R9).",
+      "capped_ctl": "The weekly target is capped so that fitness does not rise too fast (R1).",
+      "capped_availability": "The weekly target is capped by the available time (R11).",
+      "target_reduced": "The weekly target was reduced to satisfy the rules.",
+      "hard_reduced": "A hard session was planned easy to satisfy the rules.",
+      "moderate_removed": "The moderate session was dropped to satisfy the rules.",
+      "fallback_rest": "This week could not be filled within the rules and stays free.",
+      "no_training_days": "No day allows training.",
+      "event_after_horizon": "The event lies beyond the planning horizon."
+    },
+    "session": {
+      "long": "Long session on the day with the most time.",
+      "hard": "Hard session on an allowed day, never on consecutive days (R3, R4).",
+      "moderate": "Moderate session for variety.",
+      "easy": "Easy session for aerobic endurance.",
+      "recovery_after_hard": "Easy after a hard session.",
+      "strength": "Strength, not on the day before a hard session (R7).",
+      "race_opener": "Short intense session before the race, intensity stays.",
+      "recovery_swap": "Easy instead of hard because HRV or sleep were clearly below your recent average (R12)."
+    }
+  },
+  "rule": {
+    "R01": {
+      "name": "Fitness ramp",
+      "explanation": "Fitness (CTL) should rise only by a limited amount per week. Source: rule of thumb."
+    },
+    "R02": {
+      "name": "Weekly volume increase",
+      "explanation": "Training time rises only by a limited amount over the previous week. Warning from 10 percent, rejection from 30 percent. Source: rule of thumb, no reliable protective effect shown (Q12, Q13)."
+    },
+    "R03": {
+      "name": "Hard sessions per week",
+      "explanation": "At most two hard sessions per week. Source: rule of thumb, descriptive Q5."
+    },
+    "R04": {
+      "name": "No hard sessions on consecutive days",
+      "explanation": "At least one day without a hard session lies between two hard sessions. Source: rule of thumb."
+    },
+    "R05": {
+      "name": "Rest day",
+      "explanation": "At least one day per week without a session. Source: rule of thumb."
+    },
+    "R06": {
+      "name": "Recovery week",
+      "explanation": "After three load weeks comes a week with 60 to 70 percent of the load. Source: rule of thumb, not proven."
+    },
+    "R07": {
+      "name": "Strength training",
+      "explanation": "One to two strength sessions per week, not on the day before a hard session, at most one in the taper. Source: rule of thumb."
+    },
+    "R08": {
+      "name": "Share of easy training",
+      "explanation": "At least 70 percent of the time in zones 1 and 2. Source: Q5 (descriptive, about 80 percent), limit is a rule of thumb."
+    },
+    "R09": {
+      "name": "Taper before the race",
+      "explanation": "Seven to fourteen days, volume drops, intensity stays. Source: Q10 (principle), duration is a rule of thumb."
+    },
+    "R10": {
+      "name": "Form not too low",
+      "explanation": "The projected form (TSB) should not fall below -30. Source: rule of thumb."
+    },
+    "R11": {
+      "name": "Availability",
+      "explanation": "Training time per weekday never exceeds your input, fixed rest days and days without hard sessions are kept. Source: user input."
+    },
+    "R12": {
+      "name": "Recovery data",
+      "explanation": "If HRV or sleep duration of the latest day are clearly below the average of the days before, the next hard session is replaced by an easy one. Source: Q6 (HRV monitoring, the 7-day average only from a secondary report), thresholds are rules of thumb. Without recovery data nothing changes."
+    }
+  }
+}

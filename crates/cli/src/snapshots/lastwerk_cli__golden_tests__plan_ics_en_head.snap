@@ -1,0 +1,28 @@
+---
+source: crates/cli/src/golden_tests.rs
+expression: head
+---
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Lastwerk//Plan//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DESCRIPTION:Continuous run at threshold in zone 4.\nHard session on an allo
+ wed day\, never on consecutive days (R3\, R4).
+DTEND:20270105T074000
+DTSTAMP:20261013T080000Z
+DTSTART:20270105T070000
+SUMMARY:Continuous tempo run (Running)
+UID:00000000-0000-4000-8000-000000000001-2027-01-05-am
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:General program A\, by time and RPE.\nStrength\, not on the da
+ y before a hard session (R7).
+DTEND:20270106T074500
+DTSTAMP:20261013T080000Z
+DTSTART:20270106T070000
+SUMMARY:Strength\, program A
+UID:00000000-0000-4000-8000-000000000001-2027-01-06-am
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:Even effort in zone 2\, relaxed and sustainable.\nLong session

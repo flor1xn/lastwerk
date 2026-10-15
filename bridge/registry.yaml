@@ -1,0 +1,642 @@
+# Endpunkt-Register der Lastwerk-Bridge (SPEC 5.5).
+# Erzeugt aus src/lastwerk_bridge/registry.py, nicht von Hand ändern.
+# status: ok, empty oder error laut Sonde (L1), unchecked_until_L1 ohne Sondenergebnis.
+# max_span_days: größte geprüfte Spanne, 1792 heißt kein Limit gefunden (SPEC 14, O26).
+schema_version: 1
+library: garminconnect
+entries:
+  - name: profile
+    method: get_user_profile
+    granularity: once
+    class: S1
+    params: []
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: settings
+    method: get_userprofile_settings
+    granularity: once
+    class: S1
+    params: []
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: devices
+    method: get_devices
+    granularity: once
+    class: S1
+    params: []
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: device_last_used
+    method: get_device_last_used
+    granularity: once
+    class: S1
+    params: []
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: primary_training_device
+    method: get_primary_training_device
+    granularity: once
+    class: S1
+    params: []
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: zones
+    method: get_heart_rate_zones
+    granularity: once
+    class: S1
+    params: []
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: power_zones
+    method: get_power_zones
+    granularity: once
+    class: S1
+    params: []
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: ftp
+    method: get_cycling_ftp
+    granularity: once
+    class: S1
+    params: []
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: lactate_threshold
+    method: get_lactate_threshold
+    granularity: once
+    class: S1
+    params: []
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: personal_records
+    method: get_personal_record
+    granularity: once
+    class: S1
+    params: []
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: goals
+    method: get_goals
+    granularity: once
+    class: S1
+    params: []
+    consumer: false
+    max_span_days: null
+    status: empty
+    ext: json
+    note: "start zählt ab 1 (Bruch in 0.3.17)"
+  - name: workouts
+    method: get_workouts
+    granularity: once
+    class: S1
+    params: []
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: training_plans
+    method: get_training_plans
+    granularity: once
+    class: S1
+    params: []
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: activity_types
+    method: get_activity_types
+    granularity: once
+    class: S1
+    params: []
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: gear
+    method: get_gear
+    granularity: once
+    class: S1
+    params: [userProfileNumber]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+    note: "braucht die Profilnummer aus profile"
+  - name: activities_list
+    method: get_activities
+    granularity: page
+    class: S1
+    params: [start, limit]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: summary
+    method: get_activity
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: details
+    method: get_activity_details
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+    note: "auf maxchart 2000 und maxpoly 4000 begrenzt, Streams aus original.fit"
+  - name: splits
+    method: get_activity_splits
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: typed_splits
+    method: get_activity_typed_splits
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: split_summaries
+    method: get_activity_split_summaries
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: weather
+    method: get_activity_weather
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: hr_zones
+    method: get_activity_hr_in_timezones
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: power_zones_activity
+    method: get_activity_power_in_timezones
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: empty
+    ext: json
+  - name: exercise_sets
+    method: get_activity_exercise_sets
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: gear_activity
+    method: get_activity_gear
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: original
+    method: download_activity
+    granularity: per_activity
+    class: S1
+    params: [activity_id]
+    kwargs:
+      dl_fmt: ORIGINAL
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: zip
+    note: "dl_fmt ORIGINAL liefert ein ZIP, original.fit wird daraus entpackt (T12)"
+  - name: user_summary
+    method: get_user_summary
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: steps
+    method: get_steps_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: floors
+    method: get_floors
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: heart_rates
+    method: get_heart_rates
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: rhr
+    method: get_rhr_day
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: stress
+    method: get_stress_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: all_day_stress
+    method: get_all_day_stress
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: body_battery_events
+    method: get_body_battery_events
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: respiration
+    method: get_respiration_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: spo2
+    method: get_spo2_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: intensity_minutes
+    method: get_intensity_minutes_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: sleep
+    method: get_sleep_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: hrv
+    method: get_hrv_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: training_readiness
+    method: get_training_readiness
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: training_status
+    method: get_training_status
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: daily_training_status
+    method: get_daily_training_status
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: morning_training_readiness
+    method: get_morning_training_readiness
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: fitness_age
+    method: get_fitnessage_data
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: max_metrics
+    method: get_max_metrics
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: true
+    max_span_days: null
+    status: empty
+    ext: json
+  - name: four_week_load_balance
+    method: get_training_four_week_load_balance
+    granularity: day
+    class: S2
+    params: [date]
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: activities_by_date
+    method: get_activities_by_date
+    granularity: range
+    class: S1
+    params: [start, end]
+    consumer: true
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: body_battery
+    method: get_body_battery
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 31
+    status: ok
+    ext: json
+  - name: hrv_range
+    method: get_hrv_data_range
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: true
+    max_span_days: 336
+    status: ok
+    ext: json
+  - name: endurance_score
+    method: get_endurance_score
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 392
+    status: ok
+    ext: json
+  - name: hill_score
+    method: get_hill_score
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 392
+    status: ok
+    ext: json
+  - name: running_tolerance
+    method: get_running_tolerance
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 336
+    status: empty
+    ext: json
+  - name: race_predictions
+    method: get_race_predictions
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: null
+    status: error
+    ext: json
+  - name: max_metrics_range
+    method: get_max_metrics_range
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: daily_steps
+    method: get_daily_steps
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: sleep_daily
+    method: get_sleep_daily
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: true
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: rhr_daily
+    method: get_rhr_daily
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: true
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: calories_daily
+    method: get_calories_daily
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: training_load_activities
+    method: get_training_load_activities
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: true
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: weekly_intensity_minutes
+    method: get_weekly_intensity_minutes
+    granularity: range
+    class: S2
+    params: [start, end]
+    consumer: false
+    max_span_days: 336
+    status: ok
+    ext: json
+  - name: weigh_ins
+    method: get_weigh_ins
+    granularity: range
+    class: S3
+    params: [start, end]
+    category: weight
+    consumer: false
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: body_composition
+    method: get_body_composition
+    granularity: range
+    class: S3
+    params: [start, end]
+    category: weight
+    consumer: false
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: blood_pressure
+    method: get_blood_pressure
+    granularity: range
+    class: S3
+    params: [start, end]
+    category: blood_pressure
+    consumer: false
+    max_span_days: 1792
+    status: ok
+    ext: json
+  - name: hydration
+    method: get_hydration_data
+    granularity: day
+    class: S3
+    params: [date]
+    category: hydration
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: nutrition_food_log
+    method: get_nutrition_daily_food_log
+    granularity: day
+    class: S3
+    params: [date]
+    category: nutrition
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: nutrition_meals
+    method: get_nutrition_daily_meals
+    granularity: day
+    class: S3
+    params: [date]
+    category: nutrition
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json
+  - name: nutrition_settings
+    method: get_nutrition_daily_settings
+    granularity: day
+    class: S3
+    params: [date]
+    category: nutrition
+    consumer: false
+    max_span_days: null
+    status: empty
+    ext: json
+  - name: lifestyle_logging
+    method: get_lifestyle_logging_data
+    granularity: day
+    class: S3
+    params: [date]
+    category: lifestyle
+    consumer: false
+    max_span_days: null
+    status: ok
+    ext: json

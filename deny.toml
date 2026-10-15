@@ -1,0 +1,57 @@
+# cargo-deny: Lizenzen, bekannte Sicherheitslücken, Quellen (SPEC 11.6).
+# Das Projekt steht unter MIT OR Apache-2.0. Abhängigkeiten dürfen nur Lizenzen haben,
+# die damit vereinbar sind. Neue Lizenzen werden hier bewusst einzeln ergänzt.
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = [
+    # proc-macro-error ist nicht mehr gepflegt. Es steckt als Makro zur Übersetzungszeit in
+    # glib-macros 0.18 und gtk3-macros, den GTK3-Bindungen, die Tauri 2 unter Linux nutzt
+    # (app/src-tauri). Kein Laufzeitcode, keine bekannte Sicherheitslücke, keine sichere
+    # Aktualisierung möglich (T06). Entfernen, sobald Tauri auf neuere Bindungen wechselt.
+    { id = "RUSTSEC-2024-0370", reason = "unmaintained, nur Makro zur Übersetzungszeit in den GTK3-Bindungen von Tauri" },
+]
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    # MIT-0: MIT ohne Namensnennungspflicht, für borrow-or-share (über jsonschema, T08).
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CC0-1.0",
+]
+# MPL-2.0 (schwaches Copyleft auf Dateiebene) nur für diese fünf Pakete der Tauri-Kette in
+# app/src-tauri (T06): cssparser, cssparser-macros, selectors und dtoa-short kommen über
+# tauri-utils (CSP-Verarbeitung), option-ext über dirs. Sie werden unverändert gelinkt, Pflichten
+# entstehen nur für geänderte MPL-Dateien. Bewusst je Paket und nicht als allgemeine Lizenz,
+# damit jedes weitere MPL-Paket auffällt. Entscheidung des Projekts offen, siehe
+# docs/tasks/T06-ui-geruest.md.
+exceptions = [
+    { allow = ["MPL-2.0"], crate = "cssparser" },
+    { allow = ["MPL-2.0"], crate = "cssparser-macros" },
+    { allow = ["MPL-2.0"], crate = "selectors" },
+    { allow = ["MPL-2.0"], crate = "dtoa-short" },
+    { allow = ["MPL-2.0"], crate = "option-ext" },
+    # CDLA-Permissive-2.0: Wurzelzertifikate (Datenlizenz, permissiv), über das Updater-Plugin
+    # (reqwest mit rustls) aus T17. Nur dieses Crate, keine allgemeine Freigabe.
+    { allow = ["CDLA-Permissive-2.0"], crate = "webpki-root-certs" },
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Pfadabhängigkeiten innerhalb des Workspace tragen keine Version (publish = false).
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

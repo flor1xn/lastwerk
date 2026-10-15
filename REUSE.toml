@@ -1,0 +1,19 @@
+# Lizenzzuordnung nach REUSE 3.3 (https://reuse.software). Prüfung: `reuse lint`.
+# Eigener Code und eigene Dokumente: MIT OR Apache-2.0 nach Wahl (LICENSE-MIT, LICENSE-APACHE).
+# Fremdcode im Repository trägt seine eigene Lizenz und steht unten mit Vorrang (override).
+version = 1
+SPDX-PackageName = "Lastwerk"
+SPDX-PackageDownloadLocation = "https://github.com/flor1xn/lastwerk"
+
+[[annotations]]
+path = "**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Lastwerk contributors"
+SPDX-License-Identifier = "MIT OR Apache-2.0"
+
+# Übernommen aus https://github.com/emilkowalski/skills, unverändert (siehe .claude/skills/README.md).
+[[annotations]]
+path = ".claude/skills/**"
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Emil Kowalski"
+SPDX-License-Identifier = "MIT"

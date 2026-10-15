@@ -1,0 +1,40 @@
+[package]
+name = "lastwerk-mcp"
+description = "MCP-Server, nur lesend, gefilterte Ausgabe"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "lastwerk-mcp"
+path = "src/main.rs"
+
+# Vermerke zu Name, Version, Lizenz und Grund: docs/tasks/T10-mcp-server.md.
+[dependencies]
+lastwerk-core = { path = "../core" }
+lastwerk-store = { path = "../store" }
+# Offizielles Rust-SDK der MCP-Organisation (SPEC 5.3, Q24). Nur Server und stdio, kein HTTP.
+rmcp = { version = "3.5", default-features = false, features = ["server", "macros", "transport-io"] }
+# Laufzeit, die rmcp verlangt. Ein Thread genügt: ein Client über stdio, kurze Abfragen.
+tokio = { version = "1", default-features = false, features = ["rt", "macros"] }
+# Parameter-Schemas der Werkzeuge, dieselbe Hauptversion wie in rmcp.
+schemars = { version = "1.0", features = ["chrono04"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# Datumstypen, die Systemuhr (clock) nur für "heute" bei get_weekly_load und im Protokoll.
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+clap = { version = "4.6", features = ["derive"] }
+# Prüfung des Plans gegen plan.schema.json vor der Ausgabe, wie in lastwerk-cli: ohne
+# Standardfeatures, keine Auflösung von Verweisen über Netz oder Dateisystem.
+jsonschema = { version = "0.58", default-features = false }
+
+[dev-dependencies]
+lastwerk-testkit = { path = "../testkit" }
+# Nur in Tests: legt die Tabelle recovery_day an, die erst T14 migriert (SPEC 6.2). Dieselbe
+# Version und dieselben Features wie in lastwerk-store.
+rusqlite = { version = "0.40", default-features = false, features = ["bundled"] }
+
+[lints]
+workspace = true

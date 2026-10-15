@@ -1,0 +1,28 @@
+[package]
+name = "lastwerk-store"
+description = "SQLite-Speicher, Cache und Nutzerdaten"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+# Vermerke zu Name, Version, Lizenz und Grund: docs/tasks/T04-store-import.md.
+[dependencies]
+lastwerk-core = { path = "../core" }
+lastwerk-fit = { path = "../fit" }
+# SQLite wird mit dem Crate aus C-Quellen gebaut (Feature bundled), damit die Version
+# unabhängig vom System feststeht und unter Windows nichts nachinstalliert werden muss.
+rusqlite = { version = "0.40", default-features = false, features = ["bundled"] }
+sha2 = "0.11"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# Nur Datumstypen, die Uhrzeit kommt von außen (Parameter now).
+chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }
+thiserror = "2.0"
+
+[dev-dependencies]
+lastwerk-testkit = { path = "../testkit" }
+
+[lints]
+workspace = true

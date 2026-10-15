@@ -1,0 +1,26 @@
+[package]
+name = "lastwerk-core"
+description = "Reine Berechnungslogik ohne Ein- und Ausgabe (Belastung, PMC, Planer)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+# Erlaubte Abhängigkeiten laut SPEC 5.4: serde, chrono (nur Datumstypen), thiserror.
+# chrono ohne Standardfeatures, damit weder Systemzeit (clock) noch Zeitzonendatenbank
+# ins Crate gelangen. Vermerk zu Version, Lizenz und Grund: docs/tasks/T01-core-belastung.md.
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }
+thiserror = "2.0"
+
+# Nur Entwicklung (T07): serde_json lädt die Kataloge in Tests, insta prüft Plan-JSON
+# (Golden-Tests, SPEC 11.4). Vermerk: docs/tasks/T07-core-planer.md.
+[dev-dependencies]
+proptest = { version = "1.12", default-features = false, features = ["std"] }
+serde_json = "1.0"
+insta = { version = "1.49", default-features = false, features = ["json"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,60 @@
+{
+  "de": {
+    "1.0.3": [
+      "Neue Seite Leistung: Leistungskurve von 1 Sekunde bis 2 Stunden für 6 Wochen, 90 Tage, ein Jahr oder alles, gegen den Zeitraum davor, mit Tag und Verweis auf die Aktivität. Beim ersten Start rechnet Lastwerk dafür vorhandene Dateien einmal neu.",
+      "Bestzeiten im Laufen über 1 km, 5 km, 10 km, Halbmarathon und Marathon auf der Seite Leistung, mit Tempo, Tag und Vergleich zum Zeitraum davor.",
+      "Verlauf der Schwellenwerte auf der Seite Leistung: FTP über die Zeit mit dem Vorschlag je Monat aus der besten 20-Minuten-Leistung.",
+      "Neue Seite Kalender: ein Monat mit geplanten Einheiten und Aktivitäten je Tag, verpasste und zusätzliche Einheiten als Text, je Woche Ist gegen Soll.",
+      "Neue Seite Erholung: HRV, Ruhepuls, Schlaf und Body Battery über bis zu einem Jahr mit eigener Basis und der Untergrenze, ab der der Planer anpasst, darunter die Tageslast.",
+      "Neuer Schlüssel für die Signatur der Updates: Wer 1.0.2 oder älter installiert hat, sieht bei \"Nach Update suchen\" einen Fehler zur Signatur und lädt den Installer einmal von Hand. Danach läuft das Update wieder aus der App."
+    ],
+    "1.0.2": [
+      "Neue Seite Fortschritt: Umfang und Last über 52 Wochen und 24 Monate, je Sportart, und dieses Jahr gegen das Vorjahr bis zum selben Tag."
+    ],
+    "1.0.1": [
+      "Aktivitätsdetail mit aerober Entkopplung, Effizienzfaktor, Runden aus der Datei und Tempo bei Läufen."
+    ],
+    "1.0.0": [
+      "Garmin direkt in der App: Anmeldung auf der Seite von Garmin in einem eigenen Fenster, Abgleich von Aktivitäten, HRV, Ruhepuls, Schlaf und Body Battery beim Start und auf Klick. Kein Python mehr nötig.",
+      "Keine Ordnerwahl mehr: Lastwerk legt FIT-Dateien selbst im Datenordner der App ab. Einzelne Dateien kommen über \"FIT-Dateien hinzufügen\" dazu.",
+      "Neues Dashboard auf der Startseite: Bereitschaft, Formverlauf mit Prognose, Rampe, Intensitätsverteilung, Planerfüllung, Effizienz, Leistungskurve und Belastungskalender, jeweils mit einem Satz Deutung.",
+      "Planer mit drei Fragen (Ziel, Stunden pro Woche, Trainingstage). Anpassungen im Gespräch mit einem lokalen Modell, jeder Vorschlag wird geprüft und erst nach Bestätigung übernommen.",
+      "Neue Gestaltung ohne Kachelraster und die Schrift Cairo überall.",
+      "Lokalen Coach einrichten: Der Erststart und die Einstellungen erkennen Ollama, richten es auf Wunsch ein (Windows) und laden ein Modell, mit Empfehlung nach deinem Rechner und Fortschrittsanzeige."
+    ],
+    "0.1.2": [
+      "Erststart-Assistent: führt durch Sprache, FIT-Ordner, Schwellenwerte, Ziel und optional Garmin. Wiederholbar in den Einstellungen.",
+      "Alle Ansichten folgen der Gestaltung der Startseite Heute.",
+      "Die Einstellungen zeigen die installierte Version und die Änderungen dieser Version."
+    ]
+  },
+  "en": {
+    "1.0.3": [
+      "New Performance page: power curve from 1 second to 2 hours for 6 weeks, 90 days, a year or all time, against the previous period, with the day and a link to the activity. On first start Lastwerk recomputes existing files once for this.",
+      "Running best times over 1 km, 5 km, 10 km, half marathon and marathon on the Performance page, with pace, day and comparison with the previous period.",
+      "Threshold history on the Performance page: FTP over time with the monthly suggestion from the best 20-minute power.",
+      "New Calendar page: a month with planned sessions and activities per day, missed and extra sessions as text, actual against planned per week.",
+      "New Recovery page: HRV, resting heart rate, sleep and Body Battery over up to a year with your own baseline and the lower bound at which the planner adjusts, with daily load below.",
+      "New key for signing updates: if you have 1.0.2 or older installed, \"Check for updates\" reports a signature error; download the installer once by hand. After that, updates work from the app again."
+    ],
+    "1.0.2": [
+      "New Progress page: volume and load over 52 weeks and 24 months, per sport, and this year against last year up to the same day."
+    ],
+    "1.0.1": [
+      "Activity detail with aerobic decoupling, efficiency factor, laps from the file and pace for runs."
+    ],
+    "1.0.0": [
+      "Garmin inside the app: sign in on Garmin's own page in a separate window, sync activities, HRV, resting heart rate, sleep and Body Battery at start and on click. Python is no longer needed.",
+      "No folder to choose: Lastwerk stores FIT files in its own data folder. Single files can be added with \"Add FIT files\".",
+      "New dashboard on the start page: readiness, form history with forecast, ramp rate, intensity distribution, plan adherence, efficiency, power curve and load calendar, each with a one-sentence reading.",
+      "Planner with three questions (goal, hours per week, training days). Adjust it in a chat with a local model; every suggestion is checked and applied only after you confirm.",
+      "New design without a tile grid and the Cairo font everywhere.",
+      "Set up the local coach: the first-run assistant and the settings detect Ollama, set it up on request (Windows) and load a model, with a recommendation for your computer and a progress display."
+    ],
+    "0.1.2": [
+      "First-run assistant: guides through language, FIT folder, thresholds, goal and optionally Garmin. Repeatable in the settings.",
+      "All views follow the design of the Today page.",
+      "The settings show the installed version and what changed in this version."
+    ]
+  }
+}

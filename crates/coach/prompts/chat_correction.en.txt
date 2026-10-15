@@ -1,0 +1,1 @@
+Your last answer was rejected. The errors are listed below as codes. Give a new, complete answer in the same JSON format that avoids these errors. Changes still refer to the plan in the input. If you find no valid proposal, leave out "proposal" and briefly say why in "reply".

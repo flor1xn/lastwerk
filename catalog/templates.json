@@ -1,0 +1,400 @@
+{
+  "format_version": 1,
+  "templates": [
+    {
+      "id": "bike.endurance.steady",
+      "sport": "cycling",
+      "intensity_class": "easy",
+      "duration_min": {
+        "min": 45,
+        "max": 300
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 10,
+          "zone_scheme": "power7",
+          "zone": 1
+        },
+        {
+          "kind": "steady",
+          "minutes": 40,
+          "zone_scheme": "power7",
+          "zone": 2
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "zone_scheme": "power7",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.bike.endurance.steady"
+    },
+    {
+      "id": "bike.recovery.spin",
+      "sport": "cycling",
+      "intensity_class": "easy",
+      "duration_min": {
+        "min": 30,
+        "max": 60
+      },
+      "steps": [
+        {
+          "kind": "steady",
+          "minutes": 40,
+          "zone_scheme": "power7",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.bike.recovery.spin"
+    },
+    {
+      "id": "bike.tempo.blocks",
+      "sport": "cycling",
+      "intensity_class": "moderate",
+      "duration_min": {
+        "min": 60,
+        "max": 120
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 15,
+          "zone_scheme": "power7",
+          "zone": 2
+        },
+        {
+          "kind": "interval",
+          "minutes": 12,
+          "zone_scheme": "power7",
+          "zone": 3,
+          "reps": 3,
+          "rest_minutes": 4
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "zone_scheme": "power7",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.bike.tempo.blocks"
+    },
+    {
+      "id": "bike.threshold.2x20",
+      "sport": "cycling",
+      "intensity_class": "hard",
+      "duration_min": {
+        "min": 60,
+        "max": 120
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 15,
+          "zone_scheme": "power7",
+          "zone": 2
+        },
+        {
+          "kind": "interval",
+          "minutes": 20,
+          "zone_scheme": "power7",
+          "zone": 4,
+          "reps": 2,
+          "rest_minutes": 5
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "zone_scheme": "power7",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.bike.threshold.2x20"
+    },
+    {
+      "id": "bike.vo2.5x4",
+      "sport": "cycling",
+      "intensity_class": "hard",
+      "duration_min": {
+        "min": 60,
+        "max": 105
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 20,
+          "zone_scheme": "power7",
+          "zone": 2
+        },
+        {
+          "kind": "interval",
+          "minutes": 4,
+          "zone_scheme": "power7",
+          "zone": 5,
+          "reps": 5,
+          "rest_minutes": 4
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "zone_scheme": "power7",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.bike.vo2.5x4"
+    },
+    {
+      "id": "run.easy.steady",
+      "sport": "running",
+      "intensity_class": "easy",
+      "duration_min": {
+        "min": 25,
+        "max": 75
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 5,
+          "zone_scheme": "run_speed5",
+          "zone": 1
+        },
+        {
+          "kind": "steady",
+          "minutes": 30,
+          "zone_scheme": "run_speed5",
+          "zone": 2
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 5,
+          "zone_scheme": "run_speed5",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.run.easy.steady"
+    },
+    {
+      "id": "run.long.steady",
+      "sport": "running",
+      "intensity_class": "moderate",
+      "duration_min": {
+        "min": 60,
+        "max": 150
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 10,
+          "zone_scheme": "run_speed5",
+          "zone": 1
+        },
+        {
+          "kind": "steady",
+          "minutes": 60,
+          "zone_scheme": "run_speed5",
+          "zone": 2
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 5,
+          "zone_scheme": "run_speed5",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.run.long.steady"
+    },
+    {
+      "id": "run.tempo.continuous",
+      "sport": "running",
+      "intensity_class": "hard",
+      "duration_min": {
+        "min": 40,
+        "max": 75
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 10,
+          "zone_scheme": "run_speed5",
+          "zone": 2
+        },
+        {
+          "kind": "steady",
+          "minutes": 20,
+          "zone_scheme": "run_speed5",
+          "zone": 4
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "zone_scheme": "run_speed5",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.run.tempo.continuous"
+    },
+    {
+      "id": "run.intervals.6x3",
+      "sport": "running",
+      "intensity_class": "hard",
+      "duration_min": {
+        "min": 40,
+        "max": 70
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 12,
+          "zone_scheme": "run_speed5",
+          "zone": 2
+        },
+        {
+          "kind": "interval",
+          "minutes": 3,
+          "zone_scheme": "run_speed5",
+          "zone": 5,
+          "reps": 6,
+          "rest_minutes": 2
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 8,
+          "zone_scheme": "run_speed5",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.run.intervals.6x3"
+    },
+    {
+      "id": "swim.technique.easy",
+      "sport": "swimming",
+      "intensity_class": "easy",
+      "duration_min": {
+        "min": 25,
+        "max": 60
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 5,
+          "zone_scheme": "swim_css5",
+          "zone": 1
+        },
+        {
+          "kind": "steady",
+          "minutes": 25,
+          "zone_scheme": "swim_css5",
+          "zone": 2
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 5,
+          "zone_scheme": "swim_css5",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.swim.technique.easy"
+    },
+    {
+      "id": "swim.threshold.sets",
+      "sport": "swimming",
+      "intensity_class": "hard",
+      "duration_min": {
+        "min": 40,
+        "max": 75
+      },
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 10,
+          "zone_scheme": "swim_css5",
+          "zone": 2
+        },
+        {
+          "kind": "interval",
+          "minutes": 5,
+          "zone_scheme": "swim_css5",
+          "zone": 4,
+          "reps": 6,
+          "rest_minutes": 1
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 5,
+          "zone_scheme": "swim_css5",
+          "zone": 1
+        }
+      ],
+      "text_key": "template.swim.threshold.sets"
+    },
+    {
+      "id": "strength.general.a",
+      "sport": "strength",
+      "intensity_class": "moderate",
+      "duration_min": {
+        "min": 30,
+        "max": 75
+      },
+      "rpe": 6,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 10,
+          "rpe": 3
+        },
+        {
+          "kind": "steady",
+          "minutes": 30,
+          "rpe": 6
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 5,
+          "rpe": 2
+        }
+      ],
+      "text_key": "template.strength.general.a"
+    },
+    {
+      "id": "strength.general.b",
+      "sport": "strength",
+      "intensity_class": "moderate",
+      "duration_min": {
+        "min": 30,
+        "max": 75
+      },
+      "rpe": 6,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 10,
+          "rpe": 3
+        },
+        {
+          "kind": "steady",
+          "minutes": 30,
+          "rpe": 6
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 5,
+          "rpe": 2
+        }
+      ],
+      "text_key": "template.strength.general.b"
+    },
+    {
+      "id": "rest.day",
+      "sport": "rest",
+      "intensity_class": "easy",
+      "duration_min": {
+        "min": 0,
+        "max": 0
+      },
+      "steps": [],
+      "text_key": "template.rest.day"
+    }
+  ]
+}

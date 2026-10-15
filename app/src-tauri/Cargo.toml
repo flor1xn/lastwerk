@@ -1,0 +1,62 @@
+[package]
+name = "lastwerk-app"
+description = "Desktop-Oberfläche von Lastwerk (Tauri 2)"
+version = "0.0.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/flor1xn/lastwerk"
+publish = false
+
+# Eigenes Cargo-Projekt, kein Mitglied des Wurzel-Workspace: `cargo test --workspace` in der
+# Wurzel soll ohne die Systembibliotheken von Tauri (WebKitGTK, GTK) laufen (SPEC 5.2).
+# Der leere Abschnitt hält Cargo davon ab, den Wurzel-Workspace als Eltern zu suchen.
+[workspace]
+
+[lib]
+name = "lastwerk_app"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lastwerk-app"
+path = "src/main.rs"
+
+# Vermerke zu Name, Version, Lizenz und Grund: docs/tasks/T06-ui-geruest.md.
+[dependencies]
+lastwerk-core = { path = "../../crates/core" }
+lastwerk-fit = { path = "../../crates/fit" }
+lastwerk-store = { path = "../../crates/store" }
+# Planung, Schemaprüfung, ICS und Sicherung teilt die App mit der Kommandozeile (T09, SPEC 5.4).
+lastwerk-cli = { path = "../../crates/cli" }
+# Garmin-Zugang (T23, SPEC 5.6): Client, Schlüsselbund, Ticket aus der Weiterleitung. Keine neue
+# Fremdabhängigkeit, `lastwerk-cli` bringt das Crate schon mit.
+lastwerk-garmin = { path = "../../crates/garmin" }
+# Gespräch mit dem lokalen Coach (T26 Teil B): Eingang, Verlauf, Prüfung, Modellliste. Ein
+# Crate des Workspace, keine neue externe Abhängigkeit (`lastwerk-cli` zieht es ohnehin).
+lastwerk-coach = { path = "../../crates/coach" }
+tauri = { version = "2.12", features = [] }
+tauri-plugin-dialog = "2"
+# Update auf Knopfdruck (T17, SPEC 10.1): prüft die Signatur, Endpunkt fest in tauri.conf.json.
+tauri-plugin-updater = "2"
+serde = { version = "1.0", features = ["derive"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+# Plan-ID als UUID v4, wie in der Kommandozeile (`core` erzeugt keinen Zufall).
+serde_json = "1.0"
+uuid = { version = "1.28", default-features = false, features = ["v4"] }
+# Gesamter Arbeitsspeicher für die Empfehlung eines Modells (T29, SPEC 9.2). Nur die Funktion
+# `system`, ohne Platten, Netz, Benutzer und Sensoren. Lizenz MIT.
+sysinfo = { version = "0.39", default-features = false, features = ["system"] }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dev-dependencies]
+lastwerk-testkit = { path = "../../crates/testkit" }
+# Nur für Tests: `TokenSet::for_tests` für eine Token-Ablage im Speicher (T23). Der normale Bau
+# der App enthält die Funktion `test-endpoints` nicht.
+lastwerk-garmin = { path = "../../crates/garmin", features = ["test-endpoints"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

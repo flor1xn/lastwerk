@@ -1,0 +1,974 @@
+---
+source: crates/cli/src/golden_tests.rs
+expression: text
+---
+{
+  "schema_version": 1,
+  "plan_id": "00000000-0000-4000-8000-000000000001",
+  "created_at": "2026-10-13T08:00:00Z",
+  "locale": "de",
+  "source": "rules",
+  "rules_version": "1.0.0",
+  "goal": {
+    "kind": "event",
+    "event_date": "2027-03-27",
+    "sport": "cycling",
+    "priority": "A"
+  },
+  "weeks": [
+    {
+      "week_start": "2027-01-04",
+      "phase": "base",
+      "target_load": 128.4,
+      "planned_load": 129.4,
+      "reason_keys": [
+        "reason.week.phase_base",
+        "reason.week.start_from_ctl",
+        "reason.week.growth"
+      ],
+      "days": [
+        {
+          "date": "2027-01-04",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-05",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-06",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.a",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-07",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-08",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-09",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 60,
+              "planned_load": 42.2,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-10",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-01-11",
+      "phase": "base",
+      "target_load": 124.6,
+      "planned_load": 125.9,
+      "reason_keys": [
+        "reason.week.phase_base",
+        "reason.week.growth",
+        "reason.week.target_reduced"
+      ],
+      "days": [
+        {
+          "date": "2027-01-11",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-12",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-13",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.b",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-14",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-15",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-16",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 55,
+              "planned_load": 38.7,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-17",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-01-18",
+      "phase": "base",
+      "target_load": 128.0,
+      "planned_load": 129.4,
+      "reason_keys": [
+        "reason.week.phase_base",
+        "reason.week.growth",
+        "reason.week.target_reduced"
+      ],
+      "days": [
+        {
+          "date": "2027-01-18",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-19",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-20",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.a",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-21",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-22",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-23",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 60,
+              "planned_load": 42.2,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-24",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-01-25",
+      "phase": "recovery",
+      "target_load": 84.1,
+      "planned_load": 83.3,
+      "reason_keys": [
+        "reason.week.phase_recovery",
+        "reason.week.recovery_block"
+      ],
+      "days": [
+        {
+          "date": "2027-01-25",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.easy.steady",
+              "duration_min": 25,
+              "planned_load": 17.6,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.easy"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-26",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.b",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-27",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-28",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-29",
+          "sessions": []
+        },
+        {
+          "date": "2027-01-30",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 55,
+              "planned_load": 38.7,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-01-31",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-02-01",
+      "phase": "build",
+      "target_load": 124.6,
+      "planned_load": 125.9,
+      "reason_keys": [
+        "reason.week.phase_build",
+        "reason.week.growth",
+        "reason.week.target_reduced",
+        "reason.week.hard_reduced",
+        "reason.week.moderate_removed"
+      ],
+      "days": [
+        {
+          "date": "2027-02-01",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-02",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-03",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.a",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-04",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-05",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-06",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 55,
+              "planned_load": 38.7,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-07",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-02-08",
+      "phase": "build",
+      "target_load": 128.0,
+      "planned_load": 129.4,
+      "reason_keys": [
+        "reason.week.phase_build",
+        "reason.week.growth",
+        "reason.week.target_reduced",
+        "reason.week.hard_reduced",
+        "reason.week.moderate_removed"
+      ],
+      "days": [
+        {
+          "date": "2027-02-08",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-09",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-10",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.b",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-11",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-12",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-13",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 60,
+              "planned_load": 42.2,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-14",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-02-15",
+      "phase": "build",
+      "target_load": 124.6,
+      "planned_load": 125.9,
+      "reason_keys": [
+        "reason.week.phase_build",
+        "reason.week.growth",
+        "reason.week.target_reduced",
+        "reason.week.hard_reduced",
+        "reason.week.moderate_removed"
+      ],
+      "days": [
+        {
+          "date": "2027-02-15",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-16",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-17",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.a",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-18",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-19",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-20",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 55,
+              "planned_load": 38.7,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-21",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-02-22",
+      "phase": "recovery",
+      "target_load": 81.8,
+      "planned_load": 83.3,
+      "reason_keys": [
+        "reason.week.phase_recovery",
+        "reason.week.recovery_block"
+      ],
+      "days": [
+        {
+          "date": "2027-02-22",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.easy.steady",
+              "duration_min": 25,
+              "planned_load": 17.6,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.easy"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-23",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.b",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-24",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-25",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-26",
+          "sessions": []
+        },
+        {
+          "date": "2027-02-27",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 55,
+              "planned_load": 38.7,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-02-28",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-03-01",
+      "phase": "peak",
+      "target_load": 123.2,
+      "planned_load": 122.4,
+      "reason_keys": [
+        "reason.week.phase_peak",
+        "reason.week.growth",
+        "reason.week.target_reduced",
+        "reason.week.hard_reduced",
+        "reason.week.moderate_removed"
+      ],
+      "days": [
+        {
+          "date": "2027-03-01",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-02",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-03",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.a",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-04",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-05",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-06",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 50,
+              "planned_load": 35.2,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-07",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-03-08",
+      "phase": "peak",
+      "target_load": 126.1,
+      "planned_load": 125.9,
+      "reason_keys": [
+        "reason.week.phase_peak",
+        "reason.week.growth",
+        "reason.week.hard_reduced",
+        "reason.week.moderate_removed"
+      ],
+      "days": [
+        {
+          "date": "2027-03-08",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-09",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.tempo.continuous",
+              "duration_min": 40,
+              "planned_load": 60.2,
+              "hard": true,
+              "reason_keys": [
+                "reason.session.hard"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-10",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "strength",
+              "template_id": "strength.general.b",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-11",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-12",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-13",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.endurance.steady",
+              "duration_min": 55,
+              "planned_load": 38.7,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-14",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-03-15",
+      "phase": "taper",
+      "target_load": 88.1,
+      "planned_load": 86.8,
+      "reason_keys": [
+        "reason.week.phase_taper",
+        "reason.week.taper_reduction",
+        "reason.week.hard_reduced"
+      ],
+      "days": [
+        {
+          "date": "2027-03-15",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.easy.steady",
+              "duration_min": 25,
+              "planned_load": 17.6,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.easy"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-16",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.recovery.spin",
+              "duration_min": 30,
+              "planned_load": 21.1,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.easy"
+              ]
+            },
+            {
+              "slot": "pm",
+              "sport": "strength",
+              "template_id": "strength.general.a",
+              "duration_min": 45,
+              "planned_load": 27.0,
+              "hard": false,
+              "rpe": 6,
+              "reason_keys": [
+                "reason.session.strength"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-17",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-18",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-19",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-20",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.recovery.spin",
+              "duration_min": 30,
+              "planned_load": 21.1,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.long"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-21",
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "week_start": "2027-03-22",
+      "phase": "race",
+      "target_load": 63.0,
+      "planned_load": 63.3,
+      "reason_keys": [
+        "reason.week.phase_race",
+        "reason.week.taper_reduction",
+        "reason.week.hard_reduced"
+      ],
+      "days": [
+        {
+          "date": "2027-03-22",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.easy.steady",
+              "duration_min": 30,
+              "planned_load": 21.1,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.easy"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-23",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-24",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "cycling",
+              "template_id": "bike.recovery.spin",
+              "duration_min": 30,
+              "planned_load": 21.1,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.easy"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-25",
+          "sessions": [
+            {
+              "slot": "am",
+              "sport": "running",
+              "template_id": "run.easy.steady",
+              "duration_min": 30,
+              "planned_load": 21.1,
+              "hard": false,
+              "reason_keys": [
+                "reason.session.easy"
+              ]
+            }
+          ]
+        },
+        {
+          "date": "2027-03-26",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-27",
+          "sessions": []
+        },
+        {
+          "date": "2027-03-28",
+          "sessions": []
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

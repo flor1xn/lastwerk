@@ -1,0 +1,52 @@
+[package]
+name = "lastwerk-cli"
+description = "Kommandozeile für Import, Berechnung, Plan und Export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "lastwerk_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lastwerk"
+path = "src/main.rs"
+
+# Vermerke zu Name, Version, Lizenz und Grund: docs/tasks/T04-store-import.md.
+[dependencies]
+lastwerk-core = { path = "../core" }
+lastwerk-store = { path = "../store" }
+# Lokales Sprachmodell für `refine` (T15). Bringt ureq (blockierend, ohne TLS) mit.
+lastwerk-coach = { path = "../coach" }
+# Abgleich mit Garmin (T22): Client, Token-Ablage und Fehlercodes. Nur diese Bibliothek spricht
+# mit Garmin, die CLI hält keinen eigenen HTTP-Code dafür.
+lastwerk-garmin = { path = "../garmin" }
+clap = { version = "4.6", features = ["derive"] }
+# Systemuhr (Feature clock) nur hier, nie in core oder store.
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+serde_json = "1.0"
+# Schema-Prüfung des Plans (SPEC 5.3, 7.1). Ohne Standardfeatures: keine Netzwerk- und
+# Dateiauflösung von Verweisen (`resolve-http`, `resolve-file`), das Schema ist eingebettet.
+jsonschema = { version = "0.58", default-features = false }
+# ICS-Erzeugung (SPEC 10.2). Der Parser gehört nur zu den Tests.
+icalendar = { version = "0.17", default-features = false }
+# Plan-ID als UUID v4. Der Zufall gehört in die CLI, `core` darf keinen erzeugen.
+uuid = { version = "1.28", default-features = false, features = ["v4"] }
+# ZIP-Container der FIT-Originale von Garmin (T22), nur lesen. Ohne Standardfeatures: keine
+# Verschlüsselung, kein bzip2, lzma, zstd, ppmd. `deflate-flate2-zlib-rs` ist nur das
+# Entpacken von Deflate mit dem reinen Rust-Backend zlib-rs; das Feature `deflate` brächte
+# zusätzlich zopfli (Komprimierer) mit. Vermerk: docs/tasks/T22-garmin-sync.md.
+zip = { version = "8.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+
+[dev-dependencies]
+insta = { version = "1.49", default-features = false }
+# Eigenschaftstests der Schemaprüfung (T08), wie in core.
+proptest = { version = "1.12", default-features = false, features = ["std"] }
+icalendar = { version = "0.17", features = ["parser"] }
+lastwerk-testkit = { path = "../testkit" }
+
+[lints]
+workspace = true

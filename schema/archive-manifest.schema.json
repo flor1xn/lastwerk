@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "archive-manifest.schema.json",
+  "title": "Manifest-Eintrag des Garmin-Archivs (SPEC 5.5)",
+  "description": "Ein JSON-Objekt je Zeile in manifest.jsonl. Der juengste Eintrag je Schluessel (kind, endpoint, params) gilt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "endpoint", "status", "fetched_at", "lib_version"],
+  "properties": {
+    "kind": { "enum": ["account", "activity", "daily", "range", "device_usb"] },
+    "endpoint": { "type": "string", "maxLength": 128 },
+    "params": { "type": "object" },
+    "status": { "enum": ["ok", "empty", "not_available", "error"] },
+    "http_status": { "type": "integer" },
+    "fetched_at": { "type": "string", "format": "date-time" },
+    "lib_version": { "type": "string", "maxLength": 32 },
+    "path": { "type": "string", "maxLength": 512 },
+    "bytes": { "type": "integer", "minimum": 0 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "error_class": { "type": "string", "maxLength": 64 }
+  }
+}

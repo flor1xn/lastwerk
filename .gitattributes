@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.fit binary
+*.FIT binary
+*.png binary
+*.ico binary

@@ -1,0 +1,50 @@
+{
+  "format_version": 1,
+  "schemes": [
+    {
+      "id": "power7",
+      "basis": "ftp",
+      "sports": ["cycling"],
+      "bounds": [0.55, 0.75, 0.90, 1.05, 1.20, 1.50],
+      "source": "Q16",
+      "status": "Sekundärquelle",
+      "note": "Sieben Zonen nach Coggan, obere Grenzen als Anteil der FTP. Grenzwerte aus Sekundärliteratur, vor Freigabe am Original prüfen (SPEC 14, O8)."
+    },
+    {
+      "id": "hr_lthr5",
+      "basis": "lthr",
+      "sports": ["cycling", "running", "swimming", "strength", "other"],
+      "bounds": [0.81, 0.89, 0.93, 0.99],
+      "source": "Q22",
+      "status": "Faustregel",
+      "note": "Fünf Zonen als Anteil der Schwellenherzfrequenz, angelehnt an Friel (Rad). Nicht am Original geprüft (SPEC 14, O8)."
+    },
+    {
+      "id": "hr_karvonen",
+      "basis": "hr_reserve",
+      "sports": ["cycling", "running", "swimming", "strength", "other"],
+      "bounds": [0.60, 0.70, 0.80, 0.90],
+      "source": "Q14",
+      "status": "Faustregel",
+      "note": "Fünf Zonen als Anteil der Herzfrequenzreserve (HR_max minus HR_rest). Q14 stützt nur das Konzept der Reserve, die Anteile sind Faustregel (SPEC 8.5, O8). Fehlt HR_max, gilt die Schätzung aus dem Alter (Q7) und ist gekennzeichnet."
+    },
+    {
+      "id": "run_speed5",
+      "basis": "run_threshold_speed",
+      "sports": ["running"],
+      "bounds": [0.75, 0.85, 0.95, 1.05],
+      "source": "Faustregel",
+      "status": "Faustregel",
+      "note": "Fünf Zonen als Anteil der Schwellengeschwindigkeit. Grenzen vom Projekt gewählt, ohne Quelle (SPEC 8.5)."
+    },
+    {
+      "id": "swim_css5",
+      "basis": "css",
+      "sports": ["swimming"],
+      "bounds": [0.85, 0.95, 1.05, 1.15],
+      "source": "Q15",
+      "status": "Faustregel",
+      "note": "Fünf Zonen als Anteil der CSS. Q15 stützt nur den Begriff der kritischen Geschwindigkeit, die Prozentgrenzen sind Faustregel (SPEC 8.5)."
+    }
+  ]
+}

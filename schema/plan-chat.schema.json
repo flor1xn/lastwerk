@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "plan-chat.schema.json",
+  "title": "Lastwerk Antwort des Coachs im Gespräch",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "reply"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "reply": { "type": "string", "minLength": 1, "maxLength": 1200 },
+    "proposal": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "edit"],
+          "properties": {
+            "kind": { "const": "plan_edit" },
+            "edit": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["schema_version", "edits", "explanation"],
+              "properties": {
+                "schema_version": { "const": 1 },
+                "edits": {
+                  "type": "array",
+                  "maxItems": 14,
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["op", "date", "slot", "template_id", "duration_min"],
+                        "properties": {
+                          "op": { "const": "replace" },
+                          "date": { "type": "string", "format": "date" },
+                          "slot": { "enum": ["am", "pm"] },
+                          "template_id": { "type": "string", "pattern": "^[a-z]+(\\.[a-z0-9_]+)+$" },
+                          "duration_min": { "type": "integer", "minimum": 10, "maximum": 360 }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["op", "from_date", "from_slot", "to_date", "to_slot"],
+                        "properties": {
+                          "op": { "const": "move" },
+                          "from_date": { "type": "string", "format": "date" },
+                          "from_slot": { "enum": ["am", "pm"] },
+                          "to_date": { "type": "string", "format": "date" },
+                          "to_slot": { "enum": ["am", "pm"] }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["op", "date", "slot"],
+                        "properties": {
+                          "op": { "const": "remove" },
+                          "date": { "type": "string", "format": "date" },
+                          "slot": { "enum": ["am", "pm"] }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "explanation": { "type": "string", "maxLength": 1200 }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "minProperties": 2,
+          "properties": {
+            "kind": { "const": "planning_change" },
+            "availability": {
+              "type": "array",
+              "minItems": 7,
+              "maxItems": 7,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["max_minutes", "allow_hard", "fixed_rest"],
+                "properties": {
+                  "max_minutes": { "type": "integer", "minimum": 0, "maximum": 1440 },
+                  "allow_hard": { "type": "boolean" },
+                  "fixed_rest": { "type": "boolean" }
+                }
+              }
+            },
+            "sports": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "uniqueItems": true,
+              "items": { "enum": ["cycling", "running", "swimming"] }
+            },
+            "strength_per_week": { "type": "integer", "minimum": 0, "maximum": 2 },
+            "weeks": { "type": "integer", "minimum": 1, "maximum": 26 }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+#!/bin/sh
+# Lastwerk pre-commit: blockiert private Daten, bevor sie im Git-Index landen.
+# Aktivierung (einmal pro Klon): git config core.hooksPath .githooks
+
+blocked=0
+
+# Nur hinzugefuegte, kopierte, geaenderte oder umbenannte Dateien pruefen.
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+for f in $staged; do
+  case "$f" in
+    *.fit|*.FIT)
+      echo "BLOCKIERT: FIT-Datei im Index: $f" >&2; blocked=1 ;;
+    local/README.md)
+      ;;
+    local/*)
+      echo "BLOCKIERT: Datei unter local/ im Index: $f" >&2; blocked=1 ;;
+    *garmin_tokens.json|*.env|.env.*)
+      echo "BLOCKIERT: Zugangsdaten im Index: $f" >&2; blocked=1 ;;
+    *.db|*.db-wal|*.db-shm|*.sqlite)
+      echo "BLOCKIERT: Datenbankdatei im Index: $f" >&2; blocked=1 ;;
+  esac
+done
+
+if [ "$blocked" -ne 0 ]; then
+  echo "Commit abgebrochen. Datei aus dem Index nehmen: git restore --staged <datei>" >&2
+  exit 1
+fi
+
+exit 0

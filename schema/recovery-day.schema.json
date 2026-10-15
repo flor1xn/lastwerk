@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recovery-day.schema.json",
+  "title": "Erholungstag (SPEC 7.3)",
+  "description": "Ein Tag mit Erholungswerten aus dem Zusatzprogramm. Feldnamen vorläufig, endgültig nach docs/garmin-feldabdeckung.md (SPEC 14 O9). Die Wertebereiche sind Plausibilitätsgrenzen (Faustregel), keine physiologischen Aussagen.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "date", "source", "fetched_at"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "date": { "type": "string", "format": "date" },
+    "hrv_overnight_ms": { "type": "number", "minimum": 0, "maximum": 400 },
+    "resting_hr_bpm": { "type": "number", "minimum": 20, "maximum": 120 },
+    "sleep_duration_s": { "type": "integer", "minimum": 0, "maximum": 86400 },
+    "sleep_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "body_battery_high": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "body_battery_low": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "source": { "type": "string", "maxLength": 64 },
+    "fetched_at": { "type": "string", "format": "date-time" }
+  }
+}

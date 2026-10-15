@@ -1,0 +1,657 @@
+/* Gestaltung nach SPEC 5.5: ruhig, dunkel zuerst, eine Signalfarbe (--accent), Schrift Cairo.
+   Dunkel ist der Standard. Hell gilt bei data-theme="light" und bei data-theme="system", wenn
+   das Betriebssystem hell meldet. Schrift aus dem Build (fonts.css), nie aus dem Netz
+   (SPEC 10.4). Seit T24 ohne Kachelraster: Kennzahlen stehen auf der Fläche, Abschnitte
+   trennt eine feine Linie, Karten bleiben für Dinge, die man anfasst. */
+
+/* Maße, Schriftskala und Bewegung: unabhängig vom Thema. */
+:root {
+  --font-sans: 'Cairo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Skala für Cairo: breit, kleine x-Höhe (0,5 em), hohe Ober- und Unterlängen (Ascent
+     1,30 em, Descent 0,57 em). Deshalb ist Fließtext etwas größer als bei einer Systemschrift
+     und Anzeigegrößen sitzen enger. Zeilenhöhen immer ausdrücklich setzen, `normal` wäre 1,87. */
+  --fs-metric: 60px; /* größte Kennzahl, SPEC 5.5: 56 bis 64 */
+  --fs-display: 48px; /* Empfehlung, SPEC 5.5: 40 bis 52 */
+  --fs-title: 32px; /* Seitentitel */
+  --fs-metric-sm: 34px; /* Kennzahl in einer Reihe */
+  --fs-heading: 20px; /* Aussage unter einer Abschnittsmarke, Unterüberschrift */
+  --fs-lead: 17px; /* Ein-Satz-Aussage, SPEC 5.5: Text 15 bis 17 */
+  --fs-body: 15px; /* Fließtext */
+  --fs-dense: 14px; /* Tabellen und Formularfelder */
+  --fs-small: 13px; /* Erläuterungen, Legenden */
+  --fs-label: 12px; /* Versalien-Marken */
+  --lh-display: 1.05;
+  --lh-title: 1.15;
+  --lh-heading: 1.3;
+  --lh-body: 1.55;
+  --lh-tight: 1.35;
+  --ls-display: -0.02em; /* große Zahlen und Titel */
+  --ls-label: 0.08em; /* Versalien */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Raster 8 (SPEC 5.5) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-button: 12px;
+  --radius-card: 20px;
+  --radius-panel: 16px;
+  --radius-pill: 999px;
+  --page-max: 1080px;
+  /* Das Dashboard der Startseite nutzt die Breite für zwei Spalten (T25). */
+  --page-max-wide: 1200px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #111315;
+  --sidebar: #0d0f11;
+  --panel: #181b1e;
+  --panel-2: #22262a;
+  --border: #2a2f34;
+  --line: #262a2e;
+  --text: #ece9e3;
+  --muted: #9a9fa4;
+  --accent: #c8f169;
+  --accent-text: #12160a;
+  --warn: #f0b35a;
+  --danger: #f2877a;
+  --ok: #7bd0a0;
+  --row-hover: #1d2125;
+  --card-edge: rgba(255, 255, 255, 0.07);
+  --card-sheen: rgba(255, 255, 255, 0.035);
+  --shadow: rgba(0, 0, 0, 0.55);
+  --glow: rgba(200, 241, 105, 0.08);
+  --glow-2: rgba(124, 196, 232, 0.045);
+  --sport-cycling: #7cc4e8;
+  --sport-running: #f0b35a;
+  --sport-swimming: #5fd0c0;
+  --sport-strength: #b79ce8;
+  --sport-other: #9a9fa4;
+  --pmc-ctl: #c8f169;
+  --pmc-atl: #f0b35a;
+  --pmc-tsb: #7cc4e8;
+  --power: #f0b35a;
+  --heart: #f2877a;
+  --grid: #20252a;
+  --form-fresh: #7cc4e8;
+  --form-fresh-bg: #142630;
+  --form-balanced: #d4d7da;
+  --form-balanced-bg: #22262a;
+  --form-loaded: #f0b35a;
+  --form-loaded-bg: #3a2e19;
+  --form-overloaded: #f29486;
+  --form-overloaded-bg: #3a1d1a;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f3ef;
+  --sidebar: #ebeae5;
+  --panel: #ffffff;
+  --panel-2: #ecebe6;
+  --border: #d9d7d0;
+  --line: #dfddd5;
+  --text: #1b1d1f;
+  --muted: #5e636a;
+  --accent: #4f7000;
+  --accent-text: #ffffff;
+  --warn: #8a5200;
+  --danger: #a8332a;
+  --ok: #1f7a4d;
+  --row-hover: #f0efea;
+  --card-edge: rgba(27, 29, 31, 0.09);
+  --card-sheen: rgba(255, 255, 255, 0.8);
+  --shadow: rgba(52, 46, 28, 0.22);
+  --glow: rgba(110, 150, 0, 0.09);
+  --glow-2: rgba(14, 106, 148, 0.05);
+  --sport-cycling: #0e6a94;
+  --sport-running: #a35f00;
+  --sport-swimming: #11786b;
+  --sport-strength: #7a4fc0;
+  --sport-other: #6c7077;
+  --pmc-ctl: #4f7000;
+  --pmc-atl: #a35f00;
+  --pmc-tsb: #0e6a94;
+  --power: #a35f00;
+  --heart: #a8332a;
+  --grid: #e6e4dd;
+  --form-fresh: #0e6a94;
+  --form-fresh-bg: #ddf0f8;
+  --form-balanced: #3a3f45;
+  --form-balanced-bg: #e8e7e2;
+  --form-loaded: #8a5200;
+  --form-loaded-bg: #fbebcb;
+  --form-overloaded: #a8332a;
+  --form-overloaded-bg: #fbdcd8;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme='system'] {
+    color-scheme: light;
+    --bg: #f4f3ef;
+    --sidebar: #ebeae5;
+    --panel: #ffffff;
+    --panel-2: #ecebe6;
+    --border: #d9d7d0;
+    --line: #dfddd5;
+    --text: #1b1d1f;
+    --muted: #5e636a;
+    --accent: #4f7000;
+    --accent-text: #ffffff;
+    --warn: #8a5200;
+    --danger: #a8332a;
+    --ok: #1f7a4d;
+    --row-hover: #f0efea;
+    --card-edge: rgba(27, 29, 31, 0.09);
+    --card-sheen: rgba(255, 255, 255, 0.8);
+    --shadow: rgba(52, 46, 28, 0.22);
+    --glow: rgba(110, 150, 0, 0.09);
+    --glow-2: rgba(14, 106, 148, 0.05);
+    --sport-cycling: #0e6a94;
+    --sport-running: #a35f00;
+    --sport-swimming: #11786b;
+    --sport-strength: #7a4fc0;
+    --sport-other: #6c7077;
+    --pmc-ctl: #4f7000;
+    --pmc-atl: #a35f00;
+    --pmc-tsb: #0e6a94;
+    --power: #a35f00;
+    --heart: #a8332a;
+    --grid: #e6e4dd;
+    --form-fresh: #0e6a94;
+    --form-fresh-bg: #ddf0f8;
+    --form-balanced: #3a3f45;
+    --form-balanced-bg: #e8e7e2;
+    --form-loaded: #8a5200;
+    --form-loaded-bg: #fbebcb;
+    --form-overloaded: #a8332a;
+    --form-overloaded-bg: #fbdcd8;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: var(--fw-semibold);
+}
+
+h1 {
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display);
+}
+
+h2 {
+  font-size: var(--fs-heading);
+  line-height: var(--lh-heading);
+}
+
+/* Marke in Versalien: Abschnittsköpfe, Karten, Panels. */
+h3 {
+  font-size: var(--fs-label);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-label);
+}
+
+/* Ansichtswechsel: nur opacity und transform, 160 ms (SPEC 5.5). */
+main > * {
+  animation: view-in 160ms var(--ease-out);
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-button);
+  padding: 6px 16px;
+  min-height: 36px;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease-out,
+    transform 120ms ease-out;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  min-height: 44px;
+  padding: 8px 24px;
+  font-weight: var(--fw-bold);
+}
+
+input,
+select,
+textarea {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: var(--fs-dense);
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--fs-dense);
+}
+
+th,
+td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+th {
+  color: var(--muted);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-small);
+}
+
+/* Cairo hat kein tnum, die Ziffern sind aber in jedem Gewicht gleich breit (fonts.css). */
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.warn {
+  color: var(--warn);
+}
+
+/* ---------------------------------------------------------------------------------------
+   Bausteine (SPEC 5.5, seit T24). Reihenfolge der Verwendung: Seitenkopf, Abschnitte mit
+   Kennzahlen, Diagrammen und Balken auf der Fläche, Karten nur für Bedienbares.
+   Svelte-Hüllen dazu: lib/components/Section, Metric, StatRow.
+   --------------------------------------------------------------------------------------- */
+
+/* Inhaltsspalte einer Ansicht. Breite Arbeitsflächen (Aktivitäten) bleiben ohne. */
+.page {
+  max-width: var(--page-max);
+}
+
+.page-head {
+  margin: 0 0 var(--space-5);
+}
+
+/* Datum oder Kontext über dem Titel. */
+.page-eyebrow {
+  margin: 0 0 var(--space-1);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Ein-Satz-Aussage unter dem Titel jeder Hauptansicht (SPEC 5.5, Gestaltung der Oberfläche). */
+.page-lead {
+  margin: var(--space-1) 0 var(--space-5);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-tight);
+  color: var(--muted);
+}
+
+.page-head .page-lead {
+  margin-bottom: 0;
+}
+
+/* Abschnitt: kein Kasten, nur Weißraum und eine feine Linie oben. */
+.section {
+  padding: var(--space-5) 0 var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-5);
+  margin: 0 0 var(--space-5);
+}
+
+.section-title {
+  min-width: 0;
+}
+
+/* Marke: kleine Versalien, gedämpft. Dieselbe Form wie h3 in Karten und Panels. */
+.section-label,
+.section > h3 {
+  margin: 0 0 var(--space-5);
+  font-size: var(--fs-label);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section-head .section-label {
+  margin: 0;
+}
+
+/* Aussage in einem Satz unter der Marke. */
+.section-statement {
+  margin: var(--space-1) 0 0;
+  max-width: 54ch;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  font-size: var(--fs-heading);
+  line-height: var(--lh-heading);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+}
+
+/* Kennzahl: großer Wert, Einheit klein daneben, Beschriftung darunter, optional Veränderung. */
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metric-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--fs-metric-sm);
+  line-height: var(--lh-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric.size-lg .metric-value {
+  font-size: var(--fs-display);
+}
+
+.metric.size-xl .metric-value {
+  font-size: var(--fs-metric);
+  letter-spacing: -0.03em;
+}
+
+.metric-unit {
+  font-size: var(--fs-body);
+  line-height: 1;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.metric-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.metric-label {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-label);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Veränderung: Pfeil und Text, nie nur Farbe. */
+.metric-delta {
+  display: inline-flex;
+  margin: 0;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-small);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+  color: var(--muted);
+}
+
+.metric-delta.good {
+  color: var(--ok);
+}
+
+.metric-delta.bad {
+  color: var(--danger);
+}
+
+.metric-delta svg {
+  flex: none;
+}
+
+/* Mehrere Kennzahlen nebeneinander, getrennt durch dünne senkrechte Linien. */
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  row-gap: var(--space-4);
+}
+
+.stat-row > * {
+  padding: 0 var(--space-5);
+}
+
+.stat-row > :first-child {
+  padding-left: 0;
+}
+
+.stat-row > * + * {
+  border-left: 1px solid var(--line);
+}
+
+@media (max-width: 640px) {
+  .stat-row {
+    flex-direction: column;
+    align-items: stretch;
+    row-gap: 0;
+  }
+
+  .stat-row > * {
+    padding: var(--space-3) 0;
+  }
+
+  .stat-row > * + * {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* Zustand als Pille: Punkt und Text, die Farbe allein trägt nichts. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-small);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pill.fresh {
+  background: var(--form-fresh-bg);
+  color: var(--form-fresh);
+}
+
+.pill.balanced {
+  background: var(--form-balanced-bg);
+  color: var(--form-balanced);
+}
+
+.pill.loaded {
+  background: var(--form-loaded-bg);
+  color: var(--form-loaded);
+}
+
+.pill.overloaded {
+  background: var(--form-overloaded-bg);
+  color: var(--form-overloaded);
+}
+
+/* Karte: leicht erhoben, feiner Rand innen. Nur für Dinge, die man anfasst (Empfehlung,
+   Vorschlag des Coachs, Formulare). */
+.card {
+  background: linear-gradient(180deg, var(--card-sheen), transparent 60%), var(--panel);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  box-shadow: 0 20px 40px -28px var(--shadow);
+}
+
+/* Panel: ruhige Fläche für Arbeitsbereiche (Plan, Aktivitäten, Detail), ohne Schatten. */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius-panel);
+  padding: 18px 20px;
+}
+
+.panel > h3 {
+  margin-bottom: var(--space-2);
+}
+
+/* Diagramm: uPlot-Legende an das Thema anpassen. Linksbündig, ohne Tabellenlinien (die
+   globalen th/td-Regeln dürfen hier nicht greifen), Marken als kurze Striche. */
+.uplot .u-legend {
+  margin: var(--space-3) 0 0;
+  text-align: left;
+  color: var(--text);
+  font-size: var(--fs-small);
+  line-height: var(--lh-tight);
+}
+
+.uplot .u-legend th,
+.uplot .u-legend td {
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  font-size: inherit;
+  font-weight: var(--fw-medium);
+}
+
+.uplot .u-legend .u-series {
+  padding: 2px var(--space-4) 2px 0;
+}
+
+.uplot .u-legend .u-marker {
+  width: 12px;
+  height: 3px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.uplot .u-legend .u-series:first-child .u-marker {
+  display: none;
+}
+
+.uplot .u-legend .u-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* Kein Bewegungswunsch des Systems missachten (SPEC 5.5). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

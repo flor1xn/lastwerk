@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "source": "Ollama-Bibliothek ollama.com/library/qwen3, Größen der Standardquantisierung. Stand 15. Oktober 2026: ungeprüft (ollama.com war aus der Cloud-Umgebung nicht erreichbar, die Größen stammen aus dem Gedächtnis). Alle Werte sind Faustregel, siehe docs/SPEC.md 9.2 und crates/coach/src/recommend.rs.",
+  "models": [
+    {
+      "name": "qwen3:1.7b",
+      "size_gb": 1.4,
+      "min_ram_gb": 4,
+      "comfortable_vram_gb": 2.5,
+      "label_key": "ui.coach_setup.model.qwen3_1_7b"
+    },
+    {
+      "name": "qwen3:4b",
+      "starter": true,
+      "size_gb": 2.5,
+      "min_ram_gb": 8,
+      "comfortable_vram_gb": 4,
+      "label_key": "ui.coach_setup.model.qwen3_4b"
+    },
+    {
+      "name": "qwen3:8b",
+      "size_gb": 5.2,
+      "min_ram_gb": 16,
+      "comfortable_vram_gb": 7,
+      "label_key": "ui.coach_setup.model.qwen3_8b"
+    },
+    {
+      "name": "qwen3:14b",
+      "size_gb": 9.3,
+      "min_ram_gb": 24,
+      "comfortable_vram_gb": 12,
+      "label_key": "ui.coach_setup.model.qwen3_14b"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# Muster für private Schlüssel und Token (T38). Gemeinsame Quelle von check-privacy.sh (Index)
+# und check-history.sh (ganzer Verlauf). Pro Zeile: Art des Fundes, Tabulator, erweiterter
+# regulärer Ausdruck (POSIX ERE, wie `git grep -E`). Zeilen mit # am Anfang sind Kommentare.
+#
+# Die Ausdrücke sind so geschrieben, dass sie ihre eigene Zeile hier nicht treffen: Nach der
+# Zeichenklasse oder dem Platzhalter folgt nie ein Zeichen, das die Klasse zulässt.
+#
+# Geheimer Schlüssel des Updaters (rsign/minisign): die Kopfzeile der Schlüsseldatei im
+# Klartext oder als Base64. Der öffentliche Schlüssel in tauri.conf.json trägt eine andere
+# Kopfzeile und trifft nicht.
+Privater Schlüssel (PEM)	-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY
+JWT (zum Beispiel ein Garmin-Token)	eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}
+GitHub-Token	gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,}
+Google-OAuth-Token	ya29\.[A-Za-z0-9_-]{20,}
+Slack-Token	xox[abprs]-[A-Za-z0-9-]{10,}
+AWS-Zugangsschlüssel	AKIA[0-9A-Z]{16}
+Anthropic-Schlüssel	sk-ant-[A-Za-z0-9_-]{20,}
+Geheimer Signaturschlüssel des Updaters	encrypted[ ]secret[ ]key|[d]W50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQga2V5
+Token-Feld mit Wert (JSON)	"(access|refresh|id|di)_?token"[[:space:]]*:[[:space:]]*"[A-Za-z0-9._-]{16,}"

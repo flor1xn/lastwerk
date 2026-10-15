@@ -1,0 +1,21 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "category": "HealthcareFitness",
+    "shortDescription": "Lokales Werkzeug für Ausdauertraining",
+    "longDescription": "Lastwerk holt Aktivitäten und Erholungswerte aus Garmin Connect oder liest FIT-Dateien, berechnet Belastung, Fitness, Ermüdung und Form, zeigt sie mit Deutung und erzeugt regelbasierte Wochenpläne. Lokal, ohne Telemetrie, ohne Cloud-Modell.",
+    "copyright": "MIT OR Apache-2.0",
+    "licenseFile": "../../LICENSE-MIT",
+    "resources": {
+      "resources/ollama-setup.ps1": "resources/ollama-setup.ps1"
+    },
+    "windows": {
+      "nsis": {
+        "installerHooks": "windows/hooks.nsh",
+        "languages": ["English", "German"]
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+# Geprüfte Altfunde für check-history.sh (Abschnitt Personenbezug), T38.
+# Eine Zeile je Fund: Kurzhash des Commits (mindestens 7 Zeichen), Leerzeichen, Pfad.
+# Jeder Eintrag braucht eine Begründung in einer Kommentarzeile darüber.
+# Die Liste gilt nur für Personenbezug in Diffs, nie für Schlüssel, Token oder Binärdateien.
+
+# Derzeit kein Eintrag: Das Repository beginnt nach T38 mit einem sauberen Anfangsstand, die
+# geprüften Altfunde gehören zur alten Geschichte im privaten Archiv.

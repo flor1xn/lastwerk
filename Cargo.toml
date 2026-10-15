@@ -1,0 +1,25 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/core",
+    "crates/fit",
+    "crates/store",
+    "crates/coach",
+    "crates/garmin",
+    "crates/cli",
+    "crates/mcp",
+    "crates/testkit",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/flor1xn/lastwerk"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

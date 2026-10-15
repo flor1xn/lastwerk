@@ -1,0 +1,119 @@
+name: Automatischer Release
+
+# Hält Installer und Update immer auf dem Stand von main (Anforderung und Entscheidung vom
+# 15. Oktober 2026, T30). Nach jeder grünen CI auf main prüft der Job `decide`, ob sich
+# seit dem letzten Release etwas am Produkt geändert hat. Wenn ja, baut release.yml die
+# Installer aus genau dem geprüften Commit und veröffentlicht sie; "Nach Update suchen" in der
+# App findet die neue Version danach über releases/latest. Reine Änderungen an Dokumentation,
+# Workflows, Skripten oder bridge/ lösen keinen Release aus.
+
+# workflow_run läuft mit den Rechten und Geheimnissen des Standardzweigs, deshalb gilt (T38):
+# Der Job `decide` startet nur nach einem Push (nie nach pull_request, auch nicht aus einem Fork),
+# nur im eigenen Repository und nur auf main. Pushes auf main und claude/** schreiben nur Personen
+# mit Schreibrecht. Der Checkout dort führt keinen Code aus, er liest Tags, Dateinamen und die
+# Version aus catalog/changelog.json.
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers] Absicherung siehe Kommentar oben und Job decide
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Ein Release nach dem anderen. Wartet ein zweiter Lauf, ersetzt ein dritter ihn; der jüngste
+# Commit enthält die Änderungen der übersprungenen.
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
+jobs:
+  decide:
+    name: Neue Version nötig?
+    # Nur nach erfolgreicher CI eines Pushes auf main im eigenen Repository, nie nach Pull
+    # Requests und nie aus einem Fork (head_repository), auch wenn dessen Zweig `main` heißt.
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_branch == 'main'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+      sha: ${{ steps.next.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha }}
+          # Ganzer Verlauf mit Tags für den Vergleich mit dem letzten Release.
+          fetch-depth: 0
+      - name: Version bestimmen
+        id: next
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Nur die Spitze von main wird veröffentlicht. Ist schon ein neuerer Commit da,
+          # entscheidet dessen CI-Lauf; er enthält diese Änderungen mit. Abfrage über die API,
+          # weil der Checkout seine Zugangsdaten nicht behält (persist-credentials: false).
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$tip" != "$SHA" ]; then
+            echo "Commit ist nicht mehr die Spitze von main, kein Release."; exit 0
+          fi
+          if git tag --points-at "$SHA" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Commit hat schon einen Release."; exit 0
+          fi
+          last=$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
+          planned=$(node -e '
+            const c = require("./catalog/changelog.json");
+            const v = [...Object.keys(c.de || {}), ...Object.keys(c.en || {})];
+            console.log(v.filter((x) => /^\d+\.\d+\.\d+$/.test(x)).join("\n"));
+          ' | sort -V | tail -n 1)
+          if [ -z "$last" ]; then
+            # Erster Release eines Repositorys ohne Tag (Neuanfang nach T38): die höchste
+            # Version aus catalog/changelog.json.
+            if [ -z "$planned" ]; then
+              echo "Kein früherer Release und keine Version im Changelog."; exit 1
+            fi
+            next="$planned"
+          else
+            # Was in den Installer eingeht: App, Crates, Kataloge (Texte, Changelog), Schemas,
+            # Lockdateien und Toolchain. Nicht: docs/, scripts/, .github/, bridge/.
+            changed=$(git diff --name-only "$last" "$SHA" -- \
+              app crates catalog schema Cargo.toml Cargo.lock rust-toolchain.toml)
+            if [ -z "$changed" ]; then
+              echo "Keine Änderung am Produkt seit $last, kein Release."; exit 0
+            fi
+            echo "Geändert seit $last:"; printf '%s\n' "$changed" | head -n 50
+            # Nächste Version: Patch + 1. Steht in catalog/changelog.json schon eine höhere
+            # Version (geplante Neuerung, etwa 1.1.0), gilt diese.
+            IFS=. read -r major minor patch <<< "${last#v}"
+            next="${major}.${minor}.$((patch + 1))"
+            if [ -n "$planned" ] && [ "$planned" != "${last#v}" ] \
+              && [ "$(printf '%s\n%s\n' "${last#v}" "$planned" | sort -V | tail -n 1)" = "$planned" ]; then
+              next="$planned"
+            fi
+          fi
+          echo "Neue Version: v$next"
+          echo "tag=v$next" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Bauen und veröffentlichen
+    needs: decide
+    if: needs.decide.outputs.tag != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.decide.outputs.tag }}
+      sha: ${{ needs.decide.outputs.sha }}
+      publish: true
+    # Signaturschlüssel des Updaters (T17), nur diese beiden.
+    secrets:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    permissions:
+      contents: write
+      actions: read

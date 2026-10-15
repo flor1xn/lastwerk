@@ -1,0 +1,291 @@
+name: Release
+
+# Ein Tag `v*` baut die Installer für Windows und Linux und legt einen Release-Entwurf
+# an (SPEC 11.6, 12 M3). Ohne Signierung und ohne Support. Der Entwurf wird von Hand
+# geprüft und veröffentlicht. Seit T30 ruft auto-release.yml diesen Workflow nach jeder grünen
+# CI auf main mit Codeänderung auf und veröffentlicht direkt (Anforderung vom 15. Oktober 2026).
+
+on:
+  push:
+    tags: ['v*']
+  # Manueller Start mit dem Tag als Eingabe, für Cloud-Sessions, die keinen Tag pushen können
+  # (Umgebung bricht Tag-Pushes ab, 15. Oktober 2026). GitHub legt den Tag beim Veröffentlichen
+  # des Entwurfs selbst an (publish-release.yml). Nur auf main zugelassen (Job check-tag).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Neuer Tag, zum Beispiel v1.0.0'
+        required: true
+        type: string
+  # Aufruf aus auto-release.yml (T30): Tag, geprüfter Commit und direkte Veröffentlichung.
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      sha:
+        description: 'Commit, aus dem gebaut wird und auf den der Tag zeigt'
+        required: true
+        type: string
+      publish:
+        description: 'Entwurf am Ende veröffentlichen (wird damit neuester Release)'
+        required: false
+        type: boolean
+        default: false
+    # Nur die zwei Schlüssel der Update-Signatur (T17), nicht alle Geheimnisse des Repositories.
+    secrets:
+      TAURI_SIGNING_PRIVATE_KEY:
+        required: false
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD:
+        required: false
+
+# Nur lesen. Schreibrechte hat allein der Job `release` unten.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Tag des Releases: beim Tag-Push der Tag selbst, beim manuellen Start die Eingabe. Wird nur
+  # über diese Variable gelesen, nie direkt in Befehle eingesetzt; check-tag prüft das Muster.
+  TAG: ${{ inputs.tag || github.ref_name }}
+  # Commit des Builds: beim Aufruf aus auto-release.yml der grün geprüfte Commit, sonst der des
+  # Laufs. Bei workflow_run zeigt github.sha auf die Spitze von main, nicht auf den geprüften.
+  REF_SHA: ${{ inputs.sha || github.sha }}
+
+jobs:
+  check-tag:
+    name: Tag prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Muster, Zweig und Neuheit
+        env:
+          EVENT: ${{ github.event_name }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Tag muss die Form vX.Y.Z haben."; exit 1
+          fi
+          # Ohne Tag-Push (manueller Start oder Aufruf aus auto-release.yml über workflow_run)
+          # entsteht der Tag erst beim Veröffentlichen.
+          if [ "$EVENT" != "push" ]; then
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "Release ohne Tag-Push nur auf main."; exit 1
+            fi
+            if git ls-remote --tags "$REPO_URL" "refs/tags/$TAG" | grep -q .; then
+              echo "Tag existiert schon; dann den Tag-Push-Weg nutzen oder eine neue Version wählen."; exit 1
+            fi
+          fi
+
+  # Kein Release mit bekanntem Sicherheitshinweis: dieselbe Prüfung wie täglich (advisories.yml).
+  advisories:
+    needs: check-tag
+    uses: ./.github/workflows/advisories.yml
+
+  build:
+    name: Installer (${{ matrix.name }})
+    needs: advisories
+    # Der Signaturschlüssel liegt nur in der Umgebung `release`, die allein `main` zulässt (T38).
+    # Ein Zweig mit geändertem Workflow kommt so nicht an ihn heran. Im aufgerufenen Workflow
+    # gilt das Geheimnis der Umgebung vor dem, das der Aufrufer weiterreicht.
+    environment: release
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Nur NSIS (T30, Entscheidung): Das Update aus der App installiert die
+          # setup.exe, die Frage nach Ollama gibt es nur im NSIS-Installer (T29). Ein per MSI
+          # installiertes Lastwerk bekäme beim Update eine zweite Installation daneben.
+          - name: Windows
+            os: windows-latest
+            bundles: nsis
+            artifact: lastwerk-windows
+            files: |
+              app/src-tauri/target/release/bundle/nsis/*.exe
+              app/src-tauri/target/release/bundle/nsis/*.exe.sig
+          # Kein macOS-Installer mehr (Entscheidung vom 15. Oktober 2026): kein Mac im Einsatz,
+          # und macOS-Minuten zählten im privaten Repository zehnfach.
+          - name: Linux
+            os: ubuntu-latest
+            bundles: deb,appimage
+            artifact: lastwerk-linux
+            files: |
+              app/src-tauri/target/release/bundle/deb/*.deb
+              app/src-tauri/target/release/bundle/appimage/*.AppImage
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ env.REF_SHA }}
+      - name: Systembibliotheken (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev xdg-utils file patchelf \
+            libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
+            libayatana-appindicator3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          package_json_file: app/ui/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Abhängigkeiten der Oberfläche (festgeschrieben)
+        run: pnpm --dir app/ui install --frozen-lockfile
+      - name: Toolchain
+        shell: bash
+        run: |
+          # Version aus rust-toolchain.toml, wie in der CI.
+          rustup toolchain install
+      # Bewusst kein Cache (rust-cache, Paketcache von setup-node): Der Release-Build liest nichts,
+      # was ein anderer Lauf geschrieben hat (zizmor cache-poisoning). Öffentliche Repositories
+      # bezahlen keine Minuten, der Aufpreis ist die längere Bauzeit.
+      # Die Bündelung ist in tauri.conf.json aus (der Debug-Build der CI baut nur die Binärdatei).
+      # Für den Release gilt eine Überlagerung mit eingeschalteter Bündelung und der Version aus
+      # dem Tag (`v0.1.0` wird 0.1.0).
+      - name: Konfiguration für den Release
+        id: config
+        shell: bash
+        env:
+          # Ohne Schlüssel entsteht ein Installer ohne Update-Artefakte (T17).
+          SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          version="${TAG#v}"
+          overlay="${RUNNER_TEMP}/tauri.release.json"
+          # shellcheck disable=SC2016  # $schema ist ein JSON-Schlüssel im Node-Skript, keine Shell-Variable
+          node -e '
+            const fs = require("fs");
+            const overlay = JSON.parse(fs.readFileSync("app/src-tauri/tauri.release.conf.json", "utf8"));
+            delete overlay.$schema;
+            overlay.version = process.argv[1];
+            if (!process.env.SIGNING_KEY) delete overlay.bundle.createUpdaterArtifacts;
+            fs.writeFileSync(process.argv[2], JSON.stringify(overlay));
+          ' "$version" "$overlay"
+          echo "overlay=$overlay" >> "$GITHUB_OUTPUT"
+      - name: Build ohne Signierung
+        shell: bash
+        env:
+          # Schlüssel der Update-Signatur (T17), nicht das Codesigning von Windows oder macOS.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          OVERLAY: ${{ steps.config.outputs.overlay }}
+          BUNDLES: ${{ matrix.bundles }}
+        run: pnpm --dir app/ui exec tauri build --config "$OVERLAY" --bundles "$BUNDLES"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  # Erzeugt die Release-Notizen aus catalog/changelog.json. Nur Lesezugriff, keine Geheimnisse.
+  notes:
+    name: Release-Notizen
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ env.REF_SHA }}
+          # Ganzer Verlauf mit Tags für die Liste der Änderungen seit dem letzten Release.
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Änderungen seit dem letzten Release
+        run: |
+          # Ersatz, wenn catalog/changelog.json keinen Eintrag für die Version hat (automatische
+          # Patch-Versionen, T30): Betreffzeilen der Commits seit dem letzten Tag, ohne Merges.
+          prev=$(git tag --list 'v*' --merged "$REF_SHA" --sort=-v:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -vxF "$TAG" | head -n 1 || true)
+          if [ -n "$prev" ]; then
+            git log --no-merges --format=%s "$prev..$REF_SHA" | head -n 40 > commits.txt
+          else
+            : > commits.txt
+          fi
+          echo "Seit ${prev:-Anfang}: $(wc -l < commits.txt) Commits"
+      - run: node scripts/release-notes.mjs "$TAG" release-notes commits.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-notes
+          path: release-notes/
+          if-no-files-found: error
+
+  # Legt den Entwurf an. Einziger Job mit Schreibrecht, er führt keinen Code aus dem Repository
+  # aus, sondern lädt nur die Artefakte des Laufs und legt sie an den Release.
+  release:
+    name: Release-Entwurf
+    needs: [build, notes]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Artefakte des Laufs laden
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --dir dist
+      - name: Beschreibung
+        run: |
+          # Die Notizen kommen aus catalog/changelog.json (Job notes), dieselbe Quelle wie in der App.
+          mv dist/release-notes/notes.md notes.md
+          mv dist/release-notes/manifest-notes.txt manifest-notes.txt
+          rmdir dist/release-notes
+      - name: Update-Manifest
+        run: |
+          # latest.json für das Update auf Knopfdruck (nur Windows, nur mit Signatur).
+          sig=$(find dist -name '*-setup.exe.sig' | head -n 1)
+          exe="${sig%.sig}"
+          if [ -n "$sig" ] && [ -f "$exe" ]; then
+            # shellcheck disable=SC2016  # Das JavaScript soll die Shell nicht expandieren.
+            node -e '
+              const fs = require("fs");
+              const [tag, repo, exe, sig] = process.argv.slice(1);
+              const name = require("path").basename(exe);
+              const manifest = {
+                version: tag.replace(/^v/, ""),
+                notes: fs.readFileSync("manifest-notes.txt", "utf8"),
+                pub_date: new Date().toISOString(),
+                platforms: {
+                  "windows-x86_64": {
+                    signature: fs.readFileSync(sig, "utf8").trim(),
+                    url: `https://github.com/${repo}/releases/download/${tag}/${name}`,
+                  },
+                },
+              };
+              fs.writeFileSync("dist/latest.json", JSON.stringify(manifest, null, 2));
+            ' "$TAG" "$GITHUB_REPOSITORY" "$exe" "$sig"
+          else
+            echo "Keine Signatur gefunden, kein latest.json."
+          fi
+      - name: Entwurf anlegen
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          # Beim Tag-Push muss der Tag existieren; sonst zeigt der Entwurf auf den Commit des
+          # Builds, GitHub legt den Tag beim Veröffentlichen an (publish-release.yml oder unten).
+          if [ "$EVENT" != "push" ]; then
+            ref_args=(--target "$REF_SHA")
+          else
+            ref_args=(--verify-tag)
+          fi
+          # Die Artefakte liegen je nach Pfad in Unterordnern (nsis, deb, appimage).
+          find dist -type f -print0 | xargs -0 gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            "${ref_args[@]}" \
+            --title "Lastwerk ${TAG}" \
+            --notes-file notes.md
+      - name: Veröffentlichen
+        if: inputs.publish
+        run: |
+          # Nur beim Aufruf aus auto-release.yml. Wie publish-release.yml: GitHub legt den Tag
+          # auf dem Ziel-Commit an, --latest macht ihn zum Ziel von releases/latest (Updater).
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,url

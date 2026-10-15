@@ -1,0 +1,176 @@
+{
+  "format_version": 1,
+  "version": "1.0.0",
+  "reserved": [],
+  "load_model": {
+    "source": "Faustregel",
+    "note": "planned_load = Stunden * IF^2 * 100 mit IF je Intensitätsklasse. Kraft: Stunden * (RPE/10)^2 * 100 (SPEC 8.1).",
+    "if_easy": 0.65,
+    "if_moderate": 0.8,
+    "if_hard": 0.95
+  },
+  "structure": {
+    "source": "Konvention",
+    "min_session_minutes": 20,
+    "duration_step_min": 5,
+    "long_weight": 2.0,
+    "min_week_load": 120.0
+  },
+  "phases": {
+    "source": "Faustregel",
+    "event": {
+      "taper_weeks": 1,
+      "peak_weeks": 2,
+      "build_weeks": 4,
+      "race_opener_min_days_before": 3
+    },
+    "continuous": {
+      "load_phase": "base"
+    },
+    "base": {
+      "max_hard": 1,
+      "moderate_sessions": 0,
+      "long_session": true,
+      "strength_max": 2,
+      "weekly_growth": 0.07
+    },
+    "build": {
+      "max_hard": 2,
+      "moderate_sessions": 1,
+      "long_session": true,
+      "strength_max": 2,
+      "weekly_growth": 0.07
+    },
+    "peak": {
+      "max_hard": 2,
+      "moderate_sessions": 1,
+      "long_session": true,
+      "strength_max": 2,
+      "weekly_growth": 0.03
+    },
+    "taper": {
+      "max_hard": 1,
+      "moderate_sessions": 0,
+      "long_session": true,
+      "strength_max": 1,
+      "volume_factor": 0.7
+    },
+    "recovery": {
+      "max_hard": 0,
+      "moderate_sessions": 0,
+      "long_session": true,
+      "strength_max": 2,
+      "volume_factor": 0.65
+    },
+    "race": {
+      "max_hard": 1,
+      "moderate_sessions": 0,
+      "long_session": false,
+      "strength_max": 0,
+      "volume_factor": 0.5
+    }
+  },
+  "R01": {
+    "source": "Faustregel",
+    "references": [],
+    "hardness": "hard",
+    "note": "Anstieg der CTL je Woche, gemessen als CTL am Wochenende minus CTL am Ende der Vorwoche.",
+    "max_ctl_rise_per_week": 5.0,
+    "max_setting": 8.0,
+    "planning_margin": 0.9
+  },
+  "R02": {
+    "source": "Faustregel",
+    "references": ["Q12", "Q13"],
+    "hardness": "soft",
+    "note": "Wochenvolumen als Trainingszeit in Minuten. Weich ab warn_at, hart ab reject_at. Schwelle 30 Prozent ist ein Vorsichtswert (Q12, p = 0,07). Unter min_reference_minutes Vorwochenzeit gilt die Regel nicht (Konvention).",
+    "warn_at": 0.10,
+    "reject_at": 0.30,
+    "min_reference_minutes": 60.0
+  },
+  "R03": {
+    "source": "Faustregel",
+    "references": ["Q5"],
+    "hardness": "hard",
+    "note": "Beschreibende Beobachtung: etwa 20 Prozent der Einheiten hochintensiv bei Ausdauerathleten (Q5).",
+    "max_hard_per_week": 2
+  },
+  "R04": {
+    "source": "Faustregel",
+    "references": [],
+    "hardness": "hard",
+    "note": "Harte Einheiten nicht an aufeinanderfolgenden Tagen, auch nicht über die Wochengrenze."
+  },
+  "R05": {
+    "source": "Faustregel",
+    "references": [],
+    "hardness": "hard",
+    "note": "Ruhetag: Tag ohne Einheit.",
+    "min_rest_days_per_week": 1
+  },
+  "R06": {
+    "source": "Faustregel",
+    "references": [],
+    "hardness": "soft",
+    "note": "Verhältnis 3 zu 1 verbreitet, nicht belegt. Erholungswoche relativ zur planned_load der letzten Belastungswoche.",
+    "load_weeks": 3,
+    "recovery_min": 0.6,
+    "recovery_max": 0.7,
+    "ratio_tolerance": 0.05
+  },
+  "R07": {
+    "source": "Faustregel",
+    "references": [],
+    "hardness": "soft",
+    "note": "Krafteinheiten je Woche, nicht am Tag vor einer harten Einheit.",
+    "min_per_week": 1,
+    "max_per_week": 2,
+    "max_per_week_taper": 1
+  },
+  "R08": {
+    "source": "Q5",
+    "references": ["Q5"],
+    "hardness": "soft",
+    "note": "Q5: beschreibend etwa 80 Prozent. Der Grenzwert 70 Prozent ist eine Faustregel. Gezählt wird die Zeit in Zone 1 und 2 aller Einheiten mit Zonen (ohne Kraft).",
+    "min_easy_share": 0.7
+  },
+  "R09": {
+    "source": "Q10",
+    "references": ["Q10", "Q11"],
+    "hardness": "hard",
+    "note": "Q10 nur fuer das Prinzip. Dauer 7 bis 14 Tage: Faustregel, Zahlen aus Q11 nur über Sekundärbericht (O8). Hart ist nur die Länge, ein nicht sinkendes Volumen ist weich.",
+    "taper_days_min": 7,
+    "taper_days_max": 14
+  },
+  "R10": {
+    "source": "Faustregel",
+    "references": [],
+    "hardness": "soft",
+    "note": "Keine begutachtete Quelle.",
+    "tsb_warn_below": -30.0
+  },
+  "R11": {
+    "source": "Nutzereingabe",
+    "references": [],
+    "hardness": "hard",
+    "note": "Verfügbare Minuten je Wochentag nie überschreiten, feste Ruhetage und Tage ohne harte Einheiten einhalten.",
+    "max_sessions_per_day": 2
+  },
+  "R12": {
+    "source": "Q6",
+    "references": ["Q6"],
+    "hardness": "soft",
+    "note": "Q6 für HRV-Überwachung, die Basislinie als 7-Tage-Mittel stammt nur aus einem Sekundärbericht (O8). Alle Schwellen sind Faustregeln. Verglichen wird der jüngste Erholungstag vor dem Planbeginn mit dem Mittel der baseline_days Tage davor. HRV mindestens hrv_drop_fraction darunter oder Schlafdauer mindestens sleep_deficit_fraction darunter ersetzt die erste harte Einheit durch eine lockere derselben Sportart. Ohne Erholungsdaten ändert die Regel nichts.",
+    "hrv_drop_fraction": 0.15,
+    "sleep_deficit_fraction": 0.20,
+    "baseline_days": 7,
+    "min_baseline_days": 4,
+    "max_age_days": 3
+  },
+  "generator": {
+    "source": "Konvention",
+    "max_retries": 40,
+    "scale_step": 0.05,
+    "scale_steps": 8
+  }
+}

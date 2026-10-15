@@ -1,0 +1,37 @@
+[package]
+name = "lastwerk-garmin"
+description = "Garmin-Zugang der App: Token, Schlüsselbund, lesender Client mit Allowlist und Drosselung"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+# Erlaubt `Endpoints::for_tests` mit `http://127.0.0.1:<port>`. Nur für Tests gedacht. Die
+# Entwicklungsabhängigkeit auf sich selbst schaltet es für `cargo test` ein, ein normaler Bau
+# (auch der App) enthält den Konstruktor nicht.
+test-endpoints = []
+
+# Vermerke zu Name, Version, Lizenz und Grund: docs/tasks/T21-garmin-crate.md.
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+thiserror = "2.0"
+base64 = "0.23"
+# Blockierender HTTP-Client mit rustls und den Zertifikaten des Betriebssystems. Ohne
+# Standardfeatures: keine mitgelieferten Wurzelzertifikate (webpki-roots), keine Kompression.
+ureq = { version = "3.4", default-features = false, features = ["rustls-no-provider", "platform-verifier"] }
+# Kryptoanbieter für rustls. ureq wählt ohne die Funktion `rustls` keinen, deshalb wird `ring`
+# hier als Funktion aktiviert und in `http.rs` ausdrücklich übergeben.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+# Schlüsselbund des Betriebssystems (Funktion `v1`: Windows-Anmeldeinformationsverwaltung,
+# macOS-Schlüsselbund, Secret Service über D-Bus in reinem Rust, ohne Systembibliothek).
+keyring = "4.2"
+
+[dev-dependencies]
+lastwerk-garmin = { path = ".", features = ["test-endpoints"] }
+
+[lints]
+workspace = true

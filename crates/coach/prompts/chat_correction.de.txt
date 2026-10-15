@@ -1,0 +1,1 @@
+Deine letzte Antwort wurde abgelehnt. Die Fehler stehen unten als Codes. Gib eine neue, vollständige Antwort im selben JSON-Format aus, die diese Fehler vermeidet. Änderungen beziehen sich weiter auf den Plan im Eingang. Findest du keinen gültigen Vorschlag, lass "proposal" weg und sag in "reply" kurz, warum.
