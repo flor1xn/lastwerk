@@ -47,7 +47,7 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T35](T35-kalender.md) | Trainingskalender je Monat | nach 1.0 | erledigt | T25, T26 | ja | app |
 | [T36](T36-schwellen-verlauf.md) | Verlauf der Schwellenwerte | nach 1.0 | erledigt | T33 | ja | app |
 | [T37](T37-laufbestzeiten.md) | Bestzeiten im Laufen | nach 1.0 | erledigt | T33 | ja | crates/core, store, app |
-| [T38](T38-oeffentlich.md) | Vorbereitung auf ein öffentliches Repository | nach 1.0 | in Arbeit | T30 | ja, Umstellung durch den Eigentümer | .github, scripts, docs, crates |
+| [T38](T38-oeffentlich.md) | Vorbereitung auf ein öffentliches Repository | nach 1.0 | erledigt | T30 | ja, Umstellung durch den Eigentümer | .github, scripts, docs, crates |
 
 ## Reihenfolge
 
