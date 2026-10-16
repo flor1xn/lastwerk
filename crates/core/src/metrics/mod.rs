@@ -1,4 +1,5 @@
-//! Kennzahlen für das Dashboard (SPEC 4.2 F20, F35, F36; T25 Teil A).
+//! Kennzahlen für das Dashboard (SPEC 4.2 F20, F35, F36; T25 Teil A) und ihre Auswahl als
+//! Erkenntnisse (`insights`, SPEC 8.7, T44).
 //!
 //! Reine Funktionen über übergebene Daten: kein Dateisystem, keine Uhr. Jede Kennzahl hat
 //! eine Berechnung und eine Deutung. Die Deutung liefert einen stabilen Code (Aufzählung mit
@@ -15,6 +16,7 @@ pub mod adherence;
 pub mod distribution;
 pub mod efficiency;
 pub mod form;
+pub mod insights;
 pub mod laps;
 pub mod power_curve;
 pub mod ramp;
