@@ -56,6 +56,11 @@ pub const MIGRATIONS: &[Migration] = &[
         sql: include_str!("../migrations/0007_garmin_full.sql"),
         foreign_keys_off: true,
     },
+    Migration {
+        version: 8,
+        sql: include_str!("../migrations/0008_garmin_more.sql"),
+        foreign_keys_off: false,
+    },
 ];
 
 /// Neueste Schemaversion dieses Programms.
@@ -173,6 +178,9 @@ mod tests {
             "training_day",
             "garmin_activity_load",
             "sensitive_day",
+            "body_day",
+            "bp_day",
+            "nutrition_day",
         ] {
             assert!(t.iter().any(|n| n == expected), "{expected} fehlt: {t:?}");
         }
@@ -477,5 +485,55 @@ mod tests {
             )
             .unwrap();
         assert_eq!(idx, 1);
+    }
+
+    /// Migration 8 (T40): Stand 7 mit Nutzerdaten wird gehoben. Bestehende Zeilen bleiben mit
+    /// allen Werten, die neuen Spalten sind leer, die neuen Tabellen leer.
+    #[test]
+    fn migration_8_adds_columns_and_keeps_rows() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.pragma_update(None, "foreign_keys", true).unwrap();
+        migrate_with(&mut conn, &MIGRATIONS[..7]).unwrap();
+        for sql in [
+            "INSERT INTO wellness_day (local_date, steps, source, imported_at) \
+             VALUES ('2026-10-01', 9000, 'garmin-app', '2026-10-02T00:00:00Z')",
+            "INSERT INTO training_day (local_date, vo2max_running, source, imported_at) \
+             VALUES ('2026-10-01', 52.5, 'garmin-app', '2026-10-02T00:00:00Z')",
+            "INSERT INTO sensitive_day (local_date, hydration_ml, source, imported_at) \
+             VALUES ('2026-10-01', 2000, 'garmin-app', '2026-10-02T00:00:00Z')",
+            "INSERT INTO threshold (sport, kind, value, valid_from, origin) \
+             VALUES ('cycling', 'ftp_w', 250, '2026-01-01', 'garmin')",
+        ] {
+            conn.execute(sql, []).unwrap();
+        }
+        migrate_with(&mut conn, &MIGRATIONS[..8]).unwrap();
+        assert_eq!(current_version(&conn).unwrap(), 8);
+        let (steps, floors): (i64, Option<f64>) = conn
+            .query_row("SELECT steps, floors_up FROM wellness_day", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+        assert_eq!((steps, floors), (9000, None));
+        let (vo2, status): (f64, Option<String>) = conn
+            .query_row(
+                "SELECT vo2max_running, training_status FROM training_day",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert!((vo2 - 52.5).abs() < f64::EPSILON);
+        assert_eq!(status, None);
+        for (table, rows) in [
+            ("sensitive_day", 1),
+            ("threshold", 1),
+            ("body_day", 0),
+            ("bp_day", 0),
+            ("nutrition_day", 0),
+        ] {
+            let n: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(n, rows, "{table}");
+        }
     }
 }

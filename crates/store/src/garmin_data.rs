@@ -30,6 +30,10 @@ use crate::store::Store;
 /// Einstellung, die den Abruf der Hydration (S3) freigibt. Nur genau `true` gibt frei
 /// (SPEC 5.5, 6.2, Entscheidung E3).
 pub const SETTING_GARMIN_SHARE_HYDRATION: &str = "garmin.share.hydration";
+/// Freigaben der übrigen S3-Bereiche (T40, Entscheidung E7), wie die Hydration.
+pub const SETTING_GARMIN_SHARE_BODY: &str = "garmin.share.body";
+pub const SETTING_GARMIN_SHARE_BLOOD_PRESSURE: &str = "garmin.share.blood_pressure";
+pub const SETTING_GARMIN_SHARE_NUTRITION: &str = "garmin.share.nutrition";
 /// Herkunft von `athlete.sex` und `athlete.birth_year`: `garmin` oder `manual`. Garmin setzt die
 /// Werte nur, solange sie nicht `manual` sind (SPEC 8.6).
 pub const SETTING_ATHLETE_SEX_ORIGIN: &str = "athlete.sex_origin";
@@ -400,6 +404,9 @@ day_record!(
         intensity_vigorous_min: Real(0.0, 1440.0),
         stress_avg: Real(0.0, 100.0),
         stress_max: Real(0.0, 100.0),
+        // T40 (Faustregel): höchstens 2000 Etagen am Tag.
+        floors_up: Real(0.0, 2000.0),
+        floors_down: Real(0.0, 2000.0),
     ]
 );
 
@@ -417,6 +424,30 @@ day_record!(
         vo2max_cycling: Real(10.0, 100.0),
         endurance_score: Real(0.0, 20_000.0),
         hill_score: Real(0.0, 200.0),
+        // T40 (Faustregeln): Garmins Lasten bis 10 000 wie die akute Last, Verhältnis akut zu
+        // chronisch bis 10, Rennzeiten 5 min bis 24 h, Lauftoleranz und Strecke bis 1000 km,
+        // Aufprallbelastung bis 10 Millionen (Garmins Einheit ohne Beleg, nur Anzeige).
+        training_status: Key(32),
+        garmin_chronic_load: Real(0.0, 10_000.0),
+        garmin_acwr: Real(0.0, 10.0),
+        load_aerobic_low: Real(0.0, 10_000.0),
+        load_aerobic_low_min: Real(0.0, 10_000.0),
+        load_aerobic_low_max: Real(0.0, 10_000.0),
+        load_aerobic_high: Real(0.0, 10_000.0),
+        load_aerobic_high_min: Real(0.0, 10_000.0),
+        load_aerobic_high_max: Real(0.0, 10_000.0),
+        load_anaerobic: Real(0.0, 10_000.0),
+        load_anaerobic_min: Real(0.0, 10_000.0),
+        load_anaerobic_max: Real(0.0, 10_000.0),
+        load_balance: Key(48),
+        race_5k_s: Real(300.0, 86_400.0),
+        race_10k_s: Real(300.0, 86_400.0),
+        race_half_s: Real(300.0, 86_400.0),
+        race_marathon_s: Real(300.0, 86_400.0),
+        run_acute_distance_m: Real(0.0, 1_000_000.0),
+        run_impact_load: Real(0.0, 10_000_000.0),
+        run_tolerance_m: Real(0.0, 1_000_000.0),
+        run_tolerance_level: Key(32),
     ]
 );
 
@@ -428,6 +459,95 @@ day_record!(
         hydration_ml: Real(0.0, 20_000.0),
     ]
 );
+
+// Grenzen (Faustregeln, T40): Gewicht 20 bis 400 kg, BMI 8 bis 100, Anteile 0 bis 100
+// Prozent, Knochen- und Muskelmasse bis 200 kg.
+day_record!(
+    /// Zeile von `body_day` (S3): Gewicht und Körperzusammensetzung, nur nach Freigabe
+    /// "Körper" (Entscheidung E7).
+    BodyDay, "body_day", [
+        weight_kg: Real(20.0, 400.0),
+        bmi: Real(8.0, 100.0),
+        body_fat_pct: Real(0.0, 100.0),
+        body_water_pct: Real(0.0, 100.0),
+        bone_kg: Real(0.0, 200.0),
+        muscle_kg: Real(0.0, 200.0),
+    ]
+);
+
+// Grenzen (Faustregeln, T40): systolisch 50 bis 300, diastolisch 20 bis 200 mmHg, Puls nach
+// SPEC 6.5 (30 bis 230).
+day_record!(
+    /// Zeile von `bp_day` (S3): Blutdruck, nur nach Freigabe "Blutdruck" (Entscheidung E7).
+    BpDay, "bp_day", [
+        systolic_mmhg: Real(50.0, 300.0),
+        diastolic_mmhg: Real(20.0, 200.0),
+        pulse_bpm: Real(30.0, 230.0),
+    ]
+);
+
+// Grenzen (Faustregeln, T40): bis 20 000 kcal und 3000 g je Nährstoff am Tag.
+day_record!(
+    /// Zeile von `nutrition_day` (S3): Ernährungstagebuch je Tag, nur nach Freigabe
+    /// "Ernährung" (Entscheidung E7).
+    NutritionDay, "nutrition_day", [
+        calories_kcal: Real(0.0, 20_000.0),
+        carbs_g: Real(0.0, 3000.0),
+        fat_g: Real(0.0, 3000.0),
+        protein_g: Real(0.0, 3000.0),
+        calories_goal_kcal: Real(0.0, 20_000.0),
+    ]
+);
+
+/// Bereich sensibler Werte (S3), je Bereich freigegeben und gelöscht (Entscheidung E7).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SensitiveCategory {
+    Hydration,
+    Body,
+    BloodPressure,
+    Nutrition,
+}
+
+impl SensitiveCategory {
+    pub const ALL: [Self; 4] = [
+        Self::Hydration,
+        Self::Body,
+        Self::BloodPressure,
+        Self::Nutrition,
+    ];
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Hydration => "hydration",
+            Self::Body => "body",
+            Self::BloodPressure => "blood_pressure",
+            Self::Nutrition => "nutrition",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|c| c.as_str() == s)
+    }
+
+    /// Einstellung, die den Bereich freigibt. Nur genau `true` gibt frei.
+    pub fn setting(self) -> &'static str {
+        match self {
+            Self::Hydration => SETTING_GARMIN_SHARE_HYDRATION,
+            Self::Body => SETTING_GARMIN_SHARE_BODY,
+            Self::BloodPressure => SETTING_GARMIN_SHARE_BLOOD_PRESSURE,
+            Self::Nutrition => SETTING_GARMIN_SHARE_NUTRITION,
+        }
+    }
+
+    fn table(self) -> &'static str {
+        match self {
+            Self::Hydration => SensitiveDay::SPEC.table,
+            Self::Body => BodyDay::SPEC.table,
+            Self::BloodPressure => BpDay::SPEC.table,
+            Self::Nutrition => NutritionDay::SPEC.table,
+        }
+    }
+}
 
 /// Zeile von `garmin_activity_load`: Garmins Trainingslast und Trainingseffekt einer
 /// Aktivität. Nur zur Anzeige neben der eigenen Last (Entscheidung E2, SPEC 8.1).
@@ -654,10 +774,26 @@ impl Store {
             .flatten())
     }
 
-    /// Löscht alle S3-Werte (Einstellungen, "S3-Werte löschen"). Gibt die Zahl der Zeilen
-    /// zurück.
+    /// Löscht alle S3-Werte aller Bereiche. Gibt die Zahl der Zeilen zurück.
     pub fn delete_sensitive_days(&mut self) -> Result<u32> {
-        Ok(self.conn.execute("DELETE FROM sensitive_day", [])? as u32)
+        let mut n = 0;
+        for c in SensitiveCategory::ALL {
+            n += self.delete_sensitive(c)?;
+        }
+        Ok(n)
+    }
+
+    /// Löscht die S3-Werte eines Bereichs (Einstellungen, "Löschen" je Bereich). Gibt die Zahl
+    /// der Zeilen zurück.
+    pub fn delete_sensitive(&mut self, category: SensitiveCategory) -> Result<u32> {
+        Ok(self
+            .conn
+            .execute(&format!("DELETE FROM {}", category.table()), [])? as u32)
+    }
+
+    /// Ob der Nutzer den Bereich freigegeben hat (Einstellung genau `true`).
+    pub fn sensitive_released(&self, category: SensitiveCategory) -> Result<bool> {
+        Ok(self.get_setting(category.setting())?.as_deref() == Some("true"))
     }
 
     /// Schreibt eine Schwelle aus Garmin (Herkunft `garmin`, SPEC 8.6). Gibt es schon eine
@@ -903,5 +1039,62 @@ mod tests {
         let mut bad = export;
         bad.training_days[0].insert("unknown".into(), serde_json::json!(1));
         assert!(fresh.import_user_data(&bad).is_err());
+    }
+
+    #[test]
+    fn sensitive_values_are_released_and_deleted_per_category() {
+        let mut s = Store::open_in_memory().unwrap();
+        let mut b = BodyDay::empty(d("2026-10-01"), "garmin-app", at(6));
+        b.weight_kg = Some(72.4);
+        let mut p = BpDay::empty(d("2026-10-01"), "garmin-app", at(6));
+        p.systolic_mmhg = Some(121.0);
+        let mut n = NutritionDay::empty(d("2026-10-01"), "garmin-app", at(6));
+        n.calories_kcal = Some(2400.0);
+        s.merge_garmin_rows(&[b]).unwrap();
+        s.merge_garmin_rows(&[p]).unwrap();
+        s.merge_garmin_rows(&[n]).unwrap();
+
+        // Ohne Einstellung und mit einem anderen Wert als `true` ist nichts freigegeben.
+        assert!(!s.sensitive_released(SensitiveCategory::Body).unwrap());
+        s.set_setting(SETTING_GARMIN_SHARE_BODY, "yes").unwrap();
+        assert!(!s.sensitive_released(SensitiveCategory::Body).unwrap());
+        s.set_setting(SETTING_GARMIN_SHARE_BODY, "true").unwrap();
+        assert!(s.sensitive_released(SensitiveCategory::Body).unwrap());
+        assert!(!s.sensitive_released(SensitiveCategory::Nutrition).unwrap());
+
+        let export = s.export_user_data().unwrap();
+        assert_eq!(
+            (
+                export.body_days.len(),
+                export.bp_days.len(),
+                export.nutrition_days.len()
+            ),
+            (1, 1, 1)
+        );
+        let mut fresh = Store::open_in_memory().unwrap();
+        fresh.import_user_data(&export).unwrap();
+        assert_eq!(fresh.export_user_data().unwrap(), export);
+
+        // Löschen trifft nur den Bereich.
+        assert_eq!(
+            s.delete_sensitive(SensitiveCategory::BloodPressure)
+                .unwrap(),
+            1
+        );
+        let bp: Vec<BpDay> = s.garmin_rows(d("2026-01-01"), d("2026-12-31")).unwrap();
+        let body: Vec<BodyDay> = s.garmin_rows(d("2026-01-01"), d("2026-12-31")).unwrap();
+        assert!(bp.is_empty());
+        assert_eq!(body.len(), 1);
+        assert_eq!(s.delete_sensitive_days().unwrap(), 2);
+
+        // Ein Gewicht außerhalb der Grenzen wird abgelehnt.
+        let mut bad = BodyDay::empty(d("2026-10-02"), "garmin-app", at(6));
+        bad.weight_kg = Some(5.0);
+        assert!(s.merge_garmin_rows(&[bad]).is_err());
+        assert_eq!(
+            SensitiveCategory::parse("blood_pressure"),
+            Some(SensitiveCategory::BloodPressure)
+        );
+        assert_eq!(SensitiveCategory::parse("menstrual"), None);
     }
 }

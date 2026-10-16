@@ -56,8 +56,10 @@ pub use derived::SETTING_ATHLETE_BIRTH_YEAR;
 pub use duplicates::DuplicateRule;
 pub use error::{Result, StoreError};
 pub use garmin_data::{
-    Cell, Column, DayRecord, GARMIN_APP_SOURCE, GarminActivityLoad, GarminThresholdOutcome,
-    SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, SETTING_ATHLETE_SEX_ORIGIN, SETTING_GARMIN_SHARE_HYDRATION,
+    BodyDay, BpDay, Cell, Column, DayRecord, GARMIN_APP_SOURCE, GarminActivityLoad,
+    GarminThresholdOutcome, NutritionDay, SETTING_ATHLETE_BIRTH_YEAR_ORIGIN,
+    SETTING_ATHLETE_SEX_ORIGIN, SETTING_GARMIN_SHARE_BLOOD_PRESSURE, SETTING_GARMIN_SHARE_BODY,
+    SETTING_GARMIN_SHARE_HYDRATION, SETTING_GARMIN_SHARE_NUTRITION, SensitiveCategory,
     SensitiveDay, TableSpec, TrainingDay, WellnessDay,
 };
 pub use garmin_settings::{

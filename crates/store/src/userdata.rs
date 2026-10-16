@@ -2,7 +2,8 @@
 //!
 //! Nutzerdaten sind nicht aus FIT ableitbar: `threshold`, `goal`, `availability`, `plan`,
 //! `manual_session`, `setting`, `recovery_day` (seit T14), `wellness_day`, `training_day`,
-//! `garmin_activity_load` und `sensitive_day` (seit T39). Der Cache gehört nicht dazu.
+//! `garmin_activity_load` und `sensitive_day` (seit T39), `body_day`, `bp_day` und
+//! `nutrition_day` (seit T40). Der Cache gehört nicht dazu.
 //!
 //! `recovery_day` hält Gesundheitswerte (HRV, Ruhepuls, Schlaf). Die Sicherung enthält sie,
 //! damit nach einer Wiederherstellung nichts fehlt, und gehört wie die ganze Sicherung nicht
@@ -15,7 +16,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{Result, StoreError};
 use crate::garmin_data::{
-    GarminActivityLoad, SensitiveDay, TrainingDay, WellnessDay, export_table, import_table,
+    BodyDay, BpDay, GarminActivityLoad, NutritionDay, SensitiveDay, TrainingDay, WellnessDay,
+    export_table, import_table,
 };
 use crate::store::Store;
 
@@ -134,6 +136,13 @@ pub struct UserDataExport {
     /// Rechner nur durch den Nutzer.
     #[serde(default)]
     pub sensitive_days: Vec<serde_json::Map<String, serde_json::Value>>,
+    /// S3-Werte je Bereich (seit T40, Entscheidung E7): Körper, Blutdruck, Ernährung.
+    #[serde(default)]
+    pub body_days: Vec<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default)]
+    pub bp_days: Vec<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default)]
+    pub nutrition_days: Vec<serde_json::Map<String, serde_json::Value>>,
     pub settings: Vec<SettingExport>,
 }
 
@@ -272,6 +281,9 @@ impl Store {
             training_days: export_table::<TrainingDay>(c)?,
             garmin_activity_loads: export_table::<GarminActivityLoad>(c)?,
             sensitive_days: export_table::<SensitiveDay>(c)?,
+            body_days: export_table::<BodyDay>(c)?,
+            bp_days: export_table::<BpDay>(c)?,
+            nutrition_days: export_table::<NutritionDay>(c)?,
             settings: collect(c, "SELECT key, value FROM setting ORDER BY key", |r| {
                 Ok(SettingExport {
                     key: r.get(0)?,
@@ -304,6 +316,9 @@ impl Store {
             "training_day",
             "garmin_activity_load",
             "sensitive_day",
+            "body_day",
+            "bp_day",
+            "nutrition_day",
             "setting",
         ] {
             tx.execute(&format!("DELETE FROM {table}"), [])?;
@@ -438,6 +453,9 @@ impl Store {
         import_table::<TrainingDay>(&tx, &e.training_days)?;
         import_table::<GarminActivityLoad>(&tx, &e.garmin_activity_loads)?;
         import_table::<SensitiveDay>(&tx, &e.sensitive_days)?;
+        import_table::<BodyDay>(&tx, &e.body_days)?;
+        import_table::<BpDay>(&tx, &e.bp_days)?;
+        import_table::<NutritionDay>(&tx, &e.nutrition_days)?;
         for s in &e.settings {
             tx.execute(
                 "INSERT INTO setting (key, value) VALUES (?1, ?2)",
