@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { assertClean, installGuard, type Guard } from './guard';
+import { openSettingsTab, toEnglish } from './nav';
 
 // Rauchtest der Einrichtung des lokalen Coachs (T29) mit der Attrappe, in Deutsch und Englisch:
 // Ollama fehlt, "Jetzt einrichten", Modell laden mit Fortschritt, Abschnitt in den Einstellungen,
@@ -53,8 +54,8 @@ async function shot(page: Page, name: string) {
 for (const lang of ['de', 'en'] as const) {
   test(`Coach einrichten in den Einstellungen (${lang})`, async ({ page }) => {
     await page.goto('/?ollama=fehlt');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
-    await page.getByTestId('nav-settings').click();
+    if (lang === 'en') await toEnglish(page);
+    await openSettingsTab(page, 'coach');
 
     const section = page.getByTestId('coach-setup-section');
     await expect(section.locator('h3')).toHaveText(TEXT[lang].sectionTitle);
@@ -92,19 +93,21 @@ for (const lang of ['de', 'en'] as const) {
 
   test(`Hinweis in der Planansicht führt zur Einrichtung (${lang})`, async ({ page }) => {
     await page.goto('/?ollama=fehlt');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
+    if (lang === 'en') await toEnglish(page);
     await page.getByTestId('nav-plan').click();
     const link = page.getByTestId('coach-open-setup');
     await expect(link).toHaveText(TEXT[lang].openSettings);
     await link.click();
+    // Der Hinweis öffnet die Einstellungen direkt im Reiter Coach (T42).
+    await expect(page.getByTestId('tab-settings-coach')).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByTestId('coach-setup-section')).toBeVisible();
     await expect(page.getByTestId('coach-setup-install-button')).toHaveText(TEXT[lang].install);
   });
 
   test(`Zustand "lädt gerade" zeigt den Fortschritt (${lang})`, async ({ page }) => {
     await page.goto('/?ollama=laedt');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
-    await page.getByTestId('nav-settings').click();
+    if (lang === 'en') await toEnglish(page);
+    await openSettingsTab(page, 'coach');
     const progress = page.getByTestId('coach-pull-progress');
     await expect(progress).toBeVisible();
     await expect(progress).toContainText(TEXT[lang].background);
@@ -114,8 +117,8 @@ for (const lang of ['de', 'en'] as const) {
 
   test(`Ollama läuft schon (${lang})`, async ({ page }) => {
     await page.goto('/?ollama=laeuft');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
-    await page.getByTestId('nav-settings').click();
+    if (lang === 'en') await toEnglish(page);
+    await openSettingsTab(page, 'coach');
     await expect(page.getByTestId('coach-setup-state')).toHaveText(TEXT[lang].running);
     await expect(page.getByTestId('coach-setup-ready')).toHaveText(TEXT[lang].ready);
     await expect(page.getByTestId('coach-setup-install-button')).toHaveCount(0);

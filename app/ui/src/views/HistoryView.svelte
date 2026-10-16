@@ -11,9 +11,11 @@
     bodyTab,
     CALENDAR_MODES,
     calendarMode,
+    closeActivity,
     HISTORY_TABS,
     historyTab,
     selectedActivityId,
+    type HistoryTab,
   } from '../lib/state';
   import ActivitiesView from './ActivitiesView.svelte';
   import ActivityDetailView from './ActivityDetailView.svelte';
@@ -28,6 +30,13 @@
   const modes = $derived(
     CALENDAR_MODES.map((v) => ({ value: v, label: $t(`ui.history.mode.${v}`) })),
   );
+  // Ein Klick auf den schon aktiven Reiter Aktivitäten führt aus dem Detail zur Liste zurück,
+  // wie man es von Reitern erwartet. Der Wechsel aus einem anderen Reiter behält das Detail.
+  function selectTab(next: HistoryTab) {
+    if (next === 'activities' && $historyTab === 'activities') closeActivity();
+    historyTab.set(next);
+  }
+
   const bodies = $derived(BODY_TABS.map((v) => ({ value: v, label: $t(`ui.history.body.${v}`) })));
 </script>
 
@@ -41,7 +50,7 @@
     options={tabs}
     value={$historyTab}
     label={$t('ui.history.tabs_label')}
-    onchange={(v) => historyTab.set(v)}
+    onchange={selectTab}
   >
     {#if $historyTab === 'calendar'}
       <div class="sub">

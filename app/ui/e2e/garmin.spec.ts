@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { assertClean, installGuard, type Guard } from './guard';
+import { toEnglish } from './nav';
 
 // Rauchtest des Abschnitts Garmin in den Einstellungen (T23) mit der Attrappe, in Deutsch und
 // Englisch: verbinden, abgleichen, Zustand in der Seitenleiste, Trennen mit Bestätigung. Kein
@@ -41,9 +42,11 @@ async function shot(page: Page, name: string) {
 for (const lang of ['de', 'en'] as const) {
   test(`Garmin in den Einstellungen (${lang})`, async ({ page }) => {
     await page.goto('/');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
+    if (lang === 'en') await toEnglish(page);
     await page.getByTestId('nav-settings').click();
     await expect(page.getByTestId('nav-settings')).toHaveText(TEXT[lang].settings);
+    // Garmin steht im ersten Reiter der Einstellungen (T42).
+    await expect(page.getByTestId('tab-settings-data')).toHaveAttribute('aria-selected', 'true');
 
     const section = page.getByTestId('garmin-section');
     await expect(section.getByTestId('garmin-state')).toHaveText(TEXT[lang].notConnected);
