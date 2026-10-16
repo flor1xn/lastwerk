@@ -107,5 +107,10 @@ describe('Reiter (T42)', () => {
     await fireEvent.click(screen.getByTestId('detail-back'));
     await screen.findByTestId('activity-table');
     expect(get(selectedActivityId)).toBeNull();
+    // Auch ein Klick auf den aktiven Reiter führt zurück zur Liste.
+    await fireEvent.click((await screen.findAllByTestId('activity-row'))[0]);
+    await screen.findByTestId('detail-title');
+    await fireEvent.click(tab('activities'));
+    await screen.findByTestId('activity-table');
   });
 });
