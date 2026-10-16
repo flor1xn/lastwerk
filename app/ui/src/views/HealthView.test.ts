@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setBackend } from '../lib/backend';
 import { MockBackend } from '../lib/backend/mock';
 import { setLocale } from '../lib/i18n';
-import { view } from '../lib/state';
+import { get } from 'svelte/store';
+import { openHistory, settingsTab, view } from '../lib/state';
 import HealthView from './HealthView.svelte';
 
 let backend: MockBackend;
@@ -13,7 +14,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date('2026-10-14T12:00:00'));
   backend = new MockBackend({ today: '2026-10-14', garminConnected: true });
   setBackend(backend);
-  view.set('health');
+  openHistory('body');
 });
 
 afterEach(() => {
@@ -93,9 +94,9 @@ describe('Gesundheit (T39)', () => {
     const empty = await screen.findByTestId('health-empty');
     expect(empty.textContent).toContain('Abgleich aus Garmin');
     await fireEvent.click(screen.getByRole('button', { name: 'Zu den Einstellungen' }));
-    let current = '';
-    view.subscribe((v) => (current = v))();
-    expect(current).toBe('settings');
+    // Garmin liefert die Werte: Reiter "Daten und Garmin".
+    expect(get(view)).toBe('settings');
+    expect(get(settingsTab)).toBe('data');
   });
 
   it('übersteht extreme Werte ohne Platzhalterfehler', async () => {

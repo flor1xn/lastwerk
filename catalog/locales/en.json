@@ -14,16 +14,29 @@
     "nav": {
       "label": "Main navigation",
       "today": "Today",
-      "week": "Week",
-      "activities": "Activities",
-      "detail": "Detail",
-      "settings": "Settings",
       "plan": "Plan",
-      "progress": "Progress",
-      "performance": "Performance",
-      "calendar": "Calendar",
-      "recovery": "Recovery",
-      "health": "Health"
+      "history": "History",
+      "settings": "Settings"
+    },
+    "history": {
+      "tabs_label": "History sections",
+      "tab": {
+        "calendar": "Calendar",
+        "activities": "Activities",
+        "progress": "Progress",
+        "performance": "Performance",
+        "body": "Body"
+      },
+      "calendar_mode": "Calendar range",
+      "mode": {
+        "month": "Month",
+        "week": "Week"
+      },
+      "body_label": "Body values",
+      "body": {
+        "recovery": "Recovery",
+        "health": "Health"
+      }
     },
     "sport": {
       "all": "All sports",
@@ -155,15 +168,12 @@
       "no_load": "No computable load in this week.",
       "not_computable": "Activities without computable load (not in the sum): {n}",
       "pmc_title": "Fitness, fatigue, form",
-      "no_pmc": "No curve for this period (future or no load yet).",
       "pmc_date": "Date",
       "ctl": "Fitness (CTL)",
       "atl": "Fatigue (ATL)",
-      "tsb": "Form (TSB)",
-      "pmc_start_note": "The curve starts on {date} with the start values. The first weeks are not reliable."
+      "tsb": "Form (TSB)"
     },
     "activities": {
-      "title": "Activities",
       "from": "From",
       "to": "To",
       "sport": "Sport",
@@ -179,8 +189,6 @@
       "duplicate_hint": "Same session as another recording, not counted in the load (duplicate rule)."
     },
     "detail": {
-      "none": "There is no activity in the period.",
-      "to_list": "To the list",
       "back": "To the list",
       "metrics": "Metrics",
       "duration": "Duration",
@@ -252,7 +260,14 @@
       "add_files": "Add FIT files",
       "add_files_hint": "For files from an Edge device or a USB stick that do not come through Garmin Connect. Lastwerk copies them into its data folder and reads them in.",
       "add_result": "{selected} selected: {copied} added, {present} already there, {rejected} skipped.",
-      "add_rejected": "Files without the .fit extension, unreadable files and files over 64 MiB are skipped."
+      "add_rejected": "Files without the .fit extension, unreadable files and files over 64 MiB are skipped.",
+      "tabs_label": "Settings sections",
+      "tab": {
+        "data": "Data and Garmin",
+        "coach": "Coach",
+        "profile": "Profile and thresholds",
+        "app": "App"
+      }
     },
     "import": {
       "progress": "File {done} of {total}",
@@ -378,10 +393,13 @@
       "plan": "Three answers are enough for a weekly plan, the rest you work out in conversation with the coach.",
       "activities": "All imported activities, duplicates are marked.",
       "detail": "Metrics, zones and course of this activity.",
-      "settings": "Data, thresholds, appearance and version.",
       "progress": "Volume and load across weeks, months and years.",
       "performance": "Your best values per duration and how they develop.",
-      "health": "Daily and training values from Garmin, each with its latest value and trend. Lastwerk does not calculate with them."
+      "health": "Daily and training values from Garmin, each with its latest value and trend. Lastwerk does not calculate with them.",
+      "settings_data": "Where your data comes from: FIT files, Garmin and the local MCP server.",
+      "settings_coach": "A local language model on this computer. It explains and adjusts, it never calculates.",
+      "settings_profile": "Details about you, thresholds and the time constants of form.",
+      "settings_app": "Language, theme, updates and version."
     },
     "about": {
       "title": "About Lastwerk",

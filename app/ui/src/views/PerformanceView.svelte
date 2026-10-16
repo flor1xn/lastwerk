@@ -23,7 +23,7 @@
     TABLE_DURATIONS,
     thresholdView,
   } from '../lib/performance';
-  import { dataVersion, openActivity, resolvedTheme, view } from '../lib/state';
+  import { dataVersion, openActivity, openSettings, resolvedTheme } from '../lib/state';
 
   // Leistung (T33): Leistungskurve je Zeitraum gegen den gleich langen Zeitraum davor. Weitere
   // Abschnitte (Schwellen T36, Laufbestzeiten T37) folgen auf derselben Seite.
@@ -134,10 +134,7 @@
 </script>
 
 <div class="page performance" data-testid="performance">
-  <header class="page-head">
-    <h1>{$t('ui.nav.performance')}</h1>
-    <p class="page-lead" data-testid="lead">{$t('ui.lead.performance')}</p>
-  </header>
+  <p class="page-lead" data-testid="lead">{$t('ui.lead.performance')}</p>
 
   <div class="controls">
     <Segmented
@@ -312,7 +309,11 @@
     <Section label={$t('ui.perf.thr.title')} statement={thrStatement} testid="perf-thresholds">
       {#if thr.kind === 'above' || thr.kind === 'no_ftp' || thr.kind === 'empty'}
         <div class="actions">
-          <button type="button" onclick={() => view.set('settings')} data-testid="perf-to-settings">
+          <button
+            type="button"
+            onclick={() => openSettings('profile')}
+            data-testid="perf-to-settings"
+          >
             {$t('ui.perf.thr.to_settings')}
           </button>
         </div>

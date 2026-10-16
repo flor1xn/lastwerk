@@ -51,7 +51,7 @@ export const locale = writable<Locale>('de');
 
 export type Translate = (key: string, params?: Params) => string;
 
-/** In Komponenten: `$t('ui.nav.week')`. */
+/** In Komponenten: `$t('ui.nav.history')`. */
 export const t: Readable<Translate> = derived(
   locale,
   ($locale): Translate =>

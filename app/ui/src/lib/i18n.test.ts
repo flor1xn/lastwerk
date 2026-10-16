@@ -4,6 +4,7 @@ import { get } from 'svelte/store';
 import { afterEach, describe, expect, it } from 'vitest';
 import { LOAD_METHODS, SPORTS, THRESHOLD_KINDS } from './backend/types';
 import { catalogs, hasKey, interpolate, locale, setLocale, t, translate } from './i18n';
+import { BODY_TABS, CALENDAR_MODES, HISTORY_TABS, SETTINGS_TABS, VIEWS } from './state';
 
 afterEach(() => setLocale('de'));
 
@@ -27,10 +28,10 @@ describe('translate', () => {
 
 describe('Store t', () => {
   it('folgt der gewählten Sprache', () => {
-    expect(get(t)('ui.nav.week')).toBe('Woche');
+    expect(get(t)('ui.nav.history')).toBe('Verlauf');
     setLocale('en');
     expect(get(locale)).toBe('en');
-    expect(get(t)('ui.nav.week')).toBe('Week');
+    expect(get(t)('ui.nav.history')).toBe('History');
   });
 
   it('ignoriert unbekannte Sprachen', () => {
@@ -75,6 +76,11 @@ describe('Kataloge', () => {
       ),
       ...['dark', 'light', 'system'].map((x) => `ui.theme.${x}`),
       ...['de', 'en'].map((x) => `ui.language.${x}`),
+      ...[...VIEWS, 'settings'].map((v) => `ui.nav.${v}`),
+      ...HISTORY_TABS.map((v) => `ui.history.tab.${v}`),
+      ...CALENDAR_MODES.map((v) => `ui.history.mode.${v}`),
+      ...BODY_TABS.map((v) => `ui.history.body.${v}`),
+      ...SETTINGS_TABS.flatMap((v) => [`ui.settings.tab.${v}`, `ui.lead.settings_${v}`]),
       ...['power7', 'hr_lthr5', 'hr_karvonen', 'run_speed5', 'swim_css5'].flatMap((id) => [
         `zones.${id}.name`,
         ...[1, 2, 3, 4, 5].map((n) => `zones.${id}.z${n}`),
