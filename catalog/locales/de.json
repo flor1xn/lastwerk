@@ -760,16 +760,22 @@
         "thresholds": "Schwellenwerte aus Garmin geändert: {n}",
         "recomputed": "neu berechnete Aktivitäten: {n}"
       },
-      "hydration": {
-        "toggle": "Hydration aus Garmin holen",
-        "hint": "Sensible Gesundheitsdaten: Lastwerk speichert sie getrennt und gibt sie nie an den MCP-Server. Standard aus.",
-        "delete": "Hydration löschen",
-        "delete_confirm": "Alle gespeicherten Hydrationswerte löschen? Das lässt sich nicht rückgängig machen. Bleibt die Freigabe an, holt der nächste Abgleich wieder Werte.",
+      "never_fetched": "Menstruations- und Schwangerschaftsdaten holt Lastwerk nie.",
+      "s3": {
+        "title": "Sensible Werte (S3)",
+        "toggle": {
+          "body": "Gewicht und Körperwerte holen",
+          "blood_pressure": "Blutdruck holen",
+          "nutrition": "Ernährung holen",
+          "hydration": "Hydration holen"
+        },
+        "hint": "Sensible Gesundheitsdaten, je Bereich freigegeben. Lastwerk holt sie nur mit Freigabe, speichert sie getrennt und gibt sie nie an den MCP-Server. Standard aus.",
+        "delete": "Löschen",
+        "delete_confirm": "Alle gespeicherten Werte zu {name} löschen? Das lässt sich nicht rückgängig machen. Bleibt die Freigabe an, holt der nächste Abgleich wieder Werte.",
         "delete_yes": "Löschen",
         "delete_no": "Abbrechen",
-        "deleted": "Gelöschte Tage mit Hydration: {n}"
-      },
-      "never_fetched": "Menstruations- und Schwangerschaftsdaten holt Lastwerk nie."
+        "deleted": "Gelöschte Tage: {n}"
+      }
     },
     "planner": {
       "title": "Dein Plan in drei Fragen",
@@ -1162,8 +1168,6 @@
       "daily_statement": "Werte je Tag aus Garmin. Tage ohne Wert bleiben Lücken.",
       "training": "Training",
       "training_statement": "Garmins eigene Einschätzungen. Lastwerk zeigt sie nur und rechnet mit der eigenen Last.",
-      "hydration": "Hydration",
-      "hydration_statement": "Sensible Werte, nur nach deiner Freigabe geholt und getrennt gespeichert.",
       "note": "Die Werte beschreiben Trainingsdaten, keine Gesundheit im medizinischen Sinn.",
       "as_of": "Stand {date}",
       "from_garmin": "von Garmin",
@@ -1188,7 +1192,35 @@
         "vo2max_cycling": "VO2max Rad",
         "endurance_score": "Ausdauerwert",
         "hill_score": "Bergwert",
-        "hydration_ml": "Hydration"
+        "hydration_ml": "Hydration",
+        "floors_up": "Etagen hoch",
+        "floors_down": "Etagen runter",
+        "garmin_chronic_load": "Garmins chronische Last",
+        "garmin_acwr": "Verhältnis akut zu chronisch",
+        "load_aerobic_low": "Aerob niedrig (4 Wochen)",
+        "load_aerobic_high": "Aerob hoch (4 Wochen)",
+        "load_anaerobic": "Anaerob (4 Wochen)",
+        "race_5k_s": "5 km",
+        "race_10k_s": "10 km",
+        "race_half_s": "Halbmarathon",
+        "race_marathon_s": "Marathon",
+        "run_acute_distance_km": "Laufstrecke 7 Tage",
+        "run_tolerance_km": "Lauftoleranz 7 Tage",
+        "run_impact_load": "Aufprallbelastung",
+        "weight_kg": "Gewicht",
+        "bmi": "BMI",
+        "body_fat_pct": "Körperfett",
+        "body_water_pct": "Körperwasser",
+        "muscle_kg": "Muskelmasse",
+        "bone_kg": "Knochenmasse",
+        "systolic_mmhg": "Systolisch",
+        "diastolic_mmhg": "Diastolisch",
+        "pulse_bpm": "Puls",
+        "calories_kcal": "Kalorien",
+        "calories_goal_kcal": "Kalorienziel",
+        "carbs_g": "Kohlenhydrate",
+        "fat_g": "Fett",
+        "protein_g": "Eiweiß"
       },
       "unit": {
         "km": "km",
@@ -1198,7 +1230,12 @@
         "min": "min",
         "years": "Jahre",
         "vo2": "ml/kg/min",
-        "ml": "ml"
+        "ml": "ml",
+        "floors": "Etagen",
+        "kg": "kg",
+        "mmhg": "mmHg",
+        "kcal": "kcal",
+        "g": "g"
       },
       "level": {
         "POOR": "Schwach",
@@ -1206,6 +1243,43 @@
         "MODERATE": "Mäßig",
         "HIGH": "Hoch",
         "PRIME": "Optimal"
+      },
+      "status_title": "Trainingsstatus",
+      "status_statement": "Garmins Trainingsstatus mit akuter und chronischer Last und dem Belastungsfokus der letzten vier Wochen. Nur zur Ansicht, Lastwerk rechnet mit der eigenen Last.",
+      "balance_label": "Belastungsfokus",
+      "target": "Ziel {min} bis {max}",
+      "race": "Rennprognosen",
+      "race_statement": "Garmins Schätzung der Zielzeiten aus VO2max und Training.",
+      "tolerance_title": "Lauftoleranz",
+      "tolerance_statement": "Laufstrecke der letzten 7 Tage im Vergleich zu dem, was Garmin für verträglich hält.",
+      "s3_statement": "Sensible Werte, nur nach deiner Freigabe in den Einstellungen geholt und getrennt gespeichert.",
+      "s3": {
+        "body": "Körper",
+        "blood_pressure": "Blutdruck",
+        "nutrition": "Ernährung",
+        "hydration": "Hydration"
+      },
+      "status": {
+        "productive": "Produktiv",
+        "maintaining": "Erhaltend",
+        "recovery": "Erholung",
+        "peaking": "Höchstform",
+        "unproductive": "Unproduktiv",
+        "detraining": "Formverlust",
+        "overreaching": "Überlastung",
+        "strained": "Angespannt",
+        "no_status": "Kein Status"
+      },
+      "balance": {
+        "balanced": "Ausgewogen",
+        "aerobic_low_shortage": "Zu wenig aerob niedrig",
+        "aerobic_high_shortage": "Zu wenig aerob hoch",
+        "anaerobic_shortage": "Zu wenig anaerob"
+      },
+      "tolerance": {
+        "low_load": "Niedrige Belastung",
+        "medium_load": "Mittlere Belastung",
+        "high_load": "Hohe Belastung"
       }
     }
   },

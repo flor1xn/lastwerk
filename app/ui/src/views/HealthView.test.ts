@@ -64,6 +64,29 @@ describe('Gesundheit (T39)', () => {
     expect(screen.getByTestId('health-hydration_ml').textContent).toContain('ml');
   });
 
+  it('zeigt Trainingsstatus, Rennprognosen und Lauftoleranz, S3-Bereiche nur nach Freigabe (T40)', async () => {
+    await backend.setSettings({ garmin_share_body: true });
+    await backend.garminSync('manual', () => {});
+    render(HealthView);
+    const status = await screen.findByTestId('health-status');
+    expect(status.textContent).toContain('Trainingsstatus');
+    expect(screen.getByTestId('health-training-status').textContent).toMatch(
+      /Produktiv|Erhaltend|Erholung|Höchstform/,
+    );
+    expect(screen.getByTestId('health-load_anaerobic-target').textContent).toContain(
+      'Ziel 80 bis 230',
+    );
+    expect(screen.getByTestId('health-balance').textContent).toContain('Zu wenig anaerob');
+    // Rennzeiten als Dauer, nicht als Sekundenzahl.
+    expect(screen.getByTestId('health-race_5k_s').textContent).toMatch(/\d+:\d\d/);
+    expect(screen.getByTestId('health-tolerance')).not.toBeNull();
+    expect(screen.getByTestId('health-floors_up').textContent).toContain('Etagen');
+    expect(screen.getByTestId('health-body').textContent).toContain('Körper');
+    expect(screen.getByTestId('health-weight_kg').textContent).toContain('kg');
+    expect(screen.queryByTestId('health-blood-pressure')).toBeNull();
+    expect(screen.queryByTestId('health-nutrition')).toBeNull();
+  });
+
   it('sagt ohne Werte, woher sie kommen, und führt in die Einstellungen', async () => {
     backend.dashboardVariant = 'empty';
     render(HealthView);

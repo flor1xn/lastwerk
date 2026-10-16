@@ -602,6 +602,9 @@ fn settings_default_to_dark_german_and_roundtrip() {
         onboarded: None,
         garmin_sync_on_start: None,
         garmin_share_hydration: None,
+        garmin_share_body: None,
+        garmin_share_blood_pressure: None,
+        garmin_share_nutrition: None,
     };
     let s = service::set_settings(&mut store, &patch, false).unwrap();
     assert_eq!((s.locale.as_str(), s.theme.as_str()), ("en", "light"));
@@ -620,6 +623,9 @@ fn settings_default_to_dark_german_and_roundtrip() {
             onboarded: None,
             garmin_sync_on_start: None,
             garmin_share_hydration: None,
+            garmin_share_body: None,
+            garmin_share_blood_pressure: None,
+            garmin_share_nutrition: None,
         },
         SettingsPatch {
             locale: None,
@@ -629,6 +635,9 @@ fn settings_default_to_dark_german_and_roundtrip() {
             onboarded: None,
             garmin_sync_on_start: None,
             garmin_share_hydration: None,
+            garmin_share_body: None,
+            garmin_share_blood_pressure: None,
+            garmin_share_nutrition: None,
         },
         SettingsPatch {
             locale: Some("de".into()),
@@ -643,6 +652,9 @@ fn settings_default_to_dark_german_and_roundtrip() {
             onboarded: None,
             garmin_sync_on_start: None,
             garmin_share_hydration: None,
+            garmin_share_body: None,
+            garmin_share_blood_pressure: None,
+            garmin_share_nutrition: None,
         },
         SettingsPatch {
             locale: None,
@@ -657,6 +669,9 @@ fn settings_default_to_dark_german_and_roundtrip() {
             onboarded: None,
             garmin_sync_on_start: None,
             garmin_share_hydration: None,
+            garmin_share_body: None,
+            garmin_share_blood_pressure: None,
+            garmin_share_nutrition: None,
         },
     ] {
         assert!(service::set_settings(&mut store, &bad, false).is_err());
@@ -680,6 +695,9 @@ fn the_recovery_switch_writes_exactly_true_or_false() {
         onboarded: None,
         garmin_sync_on_start: None,
         garmin_share_hydration: None,
+        garmin_share_body: None,
+        garmin_share_blood_pressure: None,
+        garmin_share_nutrition: None,
     };
     assert!(
         !service::get_settings(&store, false)
@@ -791,6 +809,9 @@ fn the_onboarding_flag_is_stored_as_a_setting() {
         onboarded: done,
         garmin_sync_on_start: None,
         garmin_share_hydration: None,
+        garmin_share_body: None,
+        garmin_share_blood_pressure: None,
+        garmin_share_nutrition: None,
     };
     assert!(!service::get_settings(&store, false).unwrap().onboarded);
     assert_eq!(store.get_setting("app.onboarded").unwrap(), None);

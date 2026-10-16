@@ -12,9 +12,9 @@ use lastwerk_fit::{parse_activity, read_fit_file};
 use lastwerk_store::{
     ImportOptions, ImportReport, LoadRow, LoadStatus, NewThreshold, SETTING_ATHLETE_BIRTH_YEAR,
     SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, SETTING_ATHLETE_SEX, SETTING_ATHLETE_SEX_ORIGIN,
-    SETTING_GARMIN_SHARE_HYDRATION, SETTING_MCP_RECOVERY_ENABLED, SETTING_PMC_ATL0,
-    SETTING_PMC_CTL0, SETTING_PMC_TAU_ATL, SETTING_PMC_TAU_CTL, SourceFileRecord, Store,
-    ThresholdKind, ThresholdOrigin, embedded_zone_catalog, sha256_hex,
+    SETTING_MCP_RECOVERY_ENABLED, SETTING_PMC_ATL0, SETTING_PMC_CTL0, SETTING_PMC_TAU_ATL,
+    SETTING_PMC_TAU_CTL, SensitiveCategory, SourceFileRecord, Store, ThresholdKind,
+    ThresholdOrigin, embedded_zone_catalog, sha256_hex,
 };
 
 use crate::dto::{
@@ -146,8 +146,10 @@ pub fn get_settings(store: &Store, db_in_sync_folder: bool) -> Result<Settings> 
         version: env!("CARGO_PKG_VERSION").to_owned(),
         garmin_sync_on_start: store.garmin_settings()?.sync_on_start,
         // Nur genau `true` gibt frei, wie beim Abgleich (SPEC 5.5).
-        garmin_share_hydration: text_setting(store, SETTING_GARMIN_SHARE_HYDRATION)?.as_deref()
-            == Some("true"),
+        garmin_share_hydration: store.sensitive_released(SensitiveCategory::Hydration)?,
+        garmin_share_body: store.sensitive_released(SensitiveCategory::Body)?,
+        garmin_share_blood_pressure: store.sensitive_released(SensitiveCategory::BloodPressure)?,
+        garmin_share_nutrition: store.sensitive_released(SensitiveCategory::Nutrition)?,
         cache_outdated: store.cache_outdated()?,
     })
 }
@@ -191,11 +193,18 @@ pub fn set_settings(
     if let Some(on) = patch.garmin_sync_on_start {
         store.set_garmin_sync_on_start(on)?;
     }
-    if let Some(on) = patch.garmin_share_hydration {
-        store.set_setting(
-            SETTING_GARMIN_SHARE_HYDRATION,
-            if on { "true" } else { "false" },
-        )?;
+    for (category, on) in [
+        (SensitiveCategory::Hydration, patch.garmin_share_hydration),
+        (SensitiveCategory::Body, patch.garmin_share_body),
+        (
+            SensitiveCategory::BloodPressure,
+            patch.garmin_share_blood_pressure,
+        ),
+        (SensitiveCategory::Nutrition, patch.garmin_share_nutrition),
+    ] {
+        if let Some(on) = on {
+            store.set_setting(category.setting(), if on { "true" } else { "false" })?;
+        }
     }
     if let Some(p) = &patch.pmc {
         store.set_setting(KEY_TAU_CTL, &p.tau_ctl_d.to_string())?;

@@ -9,7 +9,7 @@
 
 import { addDays } from '../dates';
 import type { DashboardVariant } from './mock-dashboard';
-import type { HealthPage, HealthPoint, HealthRange } from './types';
+import type { HealthPage, HealthPoint, HealthRange, SensitiveCategory } from './types';
 
 /** Tage mit Tageswerten (Garmin liefert sie im Abgleich für 28 Tage). */
 const DAILY_DAYS = 28;
@@ -41,8 +41,47 @@ function emptyPoint(date: string): HealthPoint {
     endurance_score: null,
     hill_score: null,
     hydration_ml: null,
+    floors_up: null,
+    floors_down: null,
+    training_status: null,
+    garmin_chronic_load: null,
+    garmin_acwr: null,
+    load_aerobic_low: null,
+    load_aerobic_low_min: null,
+    load_aerobic_low_max: null,
+    load_aerobic_high: null,
+    load_aerobic_high_min: null,
+    load_aerobic_high_max: null,
+    load_anaerobic: null,
+    load_anaerobic_min: null,
+    load_anaerobic_max: null,
+    load_balance: null,
+    race_5k_s: null,
+    race_10k_s: null,
+    race_half_s: null,
+    race_marathon_s: null,
+    run_acute_distance_km: null,
+    run_impact_load: null,
+    run_tolerance_km: null,
+    run_tolerance_level: null,
+    weight_kg: null,
+    bmi: null,
+    body_fat_pct: null,
+    body_water_pct: null,
+    bone_kg: null,
+    muscle_kg: null,
+    systolic_mmhg: null,
+    diastolic_mmhg: null,
+    pulse_bpm: null,
+    calories_kcal: null,
+    carbs_g: null,
+    fat_g: null,
+    protein_g: null,
+    calories_goal_kcal: null,
   };
 }
+
+const STATUSES = ['productive', 'maintaining', 'recovery', 'peaking'];
 
 function hasValue(p: HealthPoint): boolean {
   return Object.entries(p).some(([k, v]) => k !== 'date' && v !== null);
@@ -52,11 +91,14 @@ export function buildHealth(
   today: string,
   days: HealthRange,
   variant: DashboardVariant,
-  sensitiveReleased: boolean,
-  hydrationStored: boolean,
+  released: readonly SensitiveCategory[],
+  stored: ReadonlySet<SensitiveCategory>,
   mulberry32: (seed: number) => () => number,
 ): HealthPage {
   const rnd = mulberry32(3901);
+  // Eigene Folge für die Werte aus T40, damit die älteren Werte gleich bleiben.
+  const more = mulberry32(4001);
+  const s3 = (c: SensitiveCategory) => released.includes(c) && stored.has(c);
   const points: HealthPoint[] = [];
   const none = variant === 'empty' || variant === 'gaps';
   const extreme = variant === 'extreme';
@@ -92,9 +134,59 @@ export function buildHealth(
       p.garmin_acute_load = extreme ? 2480 : Math.round(420 + wave * 300 + rnd() * 80);
       // Immer eine Zufallszahl ziehen, damit die Freigabe die übrigen Werte nicht verschiebt.
       const hydrationDraw = rnd();
-      if (sensitiveReleased && hydrationStored && hydrationDraw < 0.8) {
+      if (s3('hydration') && hydrationDraw < 0.8) {
         p.hydration_ml = extreme ? 9850 : Math.round(1800 + rnd() * 1400);
       }
+      p.floors_up = extreme ? 1840 : Math.round(more() * 18);
+      p.floors_down = extreme ? 1790 : Math.round(more() * 16);
+      p.training_status =
+        extreme && i === 2 ? 'unknown_new_status' : STATUSES[Math.floor(i / 9) % STATUSES.length];
+      p.garmin_chronic_load = extreme ? 2310 : Math.round(380 + wave * 150);
+      p.garmin_acwr =
+        Math.round(((p.garmin_acute_load ?? 0) / (p.garmin_chronic_load || 1)) * 100) / 100;
+      p.run_acute_distance_km = extreme ? 412.6 : r1(28 + more() * 12);
+      p.run_impact_load = extreme ? 980000 : Math.round(31000 + more() * 9000);
+      p.run_tolerance_km = extreme ? 999.9 : r1(58 + more() * 6);
+      p.run_tolerance_level = (p.run_acute_distance_km ?? 0) > 36 ? 'medium_load' : 'low_load';
+      if (s3('nutrition') && more() < 0.85) {
+        p.calories_kcal = extreme ? 19800 : Math.round(2200 + more() * 600);
+        p.carbs_g = extreme ? 2950 : Math.round(260 + more() * 80);
+        p.fat_g = extreme ? 990 : Math.round(70 + more() * 25);
+        p.protein_g = extreme ? 880 : Math.round(110 + more() * 30);
+        p.calories_goal_kcal = 2600;
+      }
+      if (i === 0) {
+        p.load_aerobic_low = extreme ? 9800 : 310;
+        p.load_aerobic_low_min = 186;
+        p.load_aerobic_low_max = 420;
+        p.load_aerobic_high = extreme ? 9900 : 420;
+        p.load_aerobic_high_min = 240;
+        p.load_aerobic_high_max = 520;
+        p.load_anaerobic = extreme ? 0 : 60;
+        p.load_anaerobic_min = 80;
+        p.load_anaerobic_max = 230;
+        p.load_balance = extreme ? 'unknown_new_balance' : 'anaerobic_shortage';
+      }
+      if (i % 7 === 1) {
+        p.race_5k_s = extreme ? 86399 : Math.round(1320 - (28 - i) * 2);
+        p.race_10k_s = extreme ? 301 : Math.round(2760 - (28 - i) * 4);
+        p.race_half_s = Math.round(6120 - (28 - i) * 9);
+        p.race_marathon_s = Math.round(12900 - (28 - i) * 20);
+      }
+    }
+    // Körper und Blutdruck: Messungen an manchen Tagen über das ganze Jahr (S3).
+    if (!none && s3('body') && i % 4 === 0) {
+      p.weight_kg = extreme ? 399.9 : r1(74 - (364 - i) / 200 + (more() - 0.5));
+      p.bmi = extreme ? 99.9 : r1(23 - (364 - i) / 600);
+      p.body_fat_pct = extreme ? 99.9 : r1(16 - (364 - i) / 400);
+      p.body_water_pct = r1(58 + more());
+      p.bone_kg = r1(3.4 + more() * 0.2);
+      p.muscle_kg = r1(33 + (364 - i) / 500);
+    }
+    if (!none && s3('blood_pressure') && i % 6 === 0) {
+      p.systolic_mmhg = extreme ? 299 : Math.round(118 + more() * 10);
+      p.diastolic_mmhg = extreme ? 199 : Math.round(76 + more() * 8);
+      p.pulse_bpm = Math.round(52 + more() * 10);
     }
     // Wöchentliche Werte: Abgleich am selben Wochentag, Ausdauer und Berg ebenso.
     if (!none && variant !== 'sparse' && i % 7 === 3) {
@@ -108,5 +200,5 @@ export function buildHealth(
     }
     if (i < days && hasValue(p)) points.push(p);
   }
-  return { days, points, sensitive_released: sensitiveReleased };
+  return { days, points, sensitive_released: released.length > 0, released: [...released] };
 }

@@ -26,6 +26,7 @@ import {
   type RecoveryPage,
   type RecoveryRange,
   type HealthPage,
+  type SensitiveCategory,
   type HealthRange,
   type ExportResult,
   type GeneratePlanInput,
@@ -140,8 +141,8 @@ export class TauriBackend implements Backend {
     return call('get_health', { today, days });
   }
 
-  deleteSensitiveData(): Promise<number> {
-    return call('delete_sensitive_data');
+  deleteSensitiveData(category?: SensitiveCategory): Promise<number> {
+    return call('delete_sensitive_data', { category: category ?? null });
   }
 
   listActivities(filter: ActivityFilter): Promise<ActivityItem[]> {

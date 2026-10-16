@@ -399,10 +399,16 @@ async fn get_health(state: State<'_, AppState>, today: String, days: u32) -> Res
     .await
 }
 
-/// "S3-Werte löschen" (T39): entfernt alle Zeilen von `sensitive_day`.
+/// "Löschen" der S3-Werte (T39, je Bereich seit T40): ein Bereich oder ohne Angabe alle.
 #[tauri::command(rename_all = "snake_case")]
-async fn delete_sensitive_data(state: State<'_, AppState>) -> Result<u32> {
-    with_store(&state, service::health::delete_sensitive).await
+async fn delete_sensitive_data(
+    state: State<'_, AppState>,
+    category: Option<String>,
+) -> Result<u32> {
+    with_store(&state, move |store| {
+        service::health::delete_sensitive(store, category.as_deref())
+    })
+    .await
 }
 
 #[tauri::command(rename_all = "snake_case")]

@@ -151,6 +151,21 @@ describe('Seitenleiste und Start', () => {
 });
 
 describe('Einstellungen, Garmin seit T39', () => {
+  it('gibt jeden S3-Bereich einzeln frei, alle Standard aus (T40)', async () => {
+    const backend = mock();
+    render(SettingsView);
+    for (const c of ['body', 'blood_pressure', 'nutrition', 'hydration']) {
+      const toggle = (await screen.findByTestId(`garmin-share-${c}`)) as HTMLInputElement;
+      expect(toggle.checked, c).toBe(false);
+    }
+    await fireEvent.click(screen.getByTestId('garmin-share-blood_pressure'));
+    await waitFor(async () =>
+      expect((await backend.getSettings()).garmin_share_blood_pressure).toBe(true),
+    );
+    const settings = await backend.getSettings();
+    expect([settings.garmin_share_body, settings.garmin_share_nutrition]).toEqual([false, false]);
+  });
+
   it('gibt Hydration als Einstellung frei, Standard aus, und nennt die nie geholten Daten', async () => {
     const backend = mock();
     render(SettingsView);
@@ -172,15 +187,18 @@ describe('Einstellungen, Garmin seit T39', () => {
     await backend.garminSync('manual', () => {});
     const spy = vi.spyOn(backend, 'deleteSensitiveData');
     render(SettingsView);
-    await fireEvent.click(await screen.findByTestId('garmin-delete-sensitive'));
-    expect(screen.getByTestId('garmin-delete-confirm').textContent).toContain('nicht rückgängig');
+    await fireEvent.click(await screen.findByTestId('garmin-delete-hydration'));
+    const confirm = screen.getByTestId('garmin-delete-confirm');
+    expect(confirm.textContent).toContain('nicht rückgängig');
+    expect(confirm.textContent).toContain('Hydration');
     await fireEvent.click(screen.getByTestId('garmin-delete-no'));
     expect(spy).not.toHaveBeenCalled();
-    await fireEvent.click(screen.getByTestId('garmin-delete-sensitive'));
+    await fireEvent.click(screen.getByTestId('garmin-delete-hydration'));
     await fireEvent.click(screen.getByTestId('garmin-delete-yes'));
     const done = await screen.findByTestId('garmin-deleted');
-    expect(done.textContent).toMatch(/Gelöschte Tage mit Hydration: [1-9]\d*/);
+    expect(done.textContent).toMatch(/Gelöschte Tage: [1-9]\d*/);
     expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith('hydration');
     expect(screen.queryByTestId('garmin-delete-confirm')).toBeNull();
   });
 

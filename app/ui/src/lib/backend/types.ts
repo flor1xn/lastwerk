@@ -410,6 +410,10 @@ export interface Settings {
   garmin_sync_on_start: boolean;
   /** Hydration (S3) darf aus Garmin abgerufen werden (T39). Standard aus. */
   garmin_share_hydration: boolean;
+  /** Freigaben der übrigen S3-Bereiche (T40, Entscheidung E7). Standard aus. */
+  garmin_share_body: boolean;
+  garmin_share_blood_pressure: boolean;
+  garmin_share_nutrition: boolean;
   /** Abgeleitete Werte von einem älteren Programmstand (T33): beim Start einmal einlesen. */
   cache_outdated: boolean;
 }
@@ -427,6 +431,21 @@ export interface SettingsPatch {
   garmin_sync_on_start?: boolean;
   /** Gibt den Abruf der Hydration (S3) frei oder sperrt ihn (T39). */
   garmin_share_hydration?: boolean;
+  /** Freigaben der übrigen S3-Bereiche (T40). */
+  garmin_share_body?: boolean;
+  garmin_share_blood_pressure?: boolean;
+  garmin_share_nutrition?: boolean;
+}
+
+/** Bereiche sensibler Werte (S3), je Bereich freigegeben und gelöscht (T40, E7). */
+export const SENSITIVE_CATEGORIES = ['body', 'blood_pressure', 'nutrition', 'hydration'] as const;
+export type SensitiveCategory = (typeof SENSITIVE_CATEGORIES)[number];
+
+/** Einstellung, die einen S3-Bereich freigibt. */
+export function shareKey(
+  c: SensitiveCategory,
+): `garmin_share_${SensitiveCategory}` & keyof Settings & keyof SettingsPatch {
+  return `garmin_share_${c}`;
 }
 
 export interface AthleteInput {
@@ -1079,17 +1098,63 @@ export interface HealthPoint {
   endurance_score: number | null;
   hill_score: number | null;
   hydration_ml: number | null;
+  // Seit T40.
+  floors_up: number | null;
+  floors_down: number | null;
+  /** Garmins Trainingsstatus als Schlüssel, zum Beispiel `productive`. */
+  training_status: string | null;
+  garmin_chronic_load: number | null;
+  garmin_acwr: number | null;
+  load_aerobic_low: number | null;
+  load_aerobic_low_min: number | null;
+  load_aerobic_low_max: number | null;
+  load_aerobic_high: number | null;
+  load_aerobic_high_min: number | null;
+  load_aerobic_high_max: number | null;
+  load_anaerobic: number | null;
+  load_anaerobic_min: number | null;
+  load_anaerobic_max: number | null;
+  /** Garmins Hinweis zum Belastungsfokus als Schlüssel. */
+  load_balance: string | null;
+  race_5k_s: number | null;
+  race_10k_s: number | null;
+  race_half_s: number | null;
+  race_marathon_s: number | null;
+  run_acute_distance_km: number | null;
+  run_impact_load: number | null;
+  run_tolerance_km: number | null;
+  run_tolerance_level: string | null;
+  weight_kg: number | null;
+  bmi: number | null;
+  body_fat_pct: number | null;
+  body_water_pct: number | null;
+  bone_kg: number | null;
+  muscle_kg: number | null;
+  systolic_mmhg: number | null;
+  diastolic_mmhg: number | null;
+  pulse_bpm: number | null;
+  calories_kcal: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  protein_g: number | null;
+  calories_goal_kcal: number | null;
 }
 
+/** Textfelder eines Tages der Seite "Gesundheit" (Garmins Schlüssel). */
+export type HealthTextKey =
+  'readiness_level' | 'training_status' | 'load_balance' | 'run_tolerance_level';
+
 /** Zahlenfelder eines Tages der Seite "Gesundheit". */
-export type HealthNumberKey = Exclude<keyof HealthPoint, 'date' | 'readiness_level'>;
+export type HealthNumberKey = Exclude<keyof HealthPoint, 'date' | HealthTextKey>;
 
 /** Grundlage der Seite "Gesundheit" (T39). Nur Tage mit mindestens einem Wert, aufsteigend. */
 export interface HealthPage {
   days: number;
   points: HealthPoint[];
-  /** Hydration (S3) ist freigegeben, sonst ist `hydration_ml` immer null. */
+  /** Mindestens ein S3-Bereich ist freigegeben. */
   sensitive_released: boolean;
+  /** Freigegebene S3-Bereiche; die Werte der übrigen sind immer null (T40). */
+  released: SensitiveCategory[];
 }
 
 /** Summen eines Tages und einer Sportart (T32). `load` nur aus berechenbaren Lasten. */
@@ -1130,8 +1195,9 @@ export interface Backend {
   getRecovery(today: string, days: RecoveryRange): Promise<RecoveryPage>;
   /** Tages- und Trainingswerte aus Garmin für "Gesundheit" (T39). */
   getHealth(today: string, days: HealthRange): Promise<HealthPage>;
-  /** Löscht alle S3-Werte (Hydration) und liefert die Zahl gelöschter Tage (T39). */
-  deleteSensitiveData(): Promise<number>;
+  /** Löscht die S3-Werte eines Bereichs, ohne Angabe aller Bereiche, und liefert die Zahl
+   * gelöschter Tage (T39, je Bereich seit T40). */
+  deleteSensitiveData(category?: SensitiveCategory): Promise<number>;
   listActivities(filter: ActivityFilter): Promise<ActivityItem[]>;
   getActivity(id: number): Promise<ActivityDetail>;
   listThresholds(): Promise<ThresholdList>;

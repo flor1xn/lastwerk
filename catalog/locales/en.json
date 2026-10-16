@@ -760,16 +760,22 @@
         "thresholds": "thresholds changed from Garmin: {n}",
         "recomputed": "activities recomputed: {n}"
       },
-      "hydration": {
-        "toggle": "Fetch hydration from Garmin",
-        "hint": "Sensitive health data: Lastwerk stores it separately and never passes it to the MCP server. Off by default.",
-        "delete": "Delete hydration",
-        "delete_confirm": "Delete all stored hydration values? This cannot be undone. If the release stays on, the next sync fetches values again.",
+      "never_fetched": "Lastwerk never fetches menstrual or pregnancy data.",
+      "s3": {
+        "title": "Sensitive values (S3)",
+        "toggle": {
+          "body": "Fetch weight and body values",
+          "blood_pressure": "Fetch blood pressure",
+          "nutrition": "Fetch nutrition",
+          "hydration": "Fetch hydration"
+        },
+        "hint": "Sensitive health data, allowed per area. Lastwerk fetches it only when allowed, stores it separately and never gives it to the MCP server. Off by default.",
+        "delete": "Delete",
+        "delete_confirm": "Delete all stored values for {name}? This cannot be undone. If the permission stays on, the next sync fetches values again.",
         "delete_yes": "Delete",
         "delete_no": "Cancel",
-        "deleted": "Deleted days with hydration: {n}"
-      },
-      "never_fetched": "Lastwerk never fetches menstrual or pregnancy data."
+        "deleted": "Deleted days: {n}"
+      }
     },
     "planner": {
       "title": "Your plan in three questions",
@@ -1162,8 +1168,6 @@
       "daily_statement": "Values per day from Garmin. Days without a value stay gaps.",
       "training": "Training",
       "training_statement": "Garmin's own estimates. Lastwerk only shows them and calculates with its own load.",
-      "hydration": "Hydration",
-      "hydration_statement": "Sensitive values, fetched only after you allow it and stored separately.",
       "note": "These values describe training data, not health in a medical sense.",
       "as_of": "As of {date}",
       "from_garmin": "from Garmin",
@@ -1188,7 +1192,35 @@
         "vo2max_cycling": "VO2max cycling",
         "endurance_score": "Endurance score",
         "hill_score": "Hill score",
-        "hydration_ml": "Hydration"
+        "hydration_ml": "Hydration",
+        "floors_up": "Floors up",
+        "floors_down": "Floors down",
+        "garmin_chronic_load": "Garmin's chronic load",
+        "garmin_acwr": "Acute to chronic ratio",
+        "load_aerobic_low": "Low aerobic (4 weeks)",
+        "load_aerobic_high": "High aerobic (4 weeks)",
+        "load_anaerobic": "Anaerobic (4 weeks)",
+        "race_5k_s": "5 km",
+        "race_10k_s": "10 km",
+        "race_half_s": "Half marathon",
+        "race_marathon_s": "Marathon",
+        "run_acute_distance_km": "Running distance 7 days",
+        "run_tolerance_km": "Running tolerance 7 days",
+        "run_impact_load": "Impact load",
+        "weight_kg": "Weight",
+        "bmi": "BMI",
+        "body_fat_pct": "Body fat",
+        "body_water_pct": "Body water",
+        "muscle_kg": "Muscle mass",
+        "bone_kg": "Bone mass",
+        "systolic_mmhg": "Systolic",
+        "diastolic_mmhg": "Diastolic",
+        "pulse_bpm": "Pulse",
+        "calories_kcal": "Calories",
+        "calories_goal_kcal": "Calorie goal",
+        "carbs_g": "Carbohydrates",
+        "fat_g": "Fat",
+        "protein_g": "Protein"
       },
       "unit": {
         "km": "km",
@@ -1198,7 +1230,12 @@
         "min": "min",
         "years": "years",
         "vo2": "ml/kg/min",
-        "ml": "ml"
+        "ml": "ml",
+        "floors": "floors",
+        "kg": "kg",
+        "mmhg": "mmHg",
+        "kcal": "kcal",
+        "g": "g"
       },
       "level": {
         "POOR": "Poor",
@@ -1206,6 +1243,43 @@
         "MODERATE": "Moderate",
         "HIGH": "High",
         "PRIME": "Prime"
+      },
+      "status_title": "Training status",
+      "status_statement": "Garmin's training status with acute and chronic load and the load focus of the last four weeks. For viewing only, Lastwerk computes its own load.",
+      "balance_label": "Load focus",
+      "target": "Target {min} to {max}",
+      "race": "Race predictions",
+      "race_statement": "Garmin's estimate of race times from VO2max and training.",
+      "tolerance_title": "Running tolerance",
+      "tolerance_statement": "Running distance of the last 7 days compared with what Garmin considers tolerable.",
+      "s3_statement": "Sensitive values, fetched only after you allow them in Settings and stored separately.",
+      "s3": {
+        "body": "Body",
+        "blood_pressure": "Blood pressure",
+        "nutrition": "Nutrition",
+        "hydration": "Hydration"
+      },
+      "status": {
+        "productive": "Productive",
+        "maintaining": "Maintaining",
+        "recovery": "Recovery",
+        "peaking": "Peaking",
+        "unproductive": "Unproductive",
+        "detraining": "Detraining",
+        "overreaching": "Overreaching",
+        "strained": "Strained",
+        "no_status": "No status"
+      },
+      "balance": {
+        "balanced": "Balanced",
+        "aerobic_low_shortage": "Low aerobic shortage",
+        "aerobic_high_shortage": "High aerobic shortage",
+        "anaerobic_shortage": "Anaerobic shortage"
+      },
+      "tolerance": {
+        "low_load": "Low load",
+        "medium_load": "Medium load",
+        "high_load": "High load"
       }
     }
   },

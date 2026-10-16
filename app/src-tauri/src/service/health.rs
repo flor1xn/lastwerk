@@ -7,7 +7,8 @@ use std::collections::BTreeMap;
 
 use chrono::{NaiveDate, TimeDelta};
 use lastwerk_store::{
-    SETTING_GARMIN_SHARE_HYDRATION, SensitiveDay, Store, TrainingDay, WellnessDay,
+    BodyDay, BpDay, DayRecord, NutritionDay, SensitiveCategory, SensitiveDay, Store, TrainingDay,
+    WellnessDay,
 };
 
 use crate::dto::{HealthPage, HealthPoint};
@@ -30,34 +31,27 @@ pub fn health(store: &Store, today: &str, days: u32) -> Result<HealthPage> {
         return Err(AppError::new("invalid_value"));
     }
     let from = today - TimeDelta::days(i64::from(days) - 1);
-    let released = store
-        .get_setting(SETTING_GARMIN_SHARE_HYDRATION)?
-        .as_deref()
-        == Some("true");
-    let wellness: BTreeMap<NaiveDate, WellnessDay> = store
-        .garmin_rows::<WellnessDay>(from, today)?
-        .into_iter()
-        .map(|r| (r.date, r))
-        .collect();
-    let training: BTreeMap<NaiveDate, TrainingDay> = store
-        .garmin_rows::<TrainingDay>(from, today)?
-        .into_iter()
-        .map(|r| (r.date, r))
-        .collect();
-    // S3 erscheint nur, solange die Freigabe gilt, auch wenn noch Zeilen da sind.
-    let sensitive: BTreeMap<NaiveDate, SensitiveDay> = if released {
-        store
-            .garmin_rows::<SensitiveDay>(from, today)?
-            .into_iter()
-            .map(|r| (r.date, r))
-            .collect()
-    } else {
-        BTreeMap::new()
-    };
+    let mut released = Vec::new();
+    for c in SensitiveCategory::ALL {
+        if store.sensitive_released(c)? {
+            released.push(c);
+        }
+    }
+    let wellness = by_date::<WellnessDay>(store, from, today, true)?;
+    let training = by_date::<TrainingDay>(store, from, today, true)?;
+    // S3 erscheint nur, solange die Freigabe des Bereichs gilt, auch wenn noch Zeilen da sind.
+    let on = |c| released.contains(&c);
+    let sensitive = by_date::<SensitiveDay>(store, from, today, on(SensitiveCategory::Hydration))?;
+    let body = by_date::<BodyDay>(store, from, today, on(SensitiveCategory::Body))?;
+    let bp = by_date::<BpDay>(store, from, today, on(SensitiveCategory::BloodPressure))?;
+    let food = by_date::<NutritionDay>(store, from, today, on(SensitiveCategory::Nutrition))?;
     let mut dates: Vec<NaiveDate> = wellness
         .keys()
         .chain(training.keys())
         .chain(sensitive.keys())
+        .chain(body.keys())
+        .chain(bp.keys())
+        .chain(food.keys())
         .copied()
         .collect();
     dates.sort();
@@ -68,6 +62,10 @@ pub fn health(store: &Store, today: &str, days: u32) -> Result<HealthPage> {
             let w = wellness.get(&date);
             let t = training.get(&date);
             let h = sensitive.get(&date);
+            let b = body.get(&date);
+            let p = bp.get(&date);
+            let n = food.get(&date);
+            let km = |m: Option<f64>| m.map(|m| m / 1000.0);
             HealthPoint {
                 date: date.to_string(),
                 steps: round(w.and_then(|w| w.steps), 0),
@@ -91,19 +89,105 @@ pub fn health(store: &Store, today: &str, days: u32) -> Result<HealthPage> {
                 endurance_score: round(t.and_then(|t| t.endurance_score), 0),
                 hill_score: round(t.and_then(|t| t.hill_score), 0),
                 hydration_ml: round(h.and_then(|h| h.hydration_ml), 0),
+                floors_up: round(w.and_then(|w| w.floors_up), 0),
+                floors_down: round(w.and_then(|w| w.floors_down), 0),
+                training_status: t.and_then(|t| t.training_status.clone()),
+                garmin_chronic_load: round(t.and_then(|t| t.garmin_chronic_load), 0),
+                garmin_acwr: round(t.and_then(|t| t.garmin_acwr), 2),
+                load_aerobic_low: round(t.and_then(|t| t.load_aerobic_low), 0),
+                load_aerobic_low_min: round(t.and_then(|t| t.load_aerobic_low_min), 0),
+                load_aerobic_low_max: round(t.and_then(|t| t.load_aerobic_low_max), 0),
+                load_aerobic_high: round(t.and_then(|t| t.load_aerobic_high), 0),
+                load_aerobic_high_min: round(t.and_then(|t| t.load_aerobic_high_min), 0),
+                load_aerobic_high_max: round(t.and_then(|t| t.load_aerobic_high_max), 0),
+                load_anaerobic: round(t.and_then(|t| t.load_anaerobic), 0),
+                load_anaerobic_min: round(t.and_then(|t| t.load_anaerobic_min), 0),
+                load_anaerobic_max: round(t.and_then(|t| t.load_anaerobic_max), 0),
+                load_balance: t.and_then(|t| t.load_balance.clone()),
+                race_5k_s: round(t.and_then(|t| t.race_5k_s), 0),
+                race_10k_s: round(t.and_then(|t| t.race_10k_s), 0),
+                race_half_s: round(t.and_then(|t| t.race_half_s), 0),
+                race_marathon_s: round(t.and_then(|t| t.race_marathon_s), 0),
+                run_acute_distance_km: round(km(t.and_then(|t| t.run_acute_distance_m)), 1),
+                run_impact_load: round(t.and_then(|t| t.run_impact_load), 0),
+                run_tolerance_km: round(km(t.and_then(|t| t.run_tolerance_m)), 1),
+                run_tolerance_level: t.and_then(|t| t.run_tolerance_level.clone()),
+                weight_kg: round(b.and_then(|b| b.weight_kg), 1),
+                bmi: round(b.and_then(|b| b.bmi), 1),
+                body_fat_pct: round(b.and_then(|b| b.body_fat_pct), 1),
+                body_water_pct: round(b.and_then(|b| b.body_water_pct), 1),
+                bone_kg: round(b.and_then(|b| b.bone_kg), 1),
+                muscle_kg: round(b.and_then(|b| b.muscle_kg), 1),
+                systolic_mmhg: round(p.and_then(|p| p.systolic_mmhg), 0),
+                diastolic_mmhg: round(p.and_then(|p| p.diastolic_mmhg), 0),
+                pulse_bpm: round(p.and_then(|p| p.pulse_bpm), 0),
+                calories_kcal: round(n.and_then(|n| n.calories_kcal), 0),
+                carbs_g: round(n.and_then(|n| n.carbs_g), 0),
+                fat_g: round(n.and_then(|n| n.fat_g), 0),
+                protein_g: round(n.and_then(|n| n.protein_g), 0),
+                calories_goal_kcal: round(n.and_then(|n| n.calories_goal_kcal), 0),
             }
         })
         .collect();
     Ok(HealthPage {
         days,
         points,
-        sensitive_released: released,
+        sensitive_released: !released.is_empty(),
+        released: released.iter().map(|c| c.as_str().to_owned()).collect(),
     })
 }
 
-/// "S3-Werte löschen" in den Einstellungen. Gibt die Zahl der gelöschten Tage zurück.
-pub fn delete_sensitive(store: &mut Store) -> Result<u32> {
-    Ok(store.delete_sensitive_days()?)
+/// Zeilen einer Tabelle nach Datum, leer, wenn `read` nicht gesetzt ist.
+fn by_date<T: DayRecord + Dated>(
+    store: &Store,
+    from: NaiveDate,
+    to: NaiveDate,
+    read: bool,
+) -> Result<BTreeMap<NaiveDate, T>> {
+    if !read {
+        return Ok(BTreeMap::new());
+    }
+    Ok(store
+        .garmin_rows::<T>(from, to)?
+        .into_iter()
+        .map(|r| (r.date(), r))
+        .collect())
+}
+
+/// Datum einer Tageszeile.
+trait Dated {
+    fn date(&self) -> NaiveDate;
+}
+
+macro_rules! dated {
+    ($($t:ty),*) => {
+        $(impl Dated for $t {
+            fn date(&self) -> NaiveDate {
+                self.date
+            }
+        })*
+    };
+}
+dated!(
+    WellnessDay,
+    TrainingDay,
+    SensitiveDay,
+    BodyDay,
+    BpDay,
+    NutritionDay
+);
+
+/// "Löschen" der S3-Werte in den Einstellungen: ein Bereich (`hydration`, `body`,
+/// `blood_pressure`, `nutrition`) oder ohne Angabe alle. Gibt die Zahl der gelöschten Tage
+/// zurück.
+pub fn delete_sensitive(store: &mut Store, category: Option<&str>) -> Result<u32> {
+    match category {
+        None => Ok(store.delete_sensitive_days()?),
+        Some(c) => {
+            let c = SensitiveCategory::parse(c).ok_or_else(|| AppError::new("invalid_value"))?;
+            Ok(store.delete_sensitive(c)?)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -145,14 +229,32 @@ mod tests {
         assert_eq!(page.points[1].vo2max_running, Some(52.0));
 
         store
-            .set_setting(SETTING_GARMIN_SHARE_HYDRATION, "true")
+            .set_setting(SensitiveCategory::Hydration.setting(), "true")
             .unwrap();
         let page = health(&store, "2026-10-16", 30).unwrap();
         assert!(page.sensitive_released);
+        assert_eq!(page.released, ["hydration"]);
         assert_eq!(page.points.len(), 3);
         assert_eq!(page.points[1].hydration_ml, Some(1500.0));
 
-        assert_eq!(delete_sensitive(&mut store).unwrap(), 1);
+        // Ein Gewicht erscheint erst mit der Freigabe "Körper", nicht mit der der Hydration.
+        let mut b = BodyDay::empty(d("2026-10-11"), GARMIN_APP_SOURCE, at());
+        b.weight_kg = Some(72.44);
+        store.merge_garmin_rows(&[b]).unwrap();
+        assert_eq!(
+            health(&store, "2026-10-16", 30).unwrap().points[1].weight_kg,
+            None
+        );
+        store
+            .set_setting(SensitiveCategory::Body.setting(), "true")
+            .unwrap();
+        let page = health(&store, "2026-10-16", 30).unwrap();
+        assert_eq!(page.points[1].weight_kg, Some(72.4));
+        assert_eq!(page.released, ["hydration", "body"]);
+
+        assert!(delete_sensitive(&mut store, Some("menstrual")).is_err());
+        assert_eq!(delete_sensitive(&mut store, Some("body")).unwrap(), 1);
+        assert_eq!(delete_sensitive(&mut store, None).unwrap(), 1);
         assert_eq!(health(&store, "2026-10-16", 30).unwrap().points.len(), 2);
         assert!(health(&store, "2026-10-16", 31).is_err());
     }

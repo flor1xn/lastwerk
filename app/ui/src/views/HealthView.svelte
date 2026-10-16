@@ -6,6 +6,8 @@
     type HealthPage,
     type HealthPoint,
     type HealthRange,
+    type HealthTextKey,
+    type SensitiveCategory,
   } from '../lib/backend/types';
   import { denseSeries } from '../lib/dashboard';
   import { daysBetween, localIso } from '../lib/dates';
@@ -14,7 +16,7 @@
   import Section from '../lib/components/Section.svelte';
   import Segmented from '../lib/components/Segmented.svelte';
   import Sparkline from '../lib/components/Sparkline.svelte';
-  import { formatDate, formatNumber } from '../lib/format';
+  import { formatDate, formatDuration, formatNumber } from '../lib/format';
   import { hasKey, locale, t } from '../lib/i18n';
   import { Loader } from '../lib/loader.svelte';
   import { dataVersion, view } from '../lib/state';
@@ -44,6 +46,12 @@
     unit?: string;
     /** Garmins eigene Zahl, nicht von Lastwerk gerechnet und nie Rechengrundlage. */
     garmin?: boolean;
+    /** Sekunden als h:mm:ss statt als Zahl (Rennprognosen). */
+    duration?: boolean;
+    /** Garmins Schlüssel desselben Tages, als Text neben der Beschriftung. */
+    text?: HealthTextKey;
+    /** Garmins Zielspanne desselben Tages (Minimum, Maximum), als Text unter dem Wert. */
+    target?: [HealthNumberKey, HealthNumberKey];
   }
 
   const DAILY: MetricDef[] = [
@@ -59,17 +67,91 @@
     { field: 'intensity_vigorous_min', digits: 0, unit: 'min' },
     { field: 'stress_avg', digits: 0 },
     { field: 'stress_max', digits: 0 },
+    { field: 'floors_up', digits: 0, unit: 'floors' },
+    { field: 'floors_down', digits: 0, unit: 'floors' },
   ];
   const TRAINING: MetricDef[] = [
-    { field: 'readiness_score', digits: 0, garmin: true },
-    { field: 'garmin_acute_load', digits: 0, garmin: true },
+    { field: 'readiness_score', digits: 0, garmin: true, text: 'readiness_level' },
     { field: 'fitness_age', digits: 0, unit: 'years', garmin: true },
     { field: 'vo2max_running', digits: 1, unit: 'vo2', garmin: true },
     { field: 'vo2max_cycling', digits: 1, unit: 'vo2', garmin: true },
     { field: 'endurance_score', digits: 0, garmin: true },
     { field: 'hill_score', digits: 0, garmin: true },
   ];
-  const HYDRATION: MetricDef[] = [{ field: 'hydration_ml', digits: 0, unit: 'ml' }];
+  // Seit T40: Trainingsstatus mit Lasten und Belastungsfokus, Rennprognosen, Lauftoleranz.
+  const STATUS: MetricDef[] = [
+    { field: 'garmin_acute_load', digits: 0, garmin: true, text: 'training_status' },
+    { field: 'garmin_chronic_load', digits: 0, garmin: true },
+    { field: 'garmin_acwr', digits: 2, garmin: true },
+    {
+      field: 'load_aerobic_low',
+      digits: 0,
+      garmin: true,
+      target: ['load_aerobic_low_min', 'load_aerobic_low_max'],
+    },
+    {
+      field: 'load_aerobic_high',
+      digits: 0,
+      garmin: true,
+      target: ['load_aerobic_high_min', 'load_aerobic_high_max'],
+    },
+    {
+      field: 'load_anaerobic',
+      digits: 0,
+      garmin: true,
+      target: ['load_anaerobic_min', 'load_anaerobic_max'],
+    },
+  ];
+  const RACE: MetricDef[] = [
+    { field: 'race_5k_s', digits: 0, garmin: true, duration: true },
+    { field: 'race_10k_s', digits: 0, garmin: true, duration: true },
+    { field: 'race_half_s', digits: 0, garmin: true, duration: true },
+    { field: 'race_marathon_s', digits: 0, garmin: true, duration: true },
+  ];
+  const TOLERANCE: MetricDef[] = [
+    {
+      field: 'run_acute_distance_km',
+      digits: 1,
+      unit: 'km',
+      garmin: true,
+      text: 'run_tolerance_level',
+    },
+    { field: 'run_tolerance_km', digits: 1, unit: 'km', garmin: true },
+    { field: 'run_impact_load', digits: 0, garmin: true },
+  ];
+  // Sensible Werte (S3) je Bereich, nur mit Freigabe (T40, Entscheidung E7).
+  const SENSITIVE: { category: SensitiveCategory; defs: MetricDef[] }[] = [
+    {
+      category: 'body',
+      defs: [
+        { field: 'weight_kg', digits: 1, unit: 'kg' },
+        { field: 'bmi', digits: 1 },
+        { field: 'body_fat_pct', digits: 1, unit: 'pct' },
+        { field: 'body_water_pct', digits: 1, unit: 'pct' },
+        { field: 'muscle_kg', digits: 1, unit: 'kg' },
+        { field: 'bone_kg', digits: 1, unit: 'kg' },
+      ],
+    },
+    {
+      category: 'blood_pressure',
+      defs: [
+        { field: 'systolic_mmhg', digits: 0, unit: 'mmhg' },
+        { field: 'diastolic_mmhg', digits: 0, unit: 'mmhg' },
+        { field: 'pulse_bpm', digits: 0, unit: 'bpm' },
+      ],
+    },
+    {
+      category: 'nutrition',
+      defs: [
+        { field: 'calories_kcal', digits: 0, unit: 'kcal' },
+        { field: 'calories_goal_kcal', digits: 0, unit: 'kcal' },
+        { field: 'carbs_g', digits: 0, unit: 'g' },
+        { field: 'fat_g', digits: 0, unit: 'g' },
+        { field: 'protein_g', digits: 0, unit: 'g' },
+      ],
+    },
+    { category: 'hydration', defs: [{ field: 'hydration_ml', digits: 0, unit: 'ml' }] },
+  ];
 
   interface Shown extends MetricDef {
     latest: HealthPoint;
@@ -106,14 +188,39 @@
 
   const daily = $derived(shown(DAILY));
   const training = $derived(shown(TRAINING));
-  const hydration = $derived(data?.sensitive_released ? shown(HYDRATION) : []);
-  const any = $derived(daily.length + training.length + hydration.length > 0);
+  const status = $derived(shown(STATUS));
+  const race = $derived(shown(RACE));
+  const tolerance = $derived(shown(TOLERANCE));
+  const sensitive = $derived(
+    SENSITIVE.filter((g) => data?.released.includes(g.category))
+      .map((g) => ({ category: g.category, list: shown(g.defs) }))
+      .filter((g) => g.list.length > 0),
+  );
+  const any = $derived(
+    daily.length + training.length + status.length + race.length + tolerance.length > 0 ||
+      sensitive.length > 0,
+  );
+  /** Garmins Hinweis zum Belastungsfokus, vom jüngsten Tag mit Hinweis. */
+  const balance = $derived(
+    [...points].reverse().find((p) => p.load_balance !== null)?.load_balance ?? null,
+  );
 
-  // Garmins Stufe der Trainingsbereitschaft: bekannte Stufen aus der Sprachdatei, sonst der
+  // Garmins Schlüssel (Stufe, Status, Hinweis): bekannte aus der Sprachdatei, sonst der
   // Schlüssel lesbar gemacht (nie als HTML).
-  function levelText(level: string): string {
-    const key = `ui.health.level.${level}`;
-    return hasKey('de', key) ? $t(key) : level.replace(/_/g, ' ').trim();
+  const TEXT_NAMESPACE: Record<HealthTextKey, string> = {
+    readiness_level: 'level',
+    training_status: 'status',
+    load_balance: 'balance',
+    run_tolerance_level: 'tolerance',
+  };
+  function keyText(kind: HealthTextKey, value: string): string {
+    const key = `ui.health.${TEXT_NAMESPACE[kind]}.${value}`;
+    return hasKey('de', key) ? $t(key) : value.replace(/_/g, ' ').trim().toLowerCase();
+  }
+
+  function valueText(m: Shown): string {
+    const v = m.latest[m.field];
+    return m.duration ? formatDuration(v) : formatNumber(v, $locale, m.digits);
   }
 
   const rangeOptions = $derived(
@@ -126,18 +233,31 @@
     {#each list as m (m.field)}
       <li class="cell" data-testid={`health-${m.field}`}>
         <Metric
-          value={formatNumber(m.latest[m.field], $locale, m.digits)}
+          value={valueText(m)}
           unit={m.unit ? $t(`ui.health.unit.${m.unit}`) : undefined}
           label={$t(`ui.health.metric.${m.field}`)}
         >
           {#snippet extra()}
-            {#if m.field === 'readiness_score' && m.latest.readiness_level}
-              <span class="level" data-testid="health-readiness-level"
-                >{levelText(m.latest.readiness_level)}</span
+            {@const text = m.text ? m.latest[m.text] : null}
+            {#if m.text && text}
+              <span class="level" data-testid={`health-${m.text.replace(/_/g, '-')}`}
+                >{keyText(m.text, text)}</span
               >
             {/if}
           {/snippet}
         </Metric>
+        {#if m.target}
+          {@const lo = m.latest[m.target[0]]}
+          {@const hi = m.latest[m.target[1]]}
+          {#if lo !== null && hi !== null}
+            <p class="caption" data-testid={`health-${m.field}-target`}>
+              {$t('ui.health.target', {
+                min: formatNumber(lo, $locale, 0),
+                max: formatNumber(hi, $locale, 0),
+              })}
+            </p>
+          {/if}
+        {/if}
         <p class="caption muted">
           {$t('ui.health.as_of', {
             date: formatDate(m.latest.date, $locale),
@@ -201,15 +321,47 @@
         {@render metrics(training)}
       </Section>
     {/if}
-    {#if hydration.length > 0}
+    {#if status.length > 0}
       <Section
-        label={$t('ui.health.hydration')}
-        statement={$t('ui.health.hydration_statement')}
-        testid="health-hydration"
+        label={$t('ui.health.status_title')}
+        statement={$t('ui.health.status_statement')}
+        testid="health-status"
       >
-        {@render metrics(hydration)}
+        {@render metrics(status)}
+        {#if balance}
+          <p class="balance" data-testid="health-balance">
+            {$t('ui.health.balance_label')}: {keyText('load_balance', balance)}
+          </p>
+        {/if}
       </Section>
     {/if}
+    {#if race.length > 0}
+      <Section
+        label={$t('ui.health.race')}
+        statement={$t('ui.health.race_statement')}
+        testid="health-race"
+      >
+        {@render metrics(race)}
+      </Section>
+    {/if}
+    {#if tolerance.length > 0}
+      <Section
+        label={$t('ui.health.tolerance_title')}
+        statement={$t('ui.health.tolerance_statement')}
+        testid="health-tolerance"
+      >
+        {@render metrics(tolerance)}
+      </Section>
+    {/if}
+    {#each sensitive as group (group.category)}
+      <Section
+        label={$t(`ui.health.s3.${group.category}`)}
+        statement={$t('ui.health.s3_statement')}
+        testid={`health-${group.category.replace(/_/g, '-')}`}
+      >
+        {@render metrics(group.list)}
+      </Section>
+    {/each}
     <p class="note muted">{$t('ui.health.note')}</p>
   {/if}
 </div>
@@ -269,6 +421,11 @@
     font-size: var(--fs-label);
     line-height: var(--lh-tight);
     font-weight: var(--fw-semibold);
+    overflow-wrap: anywhere;
+  }
+
+  .balance {
+    margin: var(--space-4) 0 0;
     overflow-wrap: anywhere;
   }
 

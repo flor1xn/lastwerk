@@ -22,6 +22,10 @@ import {
   PERF_RANGES,
   RECOVERY_RANGES,
   HEALTH_RANGES,
+  SENSITIVE_CATEGORIES,
+  shareKey,
+  type SensitiveCategory,
+  type HealthPoint,
   SPORTS,
   type ActivityDetail,
   type ActivityFilter,
@@ -268,6 +272,9 @@ export class MockBackend implements Backend {
       version: '0.0.0',
       garmin_sync_on_start: true,
       garmin_share_hydration: false,
+      garmin_share_body: false,
+      garmin_share_blood_pressure: false,
+      garmin_share_nutrition: false,
       cache_outdated: options.cacheOutdated ?? false,
     };
     this.garmin.connected = options.garminConnected ?? false;
@@ -362,11 +369,9 @@ export class MockBackend implements Backend {
     ) {
       throw err('invalid_setting');
     }
-    if (
-      patch.garmin_share_hydration !== undefined &&
-      typeof patch.garmin_share_hydration !== 'boolean'
-    ) {
-      throw err('invalid_setting');
+    for (const c of SENSITIVE_CATEGORIES) {
+      const v = patch[shareKey(c)];
+      if (v !== undefined && typeof v !== 'boolean') throw err('invalid_setting');
     }
     if (patch.pmc) {
       const { tau_ctl_d, tau_atl_d, ctl0, atl0 } = patch.pmc;
@@ -386,8 +391,9 @@ export class MockBackend implements Backend {
     if (patch.garmin_sync_on_start !== undefined) {
       this.settings.garmin_sync_on_start = patch.garmin_sync_on_start;
     }
-    if (patch.garmin_share_hydration !== undefined) {
-      this.settings.garmin_share_hydration = patch.garmin_share_hydration;
+    for (const c of SENSITIVE_CATEGORIES) {
+      const v = patch[shareKey(c)];
+      if (v !== undefined) this.settings[shareKey(c)] = v;
     }
     return structuredClone(this.settings);
   }
@@ -707,8 +713,12 @@ export class MockBackend implements Backend {
     return buildRecovery(today, days, this.dashboardVariant, mulberry32);
   }
 
-  /** Hydration (S3) liegt vor: nur nach Freigabe und einem Abgleich, bis zum Löschen. */
-  private hydrationStored = false;
+  /** S3-Bereiche, deren Werte vorliegen: nur nach Freigabe und einem Abgleich, bis zum Löschen. */
+  private sensitiveStored = new Set<SensitiveCategory>();
+
+  private released(): SensitiveCategory[] {
+    return SENSITIVE_CATEGORIES.filter((c) => this.settings[shareKey(c)]);
+  }
 
   async getHealth(today: string, days: HealthRange): Promise<HealthPage> {
     if (!isIsoDate(today)) throw err('invalid_date');
@@ -717,18 +727,38 @@ export class MockBackend implements Backend {
       today,
       days,
       this.dashboardVariant,
-      this.settings.garmin_share_hydration,
-      this.hydrationStored,
+      this.released(),
+      this.sensitiveStored,
       mulberry32,
     );
   }
 
-  async deleteSensitiveData(): Promise<number> {
-    const stored = this.hydrationStored
-      ? buildHealth(this.today, 365, this.dashboardVariant, true, true, mulberry32)
-      : null;
-    this.hydrationStored = false;
-    return stored ? stored.points.filter((p) => p.hydration_ml !== null).length : 0;
+  async deleteSensitiveData(category?: SensitiveCategory): Promise<number> {
+    if (category !== undefined && !SENSITIVE_CATEGORIES.includes(category)) {
+      throw err('invalid_value');
+    }
+    const targets = category ? [category] : [...SENSITIVE_CATEGORIES];
+    const field: Record<SensitiveCategory, keyof HealthPoint> = {
+      hydration: 'hydration_ml',
+      body: 'weight_kg',
+      blood_pressure: 'systolic_mmhg',
+      nutrition: 'calories_kcal',
+    };
+    let n = 0;
+    for (const c of targets) {
+      if (!this.sensitiveStored.has(c)) continue;
+      const page = buildHealth(
+        this.today,
+        365,
+        this.dashboardVariant,
+        [c],
+        new Set([c]),
+        mulberry32,
+      );
+      n += page.points.filter((p) => p[field[c]] !== null).length;
+      this.sensitiveStored.delete(c);
+    }
+    return n;
   }
 
   async getDashboard(today: string): Promise<Dashboard> {
@@ -1039,9 +1069,10 @@ export class MockBackend implements Backend {
       const abort = this.garmin.abortCode;
       this.garmin.syncs += 1;
       if (!abort) this.garmin.lastSync = this.today;
-      // Hydration kommt nur mit Freigabe (S3, T39).
-      const sensitive = !abort && this.settings.garmin_share_hydration;
-      if (sensitive) this.hydrationStored = true;
+      // S3 kommt nur mit Freigabe je Bereich (T39, T40).
+      const released = abort ? [] : this.released();
+      for (const c of released) this.sensitiveStored.add(c);
+      const sensitive = released.length > 0;
       return {
         window_start: addDays(this.today, first ? -365 : -7),
         activities_listed: 2 + fresh,
