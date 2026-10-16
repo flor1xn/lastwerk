@@ -39,6 +39,9 @@ export function createBackend(): Backend {
   const mock = new MockBackend({
     importStepMs: 40,
     onboarded: !fresh,
+    // Frische Installation: Nach dem ersten Abgleich schlägt die Historie die drei Fragen vor.
+    history: fresh ? { sport: 'running', hours: 7.5, days: [1, 3, 5, 6], weeks: 12 } : null,
+    historyAfterSync: fresh,
     dashboard: isDashboardVariant(variant) ? variant : undefined,
     coach: !coachOff,
     cacheOutdated: cacheOld,

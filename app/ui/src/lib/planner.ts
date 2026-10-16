@@ -90,14 +90,17 @@ export interface Answers {
 
 /**
  * Vorbelegung der drei Fragen aus dem aktiven Ziel und der gespeicherten Verfügbarkeit. Ist die
- * Verfügbarkeit nicht gesetzt (`availability_set` 0), gelten die Standardantworten. Sonst sind
- * die Tage mit Zeit und ohne festen Ruhetag die Trainingstage, und die Stunden sind ihre Summe,
- * auf halbe Stunden gelegt.
+ * Verfügbarkeit nicht gesetzt (`availability_set` 0), gilt der Vorschlag aus der Historie (T41),
+ * ohne ihn die Standardantworten. Sonst sind die Tage mit Zeit und ohne festen Ruhetag die
+ * Trainingstage, und die Stunden sind ihre Summe, auf halbe Stunden gelegt.
  */
 export function defaultAnswers(inputs: PlanningInputs | null): Answers {
   const goal = inputs?.goals.find((g) => g.active) ?? null;
+  const history = inputs?.history ?? null;
   const sport: EnduranceSport =
-    goal?.sport === 'running' || goal?.sport === 'swimming' ? goal.sport : 'cycling';
+    goal?.sport === 'running' || goal?.sport === 'swimming' || goal?.sport === 'cycling'
+      ? goal.sport
+      : (history?.sport ?? 'cycling');
   const answers: Answers = {
     kind: goal?.kind === 'event' && goal.event_date ? 'event' : 'continuous',
     date: goal?.kind === 'event' && goal.event_date ? goal.event_date : '',
@@ -105,6 +108,10 @@ export function defaultAnswers(inputs: PlanningInputs | null): Answers {
     hours: DEFAULT_HOURS,
     days: [...DEFAULT_DAYS],
   };
+  if (history && (!inputs || inputs.availability_set === 0) && history.days.length > 0) {
+    answers.days = [...history.days];
+    answers.hours = clampHours(history.hours);
+  }
   if (inputs && inputs.availability_set > 0) {
     const training = inputs.availability.filter((d) => !d.fixed_rest && d.max_minutes > 0);
     if (training.length > 0) {

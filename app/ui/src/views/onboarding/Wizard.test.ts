@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../App.svelte';
 import { setBackend } from '../../lib/backend';
 import { resetCoachSetupState } from '../../lib/coach-setup';
@@ -15,6 +15,7 @@ vi.mock(
 );
 
 afterEach(() => {
+  vi.restoreAllMocks();
   cleanup();
   setBackend(null);
   setLocale('de');
@@ -24,19 +25,28 @@ afterEach(() => {
   resetCoachSetupState();
 });
 
-async function start(options: { onboarded: boolean; setupStepMs?: number }) {
+async function start(
+  options: ConstructorParameters<typeof MockBackend>[0] & { onboarded: boolean },
+) {
   const backend = new MockBackend({ today: '2026-10-14', ...options });
   setBackend(backend);
   render(App);
   return backend;
 }
 
-async function toGarmin() {
-  await fireEvent.click(await screen.findByTestId('wizard-next'));
-  await screen.findByTestId('garmin-step');
+/** Systemsprache des Browsers (jsdom meldet sonst en-US). */
+function systemLanguage(lang: string) {
+  vi.spyOn(navigator, 'language', 'get').mockReturnValue(lang);
 }
 
-describe('Erststart-Assistent', () => {
+beforeEach(() => systemLanguage('de-DE'));
+
+async function connect() {
+  await fireEvent.click(await screen.findByTestId('garmin-connect-button'));
+  await screen.findByTestId('garmin-login-result');
+}
+
+describe('Einrichtung (T41)', () => {
   it('erscheint beim ersten Start und nicht nach der Einrichtung', async () => {
     await start({ onboarded: false });
     expect(await screen.findByTestId('wizard')).toBeTruthy();
@@ -47,106 +57,113 @@ describe('Erststart-Assistent', () => {
     expect(screen.queryByTestId('wizard')).toBeNull();
   });
 
-  it('führt durch zwei Schritte ohne Ordnerwahl, Schwellen, Ziel oder Coach (T39)', async () => {
+  it('beginnt mit Garmin, ohne Sprachschritt und ohne Fragen nach Schwellen', async () => {
     await start({ onboarded: false });
-    expect((await screen.findByTestId('wizard-progress')).textContent).toContain('1 von 2');
-    await screen.findByTestId('wizard-step-language');
-    expect(screen.queryByTestId('wizard-skip')).toBeNull();
-    await fireEvent.click(screen.getByTestId('wizard-next'));
+    expect((await screen.findByTestId('wizard-progress')).textContent).toContain('1 von 3');
     await screen.findByTestId('wizard-step-garmin');
-    expect(screen.getByTestId('wizard-progress').textContent).toContain('2 von 2');
-    expect(screen.getByTestId('wizard-skip-hint').textContent).toContain(
-      'Schwellenwerte trägst du in den Einstellungen selbst ein',
-    );
-    // Kein Schritt für Ordner, Schwellen, Ziel oder Coach: Schwellen kommen aus Garmin, der Rest
-    // steht in den Einstellungen und im Planer.
-    for (const id of ['folder', 'thresholds', 'goal', 'coach']) {
+    expect(screen.getByTestId('wizard-title').textContent).toContain('Mit Garmin verbinden');
+    for (const id of ['language', 'folder', 'thresholds', 'goal']) {
       expect(screen.queryByTestId(`wizard-step-${id}`)).toBeNull();
     }
     expect(screen.queryByTestId('threshold-section')).toBeNull();
-    expect(screen.queryByTestId('data-section')).toBeNull();
-    await fireEvent.click(screen.getByTestId('wizard-back'));
-    await screen.findByTestId('wizard-step-language');
-  });
-
-  it('der Garmin-Schritt sagt, was Lastwerk aus Garmin übernimmt', async () => {
-    await start({ onboarded: false });
-    await screen.findByTestId('wizard');
-    await toGarmin();
+    // Ohne Verbindung heißt der Knopf "Ohne Garmin weiter" und sagt, was dann fehlt.
+    expect(screen.getByTestId('wizard-skip').textContent).toContain('Ohne Garmin weiter');
+    expect(screen.getByTestId('wizard-skip-hint').textContent).toContain(
+      'Schwellenwerte trägst du in den Einstellungen selbst ein',
+    );
     const takes = screen.getByTestId('garmin-takes').textContent ?? '';
-    for (const word of [
-      'FTP',
-      'Laktatschwelle',
-      'Ruhepuls',
-      'Geschlecht',
-      'Geburtsjahr',
-      'Vorrang',
-    ]) {
+    for (const word of ['FTP', 'Laktatschwelle', 'Ruhepuls', 'Geschlecht', 'Geburtsjahr']) {
       expect(takes).toContain(word);
     }
   });
 
-  it('speichert den Abschluss als Einstellung, auch wenn alles übersprungen wird', async () => {
+  it('übernimmt beim ersten Start die Sprache des Systems', async () => {
+    systemLanguage('en-GB');
     const backend = await start({ onboarded: false });
-    await fireEvent.click(await screen.findByTestId('wizard-next'));
-    await fireEvent.click(await screen.findByTestId('wizard-skip'));
-    await screen.findByTestId('nav-today');
-    expect((await backend.getSettings()).onboarded).toBe(true);
-    expect(screen.queryByTestId('wizard')).toBeNull();
+    await waitFor(() =>
+      expect(screen.getByTestId('wizard-title').textContent).toContain('Connect with Garmin'),
+    );
+    expect((await backend.getSettings()).locale).toBe('en');
+    // Wählbar bleibt sie oben im Assistenten.
+    await fireEvent.change(screen.getByTestId('wizard-language'), { target: { value: 'de' } });
+    await waitFor(() =>
+      expect(screen.getByTestId('wizard-title').textContent).toContain('Mit Garmin verbinden'),
+    );
   });
 
   it('der Garmin-Schritt hat kein Feld für Zugangsdaten und keinen Kopierbefehl', async () => {
     await start({ onboarded: false });
-    await screen.findByTestId('wizard');
-    await toGarmin();
-    const step = screen.getByTestId('garmin-step');
+    const step = await screen.findByTestId('garmin-step');
     expect(step.querySelector('input')).toBeNull();
-    expect(step.querySelector('input[type="password"]')).toBeNull();
     expect(step.querySelector('form')).toBeNull();
     expect(screen.queryByTestId('garmin-command')).toBeNull();
     expect(step.textContent).not.toContain('lastwerk-bridge');
     expect(screen.getByTestId('garmin-risk').textContent).toContain('Inoffizieller Zugang');
     expect((await screen.findByTestId('garmin-state')).textContent).toContain('Nicht verbunden');
-    expect(screen.getByTestId('garmin-connect-button').textContent).toContain(
-      'Mit Garmin verbinden',
-    );
-    // Die Seite des Assistenten enthält an keiner Stelle ein Passwortfeld.
     expect(document.querySelector('input[type="password"]')).toBeNull();
-  });
-
-  it('verbindet über das Fenster von Garmin und startet den Abgleich', async () => {
-    const backend = await start({ onboarded: false });
-    await screen.findByTestId('wizard');
-    await toGarmin();
-    await fireEvent.click(await screen.findByTestId('garmin-connect-button'));
-    expect((await screen.findByTestId('garmin-login-result')).textContent).toContain('erfolgreich');
-    await waitFor(() =>
-      expect(screen.getByTestId('garmin-sync-state').textContent).toContain('Neue Aktivitäten: 3'),
-    );
-    expect(screen.getByTestId('garmin-state').textContent).toContain('Verbunden');
-    expect(screen.queryByTestId('garmin-connect-button')).toBeNull();
-    expect(backend.garmin.connected).toBe(true);
-    expect(backend.garmin.syncs).toBe(1);
-    // Überspringen bleibt möglich, der Abschluss ist derselbe.
-    expect(screen.getByTestId('wizard-skip')).toBeTruthy();
   });
 
   it('meldet eine abgebrochene Anmeldung als Text', async () => {
     const backend = await start({ onboarded: false });
     backend.garmin.loginCode = 'cancelled';
-    await screen.findByTestId('wizard');
-    await toGarmin();
-    await fireEvent.click(await screen.findByTestId('garmin-connect-button'));
-    expect((await screen.findByTestId('garmin-login-result')).textContent).toContain('abgebrochen');
+    await connect();
+    expect(screen.getByTestId('garmin-login-result').textContent).toContain('abgebrochen');
     expect(backend.garmin.syncs).toBe(0);
-    expect(screen.getByTestId('garmin-connect-button')).toBeTruthy();
+    expect(screen.getByTestId('wizard-skip')).toBeTruthy();
   });
 
-  it('lässt sich in den Einstellungen wiederholen', async () => {
+  it('führt von Garmin über Freigaben und Coach zum fertigen Plan aus der Historie', async () => {
+    const history = { sport: 'running' as const, hours: 7.5, days: [0, 2, 4, 6], weeks: 11 };
+    const backend = await start({ onboarded: false, history, historyAfterSync: true });
+    await connect();
+    await waitFor(() => expect(backend.garmin.syncs).toBe(1));
+    await fireEvent.click(await screen.findByTestId('wizard-next'));
+
+    // Schritt 2: Abgleich sichtbar, S3 je Bereich (alle aus), Coach nur auf Klick.
+    await screen.findByTestId('wizard-step-extras');
+    expect(screen.getByTestId('wizard-progress').textContent).toContain('2 von 3');
+    expect(screen.getByTestId('wizard-sync')).toBeTruthy();
+    for (const c of ['body', 'blood_pressure', 'nutrition', 'hydration']) {
+      expect((screen.getByTestId(`garmin-share-${c}`) as HTMLInputElement).checked, c).toBe(false);
+    }
+    expect(screen.queryByTestId('garmin-delete-body')).toBeNull();
+    await fireEvent.click(screen.getByTestId('garmin-share-body'));
+    await waitFor(async () => expect((await backend.getSettings()).garmin_share_body).toBe(true));
+    expect(screen.getByTestId('wizard-coach').querySelector('details')?.open).toBe(false);
+
+    // Schritt 3: die drei Fragen, vorbelegt aus der Historie.
+    await fireEvent.click(screen.getByTestId('wizard-next'));
+    await screen.findByTestId('wizard-step-plan');
+    expect((await screen.findByTestId('wizard-plan-history')).textContent).toContain('11 Wochen');
+    const planner = await screen.findByTestId('planner');
+    expect(planner.textContent).toContain('7,5');
+    await fireEvent.click(screen.getByTestId('planner-submit'));
+    await screen.findByTestId('nav-today');
+    expect((await backend.getSettings()).onboarded).toBe(true);
+    const plans = await backend.listPlans();
+    expect(plans.some((p) => p.status === 'active')).toBe(true);
+  });
+
+  it('lässt sich ohne Garmin und ohne Plan abschließen', async () => {
+    const backend = await start({ onboarded: false });
+    await fireEvent.click(await screen.findByTestId('wizard-skip'));
+    await screen.findByTestId('wizard-step-extras');
+    // Ohne Verbindung keine Freigaben, der Coach bleibt angeboten.
+    expect(screen.queryByTestId('wizard-s3')).toBeNull();
+    expect(screen.getByTestId('wizard-coach')).toBeTruthy();
+    await fireEvent.click(screen.getByTestId('wizard-next'));
+    await fireEvent.click(await screen.findByTestId('wizard-finish'));
+    await screen.findByTestId('nav-today');
+    expect((await backend.getSettings()).onboarded).toBe(true);
+    expect(await backend.listPlans()).toEqual([]);
+  });
+
+  it('lässt sich in den Einstellungen wiederholen, ohne die Sprache zu ändern', async () => {
+    systemLanguage('en-US');
     const backend = await start({ onboarded: true });
     await fireEvent.click(await screen.findByTestId('nav-settings'));
     await fireEvent.click(await screen.findByTestId('about-repeat'));
     await screen.findByTestId('wizard');
-    expect((await backend.getSettings()).onboarded).toBe(true);
+    expect((await backend.getSettings()).locale).toBe('de');
   });
 });

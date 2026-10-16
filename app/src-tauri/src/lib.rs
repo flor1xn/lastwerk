@@ -493,7 +493,10 @@ async fn set_plan_status(
 
 #[tauri::command(rename_all = "snake_case")]
 async fn get_planning_inputs(state: State<'_, AppState>) -> Result<PlanningInputs> {
-    with_store(&state, |store| service::plans::planning_inputs(store)).await
+    with_store(&state, |store| {
+        service::plans::planning_inputs_at(store, local_today())
+    })
+    .await
 }
 
 #[tauri::command(rename_all = "snake_case")]

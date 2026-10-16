@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Plan, PlanListItem, PlanSession } from './backend/types';
-import { activePlanId, formState, planCovers, sessionsOn } from './today';
+import { activePlanId, formState, planCovers, planStartsAfter, sessionsOn } from './today';
 
 const session = (slot: 'am' | 'pm', template_id: string): PlanSession => ({
   slot,
@@ -63,6 +63,13 @@ describe('sessionsOn', () => {
   it('erkennt Tage außerhalb des Plans', () => {
     expect(sessionsOn(plan, '2026-11-01')).toEqual([]);
     expect(planCovers(plan, '2026-11-01')).toBe(false);
+  });
+
+  it('nennt den Beginn eines Plans, der erst später anfängt (T41)', () => {
+    const first = plan.weeks[0].days[0].date;
+    expect(planStartsAfter(plan, '2026-10-01')).toBe(first);
+    expect(planStartsAfter(plan, first)).toBeNull();
+    expect(planStartsAfter(plan, '2026-11-01')).toBeNull();
   });
 });
 

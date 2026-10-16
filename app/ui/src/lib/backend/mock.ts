@@ -26,6 +26,7 @@ import {
   shareKey,
   type SensitiveCategory,
   type HealthPoint,
+  type HistoryDefaults,
   SPORTS,
   type ActivityDetail,
   type ActivityFilter,
@@ -103,6 +104,10 @@ export interface MockOptions {
   dashboard?: DashboardVariant;
   /** Mit Garmin verbunden? Standard nein (T23). */
   garminConnected?: boolean;
+  /** Vorschlag der drei Fragen aus der Historie (T41). Standard keiner. Mit
+   * `historyAfterSync` erscheint er erst nach dem ersten Abgleich. */
+  history?: HistoryDefaults | null;
+  historyAfterSync?: boolean;
   /** Läuft ein lokales Modell? `false` ist der Zustand ohne Ollama. Standard ja. */
   coach?: boolean;
   /** Wartezeit je Antwort des Coachs in Millisekunden. Standard 0. */
@@ -247,7 +252,11 @@ export class MockBackend implements Backend {
   /** Welche erfundenen Dashboard-Daten `getDashboard` liefert. Tests setzen sie um. */
   dashboardVariant: DashboardVariant;
 
+  /** Vorschlag aus der Historie (T41). */
+  private history: { value: HistoryDefaults | null; afterSync: boolean };
+
   constructor(options: MockOptions = {}) {
+    this.history = { value: options.history ?? null, afterSync: options.historyAfterSync ?? false };
     this.today = options.today ?? localIso();
     this.importStepMs = options.importStepMs ?? 0;
     this.dashboardVariant = options.dashboard ?? 'rich';
@@ -896,7 +905,8 @@ export class MockBackend implements Backend {
   }
 
   async getPlanningInputs(): Promise<PlanningInputs> {
-    return this.planning.inputs();
+    const known = !this.history.afterSync || this.garmin.syncs > 0;
+    return { ...this.planning.inputs(), history: known ? this.history.value : null };
   }
 
   async setGoal(input: GoalInput): Promise<PlanningInputs> {

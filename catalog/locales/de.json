@@ -343,18 +343,33 @@
       "step_of": "Schritt {n} von {total}",
       "back": "Zurück",
       "next": "Weiter",
-      "skip": "Überspringen",
-      "finish": "Einrichtung abschließen",
-      "language": {
-        "title": "Sprache und Erscheinungsbild",
-        "lead": "Wähle Sprache und Thema. Beides lässt sich später in den Einstellungen ändern."
-      },
       "garmin": {
-        "title": "Garmin verbinden (optional)",
-        "lead": "Lastwerk holt Aktivitäten, Erholungswerte und Schwellenwerte direkt bei Garmin.",
+        "short": "Garmin",
+        "title": "Mit Garmin verbinden",
+        "lead": "Ein Login genügt: Lastwerk holt Aktivitäten, Erholungs- und Schwellenwerte selbst. Fragen nach FTP oder Puls gibt es nicht.",
         "explain": "Du meldest dich in einem Fenster auf der Seite von Garmin an, Lastwerk sieht weder Passwort noch Code. Danach holt Lastwerk neue Aktivitäten und Erholungswerte auf diesen Rechner, nur lesend.",
         "if_skipped": "Ohne Garmin fehlen Erholungswerte, und Schwellenwerte trägst du in den Einstellungen selbst ein. Aktivitäten kommen weiter aus eigenen FIT-Dateien, verbinden kannst du später in den Einstellungen.",
-        "takes": "Nach der Anmeldung übernimmt Lastwerk Schwellenwerte (FTP, Laktatschwelle, maximale Herzfrequenz, Ruhepuls), Geschlecht und Geburtsjahr aus Garmin. Eigene Werte trägst du später in den Einstellungen ein, sie haben dann Vorrang."
+        "takes": "Nach der Anmeldung übernimmt Lastwerk Schwellenwerte (FTP, Laktatschwelle, maximale Herzfrequenz, Ruhepuls), Geschlecht und Geburtsjahr aus Garmin. Eigene Werte trägst du später in den Einstellungen ein, sie haben dann Vorrang.",
+        "without": "Ohne Garmin weiter"
+      },
+      "extras": {
+        "short": "Freigaben und Coach",
+        "title": "Während Garmin lädt",
+        "lead": "Der erste Abgleich holt ein Jahr und braucht einige Minuten. In der Zeit kannst du festlegen, was Lastwerk zusätzlich holen darf.",
+        "sync_title": "Abgleich",
+        "sync_hint": "Läuft im Hintergrund weiter. Last und Form stehen zuerst, Tageswerte folgen.",
+        "coach_title": "Lokaler Coach (optional)",
+        "coach_hint": "Ein Sprachmodell auf diesem Rechner erklärt und passt den Plan an. Es rechnet nichts und schickt nichts ins Netz.",
+        "coach_open": "Coach einrichten",
+        "to_plan": "Weiter zum Plan"
+      },
+      "plan": {
+        "short": "Plan",
+        "title": "Dein Plan",
+        "lead": "Drei Antworten, dann steht der Plan ab nächstem Montag. Alles lässt sich später im Planer ändern.",
+        "waiting": "Garmin lädt noch deine Aktivitäten. Sobald sie da sind, schlägt Lastwerk Sportart, Stunden und Trainingstage aus deinem Training vor.",
+        "from_history": "Vorgeschlagen aus deinem Training der letzten {weeks} Wochen.",
+        "later": "Später planen"
       }
     },
     "lead": {
@@ -374,7 +389,7 @@
       "whats_new": "Neu in dieser Version",
       "none": "Zu dieser Version gibt es keine Notizen.",
       "repeat": "Einrichtung wiederholen",
-      "repeat_hint": "Führt noch einmal durch Sprache, Schwellenwerte, Ziel und Garmin. Vorhandene Daten bleiben erhalten."
+      "repeat_hint": "Führt noch einmal durch Garmin, Freigaben, Coach und Plan. Vorhandene Daten bleiben erhalten."
     },
     "update": {
       "title": "Update",
@@ -550,14 +565,16 @@
       "rest_title": "Heute frei",
       "rest_hint": "Für heute ist keine Einheit geplant.",
       "no_plan_title": "Noch kein aktiver Plan",
-      "no_plan_hint": "Lege in der Planansicht ein Ziel an und aktiviere einen Plan. Dann steht hier die Einheit für heute.",
+      "no_plan_hint": "Drei Fragen im Planer genügen, dann steht hier die Einheit für heute.",
       "open_plan": "Zum Plan",
       "form_title": "Form",
       "week_title": "Diese Woche",
       "week_planned": "geplant",
       "load_unit": "Last",
       "all_sessions": "Weitere Einheiten heute",
-      "not_covered": "Der aktive Plan deckt den heutigen Tag nicht ab"
+      "not_covered": "Der aktive Plan deckt den heutigen Tag nicht ab",
+      "starts_title": "Dein Plan beginnt am {date}",
+      "starts_hint": "Bis dahin trainierst du frei oder ruhst. Im Planer siehst du schon die erste Woche."
     },
     "form": {
       "label": "Formzustand",
@@ -629,9 +646,10 @@
       },
       "form": {
         "title": "Form-Verlauf",
-        "empty": "Noch keine Last berechnet. Importiere Aktivitäten und lege Schwellenwerte an, dann entsteht hier dein Verlauf.",
+        "empty": "Noch keine Last berechnet. Verbinde Garmin oder lies FIT-Dateien ein, dann entsteht hier dein Verlauf.",
         "projection_note": "Die Prognose rechnet mit der geplanten Last des aktiven Plans.",
-        "week_ahead": "In sieben Tagen laut Plan: {tsb}"
+        "week_ahead": "In sieben Tagen laut Plan: {tsb}",
+        "loading": "Garmin lädt deine Aktivitäten. Sobald sie da sind, entsteht hier dein Verlauf aus Fitness, Ermüdung und Form."
       },
       "readiness": {
         "title": "Bereitschaft",
@@ -651,7 +669,8 @@
         "vs_baseline": "{value} zur Basis",
         "baseline": "Basis {value}",
         "no_baseline": "noch keine Basis",
-        "spark_label": "{name}, letzte 60 Tage"
+        "spark_label": "{name}, letzte 60 Tage",
+        "loading": "Garmin lädt deine Erholungswerte. Danach erscheinen hier HRV, Ruhepuls und Schlaf im Vergleich zu deinem Schnitt."
       },
       "ramp": {
         "title": "Rampe",

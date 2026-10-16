@@ -684,6 +684,19 @@ export interface PlanningInputs {
   availability: AvailabilityDay[];
   availability_set: number;
   default_minutes: number;
+  /** Vorschlag aus der eigenen Historie (T41), nur beim Lesen; zu wenig Historie: null. */
+  history: HistoryDefaults | null;
+}
+
+/** Was die letzten zwölf vollen Wochen über das Training sagen (T41, Faustregeln im Rust-Teil). */
+export interface HistoryDefaults {
+  sport: EnduranceSport;
+  /** Median der Wochenstunden, halbe Stunden, 2 bis 20. */
+  hours: number;
+  /** Wochentage, 0 Montag bis 6 Sonntag. */
+  days: number[];
+  /** Wochen mit Training, auf denen der Vorschlag beruht. */
+  weeks: number;
 }
 
 export interface BackupCounts {

@@ -668,6 +668,24 @@ pub struct PlanningInputs {
     pub availability_set: u8,
     /// Standardwert in Minuten für nicht gesetzte Tage.
     pub default_minutes: u16,
+    /// Vorschlag für die drei Fragen aus der eigenen Historie (T41), nur in
+    /// `get_planning_inputs`; sonst und bei zu wenig Historie `null`.
+    pub history: Option<HistoryDefaults>,
+}
+
+/// Was die Historie der letzten zwölf vollen Wochen über das Training sagt (T41, Faustregeln in
+/// `service::plans::history_defaults`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct HistoryDefaults {
+    /// Ausdauersportart mit der meisten Zeit.
+    pub sport: lastwerk_core::plan::PlanSport,
+    /// Median der Wochenstunden aller Sportarten über die Wochen mit Training, auf halbe Stunden
+    /// gelegt, 2 bis 20.
+    pub hours: f64,
+    /// Wochentage (0 Montag bis 6 Sonntag) mit Training in mindestens der Hälfte dieser Wochen.
+    pub days: Vec<u8>,
+    /// Wochen mit Training, auf denen der Vorschlag beruht.
+    pub weeks: u32,
 }
 
 /// Zahl der Zeilen je Tabelle eines Backups.

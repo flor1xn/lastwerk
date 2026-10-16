@@ -69,11 +69,42 @@ function inputs(over: Partial<PlanningInputs> = {}): PlanningInputs {
     })),
     availability_set: 0,
     default_minutes: 90,
+    history: null,
     ...over,
   };
 }
 
 describe('defaultAnswers', () => {
+  it('nimmt ohne Verfügbarkeit den Vorschlag aus der Historie (T41)', () => {
+    const history = { sport: 'running' as const, hours: 7.5, days: [0, 2, 4, 6], weeks: 11 };
+    expect(defaultAnswers(inputs({ history }))).toMatchObject({
+      kind: 'continuous',
+      sport: 'running',
+      hours: 7.5,
+      days: [0, 2, 4, 6],
+    });
+    // Eine gespeicherte Verfügbarkeit geht vor, die Sportart des Ziels ebenso.
+    const set = defaultAnswers(
+      inputs({
+        history,
+        availability_set: 7,
+        goals: [
+          {
+            id: 1,
+            kind: 'event',
+            sport: 'swimming',
+            event_date: '2027-05-01',
+            label: null,
+            priority: 'A',
+            active: true,
+          },
+        ],
+      }),
+    );
+    expect(set.sport).toBe('swimming');
+    expect(set.hours).toBe(10.5);
+  });
+
   it('nimmt ohne gespeicherte Daten Di, Do, Sa, So und 6 Stunden, fortlaufend', () => {
     expect(defaultAnswers(null)).toMatchObject({
       kind: 'continuous',

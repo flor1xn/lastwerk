@@ -343,18 +343,33 @@
       "step_of": "Step {n} of {total}",
       "back": "Back",
       "next": "Next",
-      "skip": "Skip",
-      "finish": "Finish setup",
-      "language": {
-        "title": "Language and appearance",
-        "lead": "Choose language and theme. You can change both later in the settings."
-      },
       "garmin": {
-        "title": "Connect Garmin (optional)",
-        "lead": "Lastwerk fetches activities, recovery values and thresholds directly from Garmin.",
+        "short": "Garmin",
+        "title": "Connect with Garmin",
+        "lead": "One login is enough: Lastwerk fetches activities, recovery and threshold values itself. No questions about FTP or heart rate.",
         "explain": "You sign in on the Garmin page in a separate window, and Lastwerk sees neither password nor code. Afterwards Lastwerk fetches new activities and recovery values to this computer, read only.",
         "if_skipped": "Without Garmin, recovery values are missing and you enter thresholds yourself in the settings. Activities still come from your own FIT files, and you can connect later in the settings.",
-        "takes": "After sign-in Lastwerk takes thresholds (FTP, lactate threshold, maximum heart rate, resting heart rate), sex and birth year from Garmin. You can enter your own values later in the settings, and they then take precedence."
+        "takes": "After sign-in Lastwerk takes thresholds (FTP, lactate threshold, maximum heart rate, resting heart rate), sex and birth year from Garmin. You can enter your own values later in the settings, and they then take precedence.",
+        "without": "Continue without Garmin"
+      },
+      "extras": {
+        "short": "Permissions and coach",
+        "title": "While Garmin loads",
+        "lead": "The first sync fetches a year and takes a few minutes. Meanwhile you can decide what else Lastwerk may fetch.",
+        "sync_title": "Sync",
+        "sync_hint": "Keeps running in the background. Load and form come first, daily values follow.",
+        "coach_title": "Local coach (optional)",
+        "coach_hint": "A language model on this computer explains and adjusts the plan. It computes nothing and sends nothing to the network.",
+        "coach_open": "Set up coach",
+        "to_plan": "Continue to plan"
+      },
+      "plan": {
+        "short": "Plan",
+        "title": "Your plan",
+        "lead": "Three answers and the plan starts next Monday. Everything can be changed later in the planner.",
+        "waiting": "Garmin is still loading your activities. Once they are here, Lastwerk suggests sport, hours and training days from your training.",
+        "from_history": "Suggested from your training of the last {weeks} weeks.",
+        "later": "Plan later"
       }
     },
     "lead": {
@@ -374,7 +389,7 @@
       "whats_new": "New in this version",
       "none": "There are no notes for this version.",
       "repeat": "Repeat setup",
-      "repeat_hint": "Walks through language, thresholds, goal and Garmin once more. Existing data is kept."
+      "repeat_hint": "Walks you through Garmin, permissions, coach and plan again. Existing data stays."
     },
     "update": {
       "title": "Update",
@@ -550,14 +565,16 @@
       "rest_title": "Rest day",
       "rest_hint": "No session is planned for today.",
       "no_plan_title": "No active plan yet",
-      "no_plan_hint": "Set a goal in the plan view and activate a plan. Today's session then appears here.",
+      "no_plan_hint": "Three questions in the planner are enough, then today's session shows up here.",
       "open_plan": "Go to plan",
       "form_title": "Form",
       "week_title": "This week",
       "week_planned": "planned",
       "load_unit": "Load",
       "all_sessions": "More sessions today",
-      "not_covered": "The active plan does not cover today"
+      "not_covered": "The active plan does not cover today",
+      "starts_title": "Your plan starts on {date}",
+      "starts_hint": "Until then, train freely or rest. The planner already shows the first week."
     },
     "form": {
       "label": "Form state",
@@ -629,9 +646,10 @@
       },
       "form": {
         "title": "Form history",
-        "empty": "No load computed yet. Import activities and set thresholds, then your history appears here.",
+        "empty": "No load computed yet. Connect Garmin or import FIT files, then your history appears here.",
         "projection_note": "The projection uses the planned load of the active plan.",
-        "week_ahead": "In seven days according to the plan: {tsb}"
+        "week_ahead": "In seven days according to the plan: {tsb}",
+        "loading": "Garmin is loading your activities. Once they are here, your fitness, fatigue and form history appears."
       },
       "readiness": {
         "title": "Readiness",
@@ -651,7 +669,8 @@
         "vs_baseline": "{value} vs baseline",
         "baseline": "Baseline {value}",
         "no_baseline": "no baseline yet",
-        "spark_label": "{name}, last 60 days"
+        "spark_label": "{name}, last 60 days",
+        "loading": "Garmin is loading your recovery values. Then HRV, resting heart rate and sleep appear here compared with your own average."
       },
       "ramp": {
         "title": "Ramp",
