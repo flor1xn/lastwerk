@@ -49,7 +49,8 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T37](T37-laufbestzeiten.md) | Bestzeiten im Laufen | nach 1.0 | erledigt | T33 | ja | crates/core, store, app |
 | [T38](T38-oeffentlich.md) | Vorbereitung auf ein öffentliches Repository | nach 1.0 | erledigt | T30 | ja, Umstellung durch den Eigentümer | .github, scripts, docs, crates |
 | [T39](T39-garmin-vollabzug.md) | Garmin-Vollabzug und Schwellenwerte aus Garmin | nach 1.0 | erledigt | T22, T23, T28 | ja, **Live manuell** | crates/garmin, store, cli, app, catalog |
-| [T40](T40-garmin-vollabzug-2.md) | Garmin-Vollabzug Teil 2: Verläufe, Trainingsstatus, S3 je Bereich | nach 1.0 | in Arbeit | T39 | ja, **Live manuell** | crates/garmin, store, cli, app, catalog |
+| [T40](T40-garmin-vollabzug-2.md) | Garmin-Vollabzug Teil 2: Verläufe, Trainingsstatus, S3 je Bereich | nach 1.0 | erledigt | T39 | ja, **Live manuell** | crates/garmin, store, cli, app, catalog |
+| [T41](T41-einrichtung-neu.md) | Einrichtung neu, in drei Schritten zum fertigen Plan | nach 1.0 | erledigt | T39, T40 | ja, **Live manuell** | app, catalog, docs |
 
 ## Reihenfolge
 
@@ -77,6 +78,12 @@ Auswertung nach 1.0 (Abgleich mit TrainingPeaks, intervals.icu, WKO, Golden Chee
 T25 ─┬─ T31, T32, T34, T35
      └─ T33 ─┬─ T36
              └─ T37
+```
+
+Garmin-Vollabzug und Einrichtung (16. Oktober 2026):
+
+```
+T39 ─ T40 ─ T41
 ```
 
 Version 1 ist der Stand nach T09 (M1 bis M3, SPEC 12). T10 kann vor dem Zusatzprogramm gezogen werden, weil es ohne Garmin-Zugang auskommt.

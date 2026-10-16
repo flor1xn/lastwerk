@@ -2,9 +2,11 @@
   "de": {
     "1.1.0": [
       "Schwellenwerte kommen jetzt aus Garmin: FTP, Laktatschwelle, maximale Herzfrequenz und Ruhepuls mit dem Datum aus Garmin, dazu Geschlecht und Geburtsjahr. Frühere Aktivitäten bekommen damit eine Last, ohne dass du etwas einträgst. Eigene Werte gehen vor, die Einstellungen zeigen je Wert Herkunft und Datum.",
+      "Auch der Verlauf von FTP und Laktatschwelle und das Schwellentempo kommen aus Garmin. Läufe bekommen damit ohne Eingabe eine Last, und ältere Aktivitäten rechnen mit dem Wert, der damals galt.",
       "Neue Seite Gesundheit: Schritte, Tagesherzfrequenz, Atmung, SpO2, Intensitätsminuten und Stress, dazu Trainingsbereitschaft, Fitnessalter, VO2max, Ausdauerwert und Bergwert aus Garmin. Garmins eigene Trainingslast steht im Aktivitätsdetail nur zum Vergleich, Lastwerk rechnet weiter selbst.",
-      "Der Erststart führt nur noch zur Anmeldung bei Garmin. Fehlt einer Aktivität ein Schwellenwert, sagt Lastwerk, welcher und wo du ihn einträgst.",
-      "Hydration holt Lastwerk nur, wenn du sie in den Einstellungen freigibst. Menstruations- und Schwangerschaftsdaten werden nie abgerufen."
+      "Die Seite Gesundheit zeigt zusätzlich Trainingsstatus mit akuter und chronischer Last, Belastungsfokus, Rennprognosen, Lauftoleranz und Etagen.",
+      "Neue Einrichtung in drei Schritten: Garmin verbinden, während des ersten Abgleichs Freigaben und Coach festlegen, dann die drei Fragen des Planers, vorbelegt aus deinem Training der letzten zwölf Wochen. Am Ende steht dein Plan. Die Sprache kommt vom System. Fehlt einer Aktivität ein Schwellenwert, sagt Lastwerk, welcher und wo du ihn einträgst.",
+      "Sensible Werte holt Lastwerk nur mit Freigabe, je Bereich einzeln: Gewicht und Körperwerte, Blutdruck, Ernährung und Hydration, jeweils einzeln löschbar. Menstruations- und Schwangerschaftsdaten werden nie abgerufen."
     ],
     "1.0.3": [
       "Neue Seite Leistung: Leistungskurve von 1 Sekunde bis 2 Stunden für 6 Wochen, 90 Tage, ein Jahr oder alles, gegen den Zeitraum davor, mit Tag und Verweis auf die Aktivität. Beim ersten Start rechnet Lastwerk dafür vorhandene Dateien einmal neu.",
@@ -37,9 +39,11 @@
   "en": {
     "1.1.0": [
       "Thresholds now come from Garmin: FTP, lactate threshold, maximum heart rate and resting heart rate with Garmin's date, plus sex and year of birth. Earlier activities get a load without you entering anything. Your own values take precedence; the settings show the source and date of each value.",
+      "FTP and lactate threshold history and the threshold pace also come from Garmin. Runs get a load without any input, and older activities use the value that applied back then.",
       "New Health page: steps, daily heart rate, respiration, SpO2, intensity minutes and stress, plus training readiness, fitness age, VO2max, endurance score and hill score from Garmin. Garmin's own training load appears in the activity detail for comparison only; Lastwerk still computes its own.",
-      "First start now only leads to the Garmin sign-in. If an activity lacks a threshold, Lastwerk says which one and where to enter it.",
-      "Lastwerk fetches hydration only if you release it in the settings. Menstrual and pregnancy data are never fetched."
+      "The Health page also shows training status with acute and chronic load, load focus, race predictions, running tolerance and floors.",
+      "New setup in three steps: connect Garmin, set permissions and the coach during the first sync, then the three planner questions, prefilled from your training of the last twelve weeks. At the end your plan is ready. The language comes from the system. If an activity lacks a threshold, Lastwerk says which one and where to enter it.",
+      "Lastwerk fetches sensitive values only with your permission, per area: weight and body values, blood pressure, nutrition and hydration, each deletable on its own. Menstrual and pregnancy data are never fetched."
     ],
     "1.0.3": [
       "New Performance page: power curve from 1 second to 2 hours for 6 weeks, 90 days, a year or all time, against the previous period, with the day and a link to the activity. On first start Lastwerk recomputes existing files once for this.",
