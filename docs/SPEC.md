@@ -201,7 +201,7 @@ Ergänzend prüft CI, dass kein `*.fit` im Git-Index steht (Abschnitt 11).
 | Datenumfang für Claude | Aggregierte Kennzahlen und einzelne Aktivitäten ohne GPS | Erholungswerte standardmäßig nicht freigegeben |
 | Garmin-Zugang | **Seit T20 (Entscheidung vom 15. Oktober 2026): in Rust in der App**, Crate `lastwerk-garmin`, Anmeldung über die Garmin-Seite in einem eigenen Fenster, Token im Schlüsselbund des Betriebssystems (5.6). Vorher: eigener schlanker Kern im Ordner `bridge/` | Nur lesend (Allowlist). Grund der Wende: Python, `uv` und Kommandozeile sind für den Alltag zu viel Einrichtung |
 | Plan-Ziel | Mit Wettkampftermin (rückwärts, mit Taper) und fortlaufend (Blöcke) | |
-| Schwellenwerte | Manuell mit Gültigkeitsdatum, Schätzung aus FIT nur als Vorschlag | |
+| Schwellenwerte | **Seit T39 (Entscheidung E1 vom 16. Oktober 2026): standardmäßig automatisch aus Garmin** mit Herkunft `garmin` und dem Datum aus Garmin, manuelle Werte gehen vor (bei gleichem Datum gewinnt manuell, 8.6). Vorher: manuell mit Gültigkeitsdatum, Schätzung aus FIT nur als Vorschlag. Die Schätzung aus FIT bleibt Vorschlag für Werte, die Garmin nicht liefert | Grund der Wende: Werte galten erst ab dem Eintragstag, frühere Aktivitäten zeigten "Schwellenwert fehlt" |
 | Netzwerk | Keine Telemetrie. Kartenkacheln sind als Option erlaubt | Umsetzung: Standard aus, siehe 10.3 |
 | Geräte | Edge-Radcomputer und Uhr | Zwei Dateiquellen, Duplikate möglich |
 
@@ -294,6 +294,7 @@ Pflegeaufwand: Release-Prozess minimal. Tag setzt CI-Build für drei Plattformen
 | F42 | Trainingskalender je Monat mit Plan gegen Ist | T35 |
 | F43 | Verlauf der Schwellenwerte mit FTP-Vorschlag je Monat | T36 |
 | F44 | Bestzeiten im Laufen über 1 km bis Marathon | T37 |
+| F45 | Vollabzug in der App: Schwellen und Profil, Tageswerte, Trainingswerte und Garmins Last je Aktivität aus Garmin, Schwellen ohne Eingabe (5.6, T39) | T39 |
 
 ### 4.3 Kann
 
@@ -976,7 +977,7 @@ Drosselung, Fortsetzung, Zeitlimit je Aufruf und Abbruchregeln sind Teil des Zus
 |---|---|---|
 | S1 Training | Aktivitätsliste, je Aktivität Zusammenfassung, Details, Splits, typisierte Splits, Split-Zusammenfassungen, Wetter, Zeit in Herzfrequenz- und Leistungszonen, Kraftsätze, Ausrüstung, FIT-Original. Zonen, Schwellenwerte, FTP, Laktatschwelle, Ziele, Pläne, Workouts, Ausrüstung, Geräte | Standardordner |
 | S2 Gesundheit | Tageswerte (Schritte, Etagen, Herzfrequenz, Ruhepuls, Stress, Body Battery, Atmung, SpO2, Intensitätsminuten, Schlaf, HRV, Trainingsbereitschaft, Trainingsstatus, Fitnessalter), Bereichs- und Verlaufswerte (Ausdauerwert, Bergwert, Lauftoleranz, Rennprognosen, VO2max) | Standardordner, Erholungswerte für MCP gesperrt |
-| S3 gesperrt abgelegt | Gewicht und Körperzusammensetzung, Blutdruck, Hydration, Ernährung, Lifestyle-Logging | Eigener Ordner `sensitive/`. Von `normalize` und `lastwerk-mcp` nicht gelesen, bis die Kategorie in den Einstellungen freigegeben ist |
+| S3 gesperrt abgelegt | Gewicht und Körperzusammensetzung, Blutdruck, Hydration, Ernährung, Lifestyle-Logging | Eigener Ordner `sensitive/`. Von `normalize` und `lastwerk-mcp` nicht gelesen, bis die Kategorie in den Einstellungen freigegeben ist. In der App (T39): ohne Freigabe kein Abruf, nach Freigabe eigene Tabelle `sensitive_day` (6.2) |
 | Nie abgerufen | Menstruations- und Schwangerschaftsdaten | Kein Wrapper wird aufgerufen, die Allowlist enthält keinen Eintrag |
 
 #### Archivlayout
@@ -1184,6 +1185,19 @@ Umsetzung (T23): Fenster `garmin-login`, etwa 480 × 720, Titel aus `ui.garmin.w
 
 **Abruf (T22).** Nur lesend, Allowlist der Pfade im Code: Profil (`socialProfile`), Aktivitätsliste, FIT-Original (`download-service/files/activity/{id}`, ZIP, nur `*.fit` darin, höchstens 256 MiB), HRV, Schlaf, Ruhepuls, Body Battery, Stress. Drosselung wie Abrufregel 4 und O24: 1,5 s Mindestabstand plus bis zu 0,5 s Zufall, kein Parallelabruf, drei 429 oder 403 in Folge sperren für 6 Stunden (Zustand im Datenordner der App). Erster Abgleich 365 Tage zurück (Faustregel, einstellbar), danach ab dem letzten Abgleich minus 7 Tage, weil Garmin Tageswerte nachträglich ergänzt (wie `sync --refresh-days 7`). Die FIT-Dateien landen im Unterordner `garmin/` des FIT-Ordners des Nutzers (`<FIT-Ordner>/garmin/<Kennung>.fit`), danach wird der ganze FIT-Ordner eingelesen (Duplikatregel 6.4). Der FIT-Stamm ist seit T28 fest `<Datenordner>/Lastwerk/fit`, der Nutzer wählt keinen (Entscheidung T28, ersetzt die Regel aus T23 mit gewähltem Ordner und `<Datenordner>/Lastwerk/garmin/fit/` aus T22, Begründung in 5.4 unter `lastwerk-cli`, "Feste Ablage"). Damit bleibt 6.1 gültig: FIT-Dateien sind die Quelle, die Datenbank ein Cache, und es gibt nur einen Ordner zum Einlesen und Wiederaufbauen. Erholungswerte sind Nutzerdaten wie bisher (`recovery_day`, im Backup). Umsetzung, Fenster, Fehlerbehandlung und Abweichungen stehen in 5.4 unter `lastwerk-cli` (Umsetzung in T22).
 
+**Vollabzug in der App (T39, Entscheidungen E1 bis E4 vom 16. Oktober 2026).** Der Abgleich holt zusätzlich zu Aktivitäten und Erholung alles, was Garmin über belegte Endpunkte liefert. Belegt heißt: Pfad, Parameter und gelesene Felder stehen im Quelltext von python-garminconnect 0.3.17 (Q27) und im Bericht der Sonde (`docs/garmin-feldabdeckung.md`); die Liste mit Zeilenangaben steht in `docs/tasks/T39-garmin-vollabzug.md`. Was nicht belegt ist (Verlauf von FTP und Laktatschwelle, Einheit des Schwellentempos, Etagen, Trainingsstatus, Rennprognosen, Lauftoleranz, Messungen von Gewicht und Blutdruck, Ernährung), steht nicht in der Allowlist und bleibt offen (O32).
+
+| Gruppe | Daten | Ablage |
+|---|---|---|
+| Konto | Geschlecht und Geburtsjahr, VO2max (Lauf, Rad) aus dem Profil; FTP und Laktatschwellen-Herzfrequenz mit Datum; maximale Herzfrequenz und Ruhepuls aus den Herzfrequenzzonen | `setting` (`athlete.*`), `threshold` mit Herkunft `garmin`, `training_day` |
+| Tageswerte (S2) | Schritte und Strecke, minimale und maximale Tagesherzfrequenz, Atmung wach und im Schlaf, SpO2 Mittel und Tiefstwert, Intensitätsminuten, Stress Mittel und Höchstwert | `wellness_day` |
+| Training (S2) | Trainingsbereitschaft (Wert, Stufe, Garmins akute Last), Fitnessalter, Ausdauerwert, Bergwert | `training_day` |
+| Training (S1) | Garmins Trainingslast und Trainingseffekt je Aktivität, nur zur Anzeige (E2) | `garmin_activity_load` |
+| S3 | Hydration, nur nach Freigabe (`garmin.share.hydration`) | `sensitive_day` |
+| Weiterhin | Aktivitäten samt FIT, HRV, Schlaf, Ruhepuls, Body Battery | wie T22 |
+
+Nie abgerufen werden Menstruations- und Schwangerschaftsdaten: Die Allowlist hat keinen Eintrag, ein Test lehnt alle Pfade von `periodichealth-service` ab (E3, 5.5). Gewicht und Größe aus dem Profil liest der Abgleich nicht, obwohl die Antwort sie enthält (S3 ohne Freigabe). S3-Abrufe gehen nur über den Marker `SensitiveConsent`, den der Abgleich nur nach der Freigabe in den Einstellungen anlegt; ohne Freigabe kein Aufruf. Garmins eigene Last und Trainingseffekte ersetzen nie die Last nach 8.1 (E2). Das Frontend greift nie aufs Netz zu, alle Abrufe laufen im Rust-Teil (E4, 10.1). Schwellen aus Garmin: Regeln in 8.6.
+
 **Wann.** Auf Klick ("Jetzt abgleichen") und einmal beim Start der App, wenn verbunden (Einstellung, Standard an). Kein Hintergrunddienst, kein Zeitplan. Jede Verbindung ist in den Einstellungen sichtbar (10.1).
 
 **Offen.** O18 (Nutzungsbedingungen) bleibt offen; das Anmeldefenster nennt das Risiko vor dem ersten Verbinden. Ob `diauth.garmin.com` Anfragen ohne Browser-TLS (reqwest mit rustls) annimmt, zeigt erst der Livetest beim Nutzer (O30).
@@ -1288,7 +1302,7 @@ CREATE TABLE threshold (
   kind        TEXT NOT NULL CHECK (kind IN ('ftp_w','lthr_bpm','hr_max_bpm','hr_rest_bpm','run_speed_mps','css_mps')),
   value       REAL NOT NULL,
   valid_from  TEXT NOT NULL,        -- Datum
-  origin      TEXT NOT NULL CHECK (origin IN ('manual','suggested_accepted')),
+  origin      TEXT NOT NULL CHECK (origin IN ('manual','suggested_accepted','garmin')),  -- 'garmin' seit T39
   note        TEXT
 );
 
@@ -1365,11 +1379,52 @@ Umsetzung in T14 (Migration `crates/store/migrations/0003_recovery_day.sql`):
 - `recovery_day` genau nach der Tabelle oben, ohne weitere Einschränkungen in SQL. Die Wertebereiche aus 7.3 prüft der Speicher in Rust (`InvalidInput`) und die CLI über das Schema. Die Tabelle gehört zu den Nutzerdaten (nicht aus FIT ableitbar), steht im Backup und bleibt bei `rebuild_cache` unberührt (6.3). Das Datum ist das Datum der Datei `YYYY-MM-DD.json` und des Feldes `date`. `fetched_at` aus der Datei hat in der Tabelle keine Spalte.
 - Die Feldnamen gelten vorläufig, bis `docs/garmin-feldabdeckung.md` aus L1 vorliegt (O9). Ändern sie sich, ändert sich das Schema und gegebenenfalls eine weitere Migration.
 
-Umsetzung in T22 (Migration `crates/store/migrations/0004_recovery_garmin.sql`): `recovery_day` bekommt `body_battery_high` und `body_battery_low` (beide `INTEGER`, leer erlaubt, Wertebereich 0 bis 100 prüft der Speicher in Rust wie bei den übrigen Werten). Vorhandene Zeilen behalten alle Werte, die neuen Spalten sind dort leer (Test: Stand 3 auf 4 mit einer Erholungszeile). Neue Einstellungen (Tabelle `setting`, im Backup): `garmin.last_sync` (`JJJJ-MM-TT`), `garmin.sync_on_start` (`true`/`false`, Standard `true`) und `garmin.backfill_days` (Standard 365, Faustregel, erlaubt 1 bis 1825). Lesen und Schreiben nur über `Store::garmin_settings` und die Setter, ein Wert außerhalb gilt beim Lesen als nicht gesetzt.
+Umsetzung in T22 (Migration `crates/store/migrations/0004_recovery_garmin.sql`): `recovery_day` bekommt `body_battery_high` und `body_battery_low` (beide `INTEGER`, leer erlaubt, Wertebereich 0 bis 100 prüft der Speicher in Rust wie bei den übrigen Werten). Vorhandene Zeilen behalten alle Werte, die neuen Spalten sind dort leer (Test: Stand 3 auf 4 mit einer Erholungszeile). Neue Einstellungen (Tabelle `setting`, im Backup) seit T22: `garmin.last_sync` (`JJJJ-MM-TT`), `garmin.sync_on_start` (`true`/`false`, Standard `true`) und `garmin.backfill_days` (Standard 365, Faustregel, erlaubt 1 bis 1825). Lesen und Schreiben nur über `Store::garmin_settings` und die Setter, ein Wert außerhalb gilt beim Lesen als nicht gesetzt.
+
+Umsetzung in T39 (Migration `crates/store/migrations/0007_garmin_full.sql`, Stand 16. Oktober 2026):
+
+- `threshold` wird neu angelegt, weil SQLite eine `CHECK`-Bedingung nicht ändern kann: neue Tabelle mit `origin IN ('manual','suggested_accepted','garmin')`, Zeilen mit denselben IDs kopiert, alte Tabelle gelöscht, neue umbenannt, Index neu. Die Fremdschlüssel aus `activity_load.threshold_id` werden dabei erst beim Abschluss geprüft (`defer_foreign_keys`). Nutzerdaten bleiben erhalten (Test Stand 6 auf 7).
+- Cache: `activity_load.missing TEXT` nennt bei `missing_threshold` die fehlende Art (`ftp_w`, `lthr_bpm`, `hr_max_bpm`, `hr_rest_bpm`, `run_speed_mps`, `css_mps`, `sex`), sonst leer. `DERIVED_CACHE_VERSION` steigt, damit der nächste Start die Spalte für alte Dateien füllt (6.3).
+- Nutzerdaten (nicht aus FIT ableitbar, im Backup, `rebuild_cache` lässt sie stehen), je Tag eine Zeile, jeder Wert leer erlaubt, Wertebereiche prüft der Speicher in Rust (Faustregeln im Code), `source` und `imported_at` wie bei `recovery_day`:
+
+```sql
+CREATE TABLE wellness_day (           -- S2, T39
+  local_date TEXT PRIMARY KEY,
+  steps INTEGER, step_distance_m REAL,
+  hr_min_bpm REAL, hr_max_bpm REAL,
+  respiration_waking_brpm REAL, respiration_sleep_brpm REAL,
+  spo2_avg_pct REAL, spo2_low_pct REAL,
+  intensity_moderate_min INTEGER, intensity_vigorous_min INTEGER,
+  stress_avg INTEGER, stress_max INTEGER,
+  source TEXT NOT NULL, imported_at TEXT NOT NULL
+);
+CREATE TABLE training_day (           -- S2, T39
+  local_date TEXT PRIMARY KEY,
+  readiness_score INTEGER, readiness_level TEXT, garmin_acute_load REAL,
+  fitness_age REAL, vo2max_running REAL, vo2max_cycling REAL,
+  endurance_score INTEGER, hill_score INTEGER,
+  source TEXT NOT NULL, imported_at TEXT NOT NULL
+);
+CREATE TABLE garmin_activity_load (   -- S1, T39, nur Anzeige (E2)
+  garmin_activity_id INTEGER PRIMARY KEY,
+  local_date TEXT NOT NULL,
+  training_load REAL, training_effect TEXT,
+  imported_at TEXT NOT NULL
+);
+CREATE TABLE sensitive_day (          -- S3, T39, nur nach Freigabe
+  local_date TEXT PRIMARY KEY,
+  hydration_ml REAL,
+  source TEXT NOT NULL, imported_at TEXT NOT NULL
+);
+```
+
+- Neue Einstellungen: `garmin.share.hydration` (`true` gibt den Abruf frei, Standard aus), `athlete.sex_origin` und `athlete.birth_year_origin` (`garmin` oder `manual`). Ein Abgleich mischt je Tag wie bei `recovery_day`: ein neuer Wert ersetzt den alten, ein fehlender lässt ihn stehen, ein Tag ohne Wert legt keine Zeile an. Ein zweiter Abgleich mit denselben Antworten ändert nichts.
+- `garmin_activity_load` hängt an der Kennung der Aktivität bei Garmin. Die Anzeige im Aktivitätsdetail findet sie über den Dateinamen `garmin/<Kennung>.fit` (5.4, `lastwerk-cli`).
+- S3 liegt in einer eigenen Tabelle, die der MCP-Server nicht liest. Nimmt der Nutzer die Freigabe zurück, holt der Abgleich nichts mehr; vorhandene Zeilen löscht er mit "S3-Werte löschen" in den Einstellungen.
 
 ### 6.3 Wiederaufbau
 
-`rebuild_cache` löscht `source_file`, `activity`, `activity_load`, `activity_zone_time`, `activity_best_power`, `activity_best_effort` (seit T37) (nicht `recovery_day`, siehe 6.2), liest den Ordner und rechnet neu. Seit T33 hält die Cache-Tabelle `cache_meta` (Migration 0005) den Stand der abgeleiteten Werte (`derived_version`, Konstante `DERIVED_CACHE_VERSION`). Ist er älter als der des Programms, liest der nächste Import jede bekannte Datei neu ein, auch unverändert, und schreibt danach den neuen Stand; die IDs der Aktivitäten bleiben erhalten. Die App liest beim Start einmal ein, wenn `Settings.cache_outdated` gilt, und erst danach gleicht sie mit Garmin ab. Eine leere Datenbank gilt nie als veraltet. Nutzertabellen bleiben unberührt. Rekonstruktion nach Datenverlust: Backup-JSON einspielen, danach Ordner einlesen.
+`rebuild_cache` löscht `source_file`, `activity`, `activity_load`, `activity_zone_time`, `activity_best_power`, `activity_best_effort` (seit T37) (nicht `recovery_day` und die Nutzertabellen aus T39, siehe 6.2), liest den Ordner und rechnet neu. Seit T33 hält die Cache-Tabelle `cache_meta` (Migration 0005) den Stand der abgeleiteten Werte (`derived_version`, Konstante `DERIVED_CACHE_VERSION`). Ist er älter als der des Programms, liest der nächste Import jede bekannte Datei neu ein, auch unverändert, und schreibt danach den neuen Stand; die IDs der Aktivitäten bleiben erhalten. Die App liest beim Start einmal ein, wenn `Settings.cache_outdated` gilt, und erst danach gleicht sie mit Garmin ab. Eine leere Datenbank gilt nie als veraltet. Nutzertabellen bleiben unberührt. Rekonstruktion nach Datenverlust: Backup-JSON einspielen, danach Ordner einlesen.
 
 Umsetzung in T08: `lastwerk restore` spielt die Sicherung ein, `lastwerk rebuild --dir <ordner>` baut danach den Cache aus den FIT-Dateien. Der Test `backup_restore_and_rebuild_reproduce_user_data_and_figures` (`crates/cli/tests/plan.rs`) sichert eine Datenbank mit Fixtures, Schwellen, Ziel, Verfügbarkeit, Plan und Einstellung, spielt sie in eine neue leere Datenbank ein, baut den Cache neu auf und vergleicht Nutzerdaten, Aktivitäten, Belastungen (ohne Berechnungszeitpunkt) und den Verlauf von CTL und ATL.
 
@@ -1679,6 +1734,8 @@ Alle Anzeigetexte stehen in `catalog/locales/de.json` und `en.json`, Schlüssel 
 
 Methodenwahl (Konvention, T01): Die Methode folgt den vorhandenen Messkanälen, bei mehreren Kanälen gilt Leistung vor Herzfrequenz (Rad) und Geschwindigkeit vor Herzfrequenz (Lauf). Fehlt die Schwelle der so bestimmten Methode, meldet die Berechnung `missing_threshold` und wechselt nicht still auf eine andere Methode. NP zählt nur volle 30-Sekunden-Fenster, es gibt kein verkürztes Anfangsfenster. Die Dauer umfasst kurze Lücken (bis 10 s) und schließt Pausen aus (6.5).
 
+Garmins Last (seit T39, Entscheidung E2 vom 16. Oktober 2026): Trainingslast und Trainingseffekt, die Garmin je Aktivität meldet, und Garmins akute Last aus der Trainingsbereitschaft zeigt die App nur zusätzlich und gekennzeichnet an. Sie gehen in keine Rechnung ein, weder in die Tageslast noch in CTL, ATL, TSB oder den Planer.
+
 TRIMP nach Banister, Parameter nach Sekundärliteratur (Original vor Implementierung prüfen):
 
 ```
@@ -1821,7 +1878,15 @@ Alle Grenzen sind vor einer Freigabe am Original zu prüfen (O8). `power7` gilt 
 
 ### 8.6 Schätzungen von Schwellenwerten
 
-Die App schlägt Werte vor, übernimmt sie nie selbst:
+**Schwellen aus Garmin (seit T39, Entscheidung E1 vom 16. Oktober 2026).** Für Werte, die Garmin liefert, übernimmt Lastwerk sie beim Abgleich ohne Rückfrage in `threshold` mit Herkunft `garmin`. Das ersetzt für diese Werte die Regel "nur als Vorschlag" unten.
+
+- Datum: Das Datum aus Garmin (`calendarDate` bei FTP und Laktatschwelle). Werte ohne Datum bei Garmin (maximale Herzfrequenz und Ruhepuls aus den Herzfrequenzzonen) bekommen beim ersten Auftreten den ersten Tag des Abgleichfensters, bei einer späteren Änderung den Tag des Abgleichs (Konvention, damit frühere Aktivitäten im Fenster eine Last bekommen; vom Nutzer zu bestätigen, Vermerk in T39).
+- Zuordnung: FTP gilt für Rad. Die Laktatschwellen-Herzfrequenz misst Garmin im Laufen (Docstring der Bibliothek, Q27) und gilt deshalb nur für Lauf; `heartRateCycling` gilt für Rad. Maximale Herzfrequenz und Ruhepuls gelten für alle Sportarten, wenn alle Zonenprofile denselben Wert nennen, sonst je Profil mit dem Namen einer Sportart (`RUNNING`, `CYCLING`, `SWIMMING`) und das Profil `DEFAULT` für alle (Annahme zu den Namen, Livetest O32). Das Schwellentempo übernimmt Lastwerk nicht, weil die Einheit nicht belegt ist (O32).
+- Vorrang: Je Art gilt der jüngste Wert mit `valid_from <= Tag`; bei gleichem Datum gewinnt ein Wert, der nicht von Garmin stammt (manuell oder übernommener Vorschlag), danach der der Sportart, danach der später angelegte. Ein manueller Wert mit späterem Datum überschreibt also alle älteren Garmin-Werte, ein späterer Garmin-Wert gilt wieder ab seinem Datum.
+- Abgleich: Ein Garmin-Wert mit gleicher Sportart, Art und gleichem Datum wird ersetzt, nicht verdoppelt; ein unveränderter Wert schreibt nichts. Ändert sich eine Schwelle, rechnet der Abgleich die Aktivitäten ab dem frühesten geänderten Datum neu (`recompute_loads`). Geschlecht und Geburtsjahr setzt Garmin nur, solange der Nutzer sie nicht selbst gesetzt hat (Herkunft in `athlete.sex_origin` und `athlete.birth_year_origin`); dann wird alles neu berechnet.
+- Fehlt ein Wert: Die Belastung bleibt `missing_threshold`, `activity_load.missing` nennt die fehlende Art (zum Beispiel `ftp_w`), und die Oberfläche sagt, welcher Wert fehlt, dass Garmin ihn nicht geliefert hat und dass er unter Einstellungen, Schwellenwerte eingetragen werden kann.
+
+Für alle übrigen Werte schlägt die App vor und übernimmt nie selbst:
 
 - FTP: 95 Prozent der besten 20-Minuten-Leistung (Faustregel, Q16 nur sekundär). Warnhinweis, dass das nur bei maximalem 20-Minuten-Test sinnvoll ist.
 - LTHR: Mittelwert der Herzfrequenz in den letzten 20 Minuten eines 30-Minuten-Tests (Faustregel der Trainerliteratur).
@@ -1962,6 +2027,7 @@ Umsetzung in T26 Teil B (Stand 15. Oktober 2026), Befehle in `app/src-tauri/src/
 - Abweichung T29 (Entscheidung vom 15. Oktober 2026): Zur Einrichtung von Ollama (9.2) entstehen Verbindungen nach außen nur im Installer nach "Ja" auf die Frage oder in der App nach Klick, nie von selbst und nie aus dem Frontend. Das Skript `ollama-setup.ps1` ruft winget mit der Quelle `winget` (Paket `Ollama.Ollama`) auf; nur wenn winget fehlt oder scheitert, lädt es `https://ollama.com/download/OllamaSetup.exe` (Weiterleitung zu den Releases von Ollama auf GitHub). Danach spricht es nur mit `http://127.0.0.1:11434`. Modelle lädt der Dienst von Ollama aus seiner eigenen Registry, Lastwerk lädt keine Modelldateien. Beim Update von Lastwerk (passiver Modus) prüft der Installer Ollama und das Startmodell nur, wenn die gemerkte Antwort "Ja" lautet. Übertragen werden keine Nutzerdaten, außer was jede HTTPS-Anfrage verrät.
 - Daten bleiben lokal. Es gibt kein Konto und keinen Server. Ausnahme sind die Antworten von `lastwerk-mcp` an den Client, den der Nutzer selbst verbindet (9.6).
 - Jede Verbindung nach außen braucht eine ausdrückliche Handlung und ist in den Einstellungen sichtbar.
+- Vollabzug aus Garmin (T39): nur die belegten lesenden Endpunkte aus 5.6, keine Menstruations- und Schwangerschaftsdaten, S3 nur nach Freigabe in den Einstellungen und getrennt gespeichert (`sensitive_day`, vom MCP-Server nicht gelesen). Neue Tages- und Trainingswerte gehen nicht an den MCP-Server.
 - Echte FIT-Dateien liegen nur in `local/` und werden nie committet (Abschnitt 1.4, Abschnitt 11).
 
 ### 10.2 Bedrohungen und Gegenmaßnahmen
@@ -2478,6 +2544,7 @@ Der Kern bleibt ohne dieses Programm vollständig nutzbar.
 | O27 | Welche nicht gewrappten Endpunkte über `connectapi` oder GraphQL sind für den Vollabzug nötig, und woher kommen ihre Pfade (eigene Browsersitzung mit den Entwicklerwerkzeugen)? | Erst nach Auswertung des Abdeckungsberichts sichtbar | M4b |
 | O28 | Sicherung und Verschlüsselung des Archivs (BitLocker, getrennter Datenträger), Aufbewahrung von `sensitive/`. Ort ist entschieden: `local/archive/garmin/` im Projektordner | Archiv enthält vollständige Gesundheits- und Standortdaten und ist nicht aus FIT ableitbar. `git clean -x` würde es löschen (6.1) | vor M4b |
 | O30 | Nimmt `diauth.garmin.com` den Tausch Ticket gegen Token ohne Browser-TLS an (reqwest mit rustls statt curl_cffi)? | Die Bibliothek sendet ihn mit nachgeahmtem Chrome-TLS, die Datenaufrufe dagegen mit der Standardbibliothek. Nachahmen widerspräche Abrufregel 5. Ausweg bei Ablehnung: Sitzungs-Cookie aus dem Anmeldefenster (wie der Rückfall `JWT_WEB` der Bibliothek), erst nach Entscheidung des Nutzers | Livetest T23 |
+| O32 | Antwortformate des Vollabzugs (T39) am echten Konto: Stimmen die Feldnamen aus dem Bericht der Sonde, die Werte von `gender` (`MALE`, `FEMALE` angenommen) und die Namen der Zonenprofile (`DEFAULT`, `RUNNING`, `CYCLING`, `SWIMMING` angenommen)? Welche Einheit hat `lactateThresholdSpeed`? Wie sehen die Zeilen der Bereichsendpunkte `biometric-service/stats/.../range` aus (Verlauf von FTP und Laktatschwelle)? | Die Sonde hat Feldnamen und Typen erfasst, keine Werte; die Bereichsendpunkte der Schwellen rief sie nicht auf. Bis zur Klärung übernimmt Lastwerk das Schwellentempo nicht und holt nur den jüngsten Wert von FTP und Laktatschwelle | Livetest T39 |
 | O31 | Feste Stunden je Woche oder Minuten je Tag: wie verteilt der Planer mit drei Fragen die Zeit? | **Entschieden am 15. Oktober 2026 (T26 Teil B): gleichmäßig auf die gewählten Tage, ohne Wochenendanteil (Faustregel).** Die Wochenzeit wird auf 5 Minuten gerundet (wie die Dauerstufe des Planers) und in 5-Minuten-Schritten gleichmäßig verteilt, ein Rest von höchstens 5 Minuten je Tag geht an die späteren Tage (Summe bleibt). Gewählte Tage sind Obergrenze je Tag mit erlaubten harten Einheiten, die übrigen feste Ruhetage mit 0 Minuten (R5 gibt der Planer selbst, wenn alle sieben Tage gewählt sind). Begründung: Die Minuten sind die Obergrenze je Tag, nicht das Ziel; der Planer wählt die Dauern nach dem Lastziel und der Rampe (R1), setzt harte Tage nach R3 und R4 und legt die Langeinheit auf den Tag mit der größten Zeit, bei Gleichstand auf den späteren (`generate.rs`). Ein doppelter Wochenendanteil wäre eine Annahme über den Alltag des Nutzers, die weder die Eingabe noch eine Quelle trägt. Folge: Bei vielen Trainingstagen ist die Langeinheit auf den Durchschnitt je Tag begrenzt (7 Tage bei 7 Stunden: 60 Minuten); wer eine längere Einheit will, sagt es im Gespräch oder stellt die Zeit je Tag in den Feineinstellungen. Weniger als 20 Minuten je Tag (`structure.min_session_minutes`) ist `too_little_time`. Beide Fassungen der Rechnung (Rust `distribute_minutes`, Oberfläche `distributeMinutes`) haben dieselben Handrechnungen als Tests | entschieden |
 | O29 | Wie zählt Kraft im Plan, solange die gemessene Last keine Kraft enthält? | Stand 14. Oktober 2026 (Integrationsprüfung, Fund B): Kraft aus FIT ist immer `missing_channel` (RPE kommt nur von Hand, 8.1), für `manual_session` gibt es keinen Eingabeweg. CTL, ATL und die Vorwochenlast enthalten deshalb keine Kraft. Der Planer rechnet Kraft aber mit Last (Session-RPE der Vorlage, 27 je Einheit bei 45 min und RPE 6) im Wochenziel, in `planned_load` und in der Vorausberechnung für R1. Folgen: Der Plan verdrängt Ausdauerlast durch Kraftlast, die später nie in der CTL erscheint, R1 verbraucht seinen Spielraum zum Teil mit Kraft, und Plan und Messung lassen sich nicht vergleichen. Optionen: (a) Eingabeweg für Session-RPE (CLI und App, je Aktivität oder als `manual_session`), dann zählt Kraft auch in der gemessenen Last; folgt 8.1, braucht Nutzereingaben und hängt an O14, ohne Eingabe bleibt die Last fehlend. (b) Kraft aus Wochenziel, `planned_load` der Woche und R1-Vorausberechnung herausnehmen (Kraft behält Dauer und zählt bei R2 und R7); Plan und Messung passen zusammen, die Ermüdung durch Kraft fehlt in ATL und TSB, alle Golden-Pläne ändern sich. (c) wie (b), aber als Parameter in `rules.default.json`, der wieder einschaltbar ist, sobald (a) besteht. Empfehlung des Prüfauftrags: (c) jetzt, (a) später. Die Minuten der Historie zählen seit 14. Oktober 2026 alle primären Aktivitäten (5.4, `week_history`), das ist entschieden | vor M3-Freigabe, Entscheidung des Nutzers |
 
@@ -2518,6 +2585,5 @@ Prüfstatus:
 | Q23 | taxuspt/garmin_mcp (github.com/taxuspt/garmin_mcp), README, CLAUDE.md, pyproject.toml, offene Issues, abgerufen am 13. Oktober 2026 | Erkundungswerkzeug, Befunde zu Fehlerbildern und Schwächen | direkt gelesen. MIT, Release 0.1.0, `garminconnect==0.3.2` gepinnt, `mcp>=1.28.1,<2`. Werkzeugzahl widersprüchlich (110+, 122, 131 nach Kategorien, rund 150 laut Issue #336). Quellcode der Werkzeuge nicht im Einzelnen geprüft |
 | Q24 | rmcp, offizielles Rust-SDK der Model-Context-Protocol-Organisation (crates.io, Version 3.5.1, Apache-2.0) | MCP-Server in Rust | Metadaten über crates.io bestätigt. API in T10 am Quelltext in `~/.cargo/registry` geprüft: `#[tool_router]`, `#[tool_handler]`, `Parameters`, `Json`, Hinweise über `annotations(...)`, `serve(stdio())`, Initialisierung mit `protocolVersion` 2025-11-25 getestet |
 | Q25 | Garmin Connect Developer Program (Berichte Dritter: Terra, Open Wearables, Sahha) | Offizieller Weg zu Garmin-Daten | nur Sekundärberichte. Aussage "nur für juristische Personen, Anträge von Privatpersonen werden abgelehnt" nicht gegen Garmins eigene Seiten geprüft |
-| Q27 | python-garminconnect 0.3.17 (github.com/cyberjunky/python-garminconnect): Quelltext von `garminconnect/__init__.py` und `client.py`, `pyproject.toml`, README, Release-Notizen, Issues #444 und #453, abgerufen am 13. Oktober 2026 | Methodenliste, Anmeldung, Abhängigkeiten, Verhalten bei 429 und 403, Fehlerbilder | direkt gelesen. Methodenliste aus zwei Abrufen des Quelltexts (Zeichen 0 bis 100000 und ab 100000) zusammengestellt, per Zusammenfassung ausgewertet und nicht Zeile für Zeile geprüft. Verhalten der Endpunkte am echten Konto ungeprüft |
-
+| Q27 | python-garminconnect 0.3.17 (github.com/cyberjunky/python-garminconnect): Quelltext von `garminconnect/__init__.py` und `client.py`, `pyproject.toml`, README, Release-Notizen, Issues #444 und #453, abgerufen am 13. Oktober 2026 | Methodenliste, Anmeldung, Abhängigkeiten, Verhalten bei 429 und 403, Fehlerbilder | direkt gelesen. Methodenliste aus zwei Abrufen des Quelltexts (Zeichen 0 bis 100000 und ab 100000) zusammengestellt, per Zusammenfassung ausgewertet und nicht Zeile für Zeile geprüft. Verhalten der Endpunkte am echten Konto ungeprüft. Seit T39 (16. Oktober 2026): Pfade, Parameter und gelesene Felder der neuen Endpunkte im lokalen Quelltext 0.3.17 (`bridge/.venv`) Zeile für Zeile gelesen, Zeilen in `docs/tasks/T39-garmin-vollabzug.md`; Feldnamen gegen den Bericht der Sonde (`docs/garmin-feldabdeckung.md`) geprüft, Werte und Einheiten am echten Konto ungeprüft (O32) |
 Nicht verwendete, aber geprüfte Aussagen: Die Aussage "Wochenanstieg von 10 Prozent schützt vor Verletzungen" ist nicht belegt (Q12, Q13). Die Aussage "ACWR zwischen 0,8 und 1,3 sei sicher" wird nicht übernommen (Q9).
