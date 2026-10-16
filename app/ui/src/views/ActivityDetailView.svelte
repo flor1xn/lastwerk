@@ -20,6 +20,7 @@
     MISSING,
   } from '../lib/format';
   import { locale, t } from '../lib/i18n';
+  import { missingText, trainingEffectText } from '../lib/load';
   import { Loader } from '../lib/loader.svelte';
   import { dataVersion, resolvedTheme, selectedActivityId, view } from '../lib/state';
 
@@ -57,6 +58,14 @@
   });
 
   const d = $derived(loader.data);
+  const missing = $derived(d ? missingText(d.item.load) : null);
+  // Garmins eigene Zahlen, nur zur Ansicht (E2): Lastwerk rechnet nie damit.
+  const garmin = $derived(
+    d?.garmin_load &&
+      (d.garmin_load.training_load !== null || d.garmin_load.training_effect !== null)
+      ? d.garmin_load
+      : null,
+  );
   const hasPower = $derived(!!d && d.series.power_w.some((v) => v !== null));
   const hasHeart = $derived(!!d && d.series.hr_bpm.some((v) => v !== null));
   // Tempo nur bei Läufen (min/km); andere Sportarten zeigen in den Runden km/h.
@@ -138,10 +147,37 @@
             ? MISSING
             : formatNumber(d.item.load.intensity_factor, $locale, 2)}
         </dd>
+        {#if garmin}
+          <dt>{$t('ui.detail.garmin.load')}</dt>
+          <dd data-testid="garmin-load">
+            {garmin.training_load === null
+              ? MISSING
+              : formatNumber(garmin.training_load, $locale, 0)}
+            <span class="flag">{$t('ui.detail.garmin.tag')}</span>
+          </dd>
+          <dt>{$t('ui.detail.garmin.effect_label')}</dt>
+          <dd data-testid="garmin-effect">
+            {garmin.training_effect === null
+              ? MISSING
+              : trainingEffectText(garmin.training_effect, $t)}
+          </dd>
+        {/if}
         <dt>{$t('ui.detail.device')}</dt>
         <dd>{d.device_product ?? MISSING}</dd>
       </dl>
-      {#if d.item.load.status !== 'ok'}
+      {#if garmin}
+        <p class="muted reason" data-testid="garmin-load-note">{$t('ui.detail.garmin.note')}</p>
+      {/if}
+      {#if missing}
+        <p class="warn reason" data-testid="load-reason" data-missing={d.item.load.missing}>
+          {$t(missing.what)}. {$t(missing.hint)}
+        </p>
+        <p class="reason">
+          <button onclick={() => view.set('settings')} data-testid="load-reason-settings"
+            >{$t('ui.load.to_settings')}</button
+          >
+        </p>
+      {:else if d.item.load.status !== 'ok'}
         <p class="warn reason" data-testid="load-reason">
           {$t(`ui.load.status.${d.item.load.status}`)}
         </p>
@@ -350,6 +386,7 @@
   dd {
     margin: 0;
     font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
   }
 
   .reason {

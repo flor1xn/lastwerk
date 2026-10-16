@@ -501,3 +501,63 @@ fn an_invalid_backup_leaves_the_data_unchanged() {
     );
     assert_eq!(plans::list_plans(&store).unwrap().len(), 1);
 }
+
+// --- Vorschlag aus der Historie (T41) ----------------------------------------------------
+
+fn day(s: &str) -> chrono::NaiveDate {
+    s.parse().unwrap()
+}
+
+#[test]
+fn history_defaults_follow_the_usual_week() {
+    // Zwölf Wochen ab Montag, 20. Juli 2026. In acht Wochen: Di 60 min Lauf, Do 60 min Lauf,
+    // Sa 120 min Rad, So 90 min Rad (5,5 h). In zwei Wochen nur Sa 120 min Rad (2 h). Zwei
+    // Wochen ohne Training zählen nicht.
+    let start = day("2026-07-20");
+    let mut rows = Vec::new();
+    for week in 0..10i64 {
+        let monday = start + chrono::TimeDelta::days(7 * week);
+        let at = |d: i64| monday + chrono::TimeDelta::days(d);
+        if week < 8 {
+            rows.push((at(1), Sport::Running, 3600));
+            rows.push((at(3), Sport::Running, 3600));
+            rows.push((at(6), Sport::Cycling, 5400));
+        }
+        rows.push((at(5), Sport::Cycling, 7200));
+        rows.push((at(5), Sport::Strength, 0));
+    }
+    let h = plans::history_defaults(&rows, start).unwrap();
+    // Rad: 10 × 120 + 8 × 90 = 1920 min, Lauf: 8 × 120 = 960 min.
+    assert_eq!(h.sport, lastwerk_core::plan::PlanSport::Cycling);
+    // Median über zehn Wochen mit Training: acht zu 5,5 h und zwei zu 2 h, also 5,5 h.
+    assert!((h.hours - 5.5).abs() < 1e-9);
+    // Di, Do, Sa, So je in mindestens 5 von 10 Wochen.
+    assert_eq!(h.days, [1, 3, 5, 6]);
+    assert_eq!(h.weeks, 10);
+}
+
+#[test]
+fn history_defaults_need_four_weeks_and_enough_time_per_day() {
+    let start = day("2026-07-20");
+    let three: Vec<_> = (0..3i64)
+        .map(|w| (start + chrono::TimeDelta::days(7 * w), Sport::Running, 3600))
+        .collect();
+    assert!(plans::history_defaults(&three, start).is_none());
+
+    // Sieben kurze Läufe je Woche zu 10 min: 70 min, also 2 h nach der Untergrenze. 120 / 7 sind
+    // 17 min je Tag, weniger als 20: der seltenste Tag (bei Gleichstand der frühere, Montag) fällt
+    // weg, 120 / 6 = 20 min reichen.
+    let mut rows = Vec::new();
+    for w in 0..6i64 {
+        for d in 0..7i64 {
+            rows.push((
+                start + chrono::TimeDelta::days(7 * w + d),
+                Sport::Running,
+                600,
+            ));
+        }
+    }
+    let h = plans::history_defaults(&rows, start).unwrap();
+    assert!((h.hours - 2.0).abs() < 1e-9);
+    assert_eq!(h.days, [1, 2, 3, 4, 5, 6]);
+}

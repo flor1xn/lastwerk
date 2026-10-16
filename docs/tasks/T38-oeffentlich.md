@@ -2,7 +2,7 @@
 
 | Feld | Wert |
 |---|---|
-| Status | in Arbeit (Weg b, siehe "Umsetzung von Weg (b)") |
+| Status | erledigt (Weg b, siehe "Umsetzung von Weg (b)") |
 | Meilenstein | nach 1.0 |
 | Voraussetzung | T30 |
 | cloudfähig | ja; Umstellung der Sichtbarkeit und Einstellungen auf GitHub nur durch den Eigentümer |
@@ -249,6 +249,26 @@ Entscheidung des Eigentümers vom 15. Oktober 2026: Weg (b), neues Repository mi
 | Trailer `Claude-Session` | abgeschaltet (`.claude/settings.json`, `attribution`; Regel in `CLAUDE.md`) |
 
 Commit-Hashes in dieser Datei und in älteren Aufträgen beziehen sich auf das Archiv. `scripts/history-allowlist.txt` ist leer, weil die Altfunde nur dort liegen.
+
+### Abnahme von Weg (b)
+
+Stand 16. Oktober 2026, lokal unter Windows mit gitleaks 8.30.1, trufflehog 3.99.2, actionlint 1.7.12, zizmor 1.31.0 (scoop, uv).
+
+| Kriterium | Ergebnis |
+|---|---|
+| `check-history.sh` auf einem Repository nur mit dem Anfangscommit, vor dem Push | **erfüllt.** gitleaks kein Leck, trufflehog 810 Chunks ohne Treffer, keine Muster, kein Personenbezug, 0 von 2 Adressen ohne noreply, 0 Sitzungsverweise |
+| `check-history.sh https://github.com/flor1xn/lastwerk.git` nach dem Push | **erfüllt.** Ohne Fund (4 Commits: Anfang und drei Zweige von Dependabot), 0 von 8 Adressen ohne noreply |
+| Secret-Scanner von GitHub | eingeschaltet mit Push-Protection, 0 Meldungen |
+| `sh scripts/check-all.sh` | alles grün außer zwei Tests in `bridge/`, die Symlinks anlegen: Unter Windows ohne Entwicklermodus fehlt dafür das Recht (WinError 1314). `bridge/` ist unverändert und läuft in der CI unter Ubuntu, dort grün |
+| CI auf `main` (Linux, Windows) und Bridge | **erfüllt**, beide grün beim ersten Lauf |
+| `auto-release.yml` | **erfüllt.** Ohne früheren Tag die Version aus dem Changelog, v1.0.3 mit Installer für Windows (NSIS) und Linux (deb, AppImage) veröffentlicht |
+| `latest.json` | erreichbar unter `releases/latest/download/latest.json`, Version 1.0.3, Signatur mit der Schlüssel-ID des neuen öffentlichen Schlüssels |
+| Echter Installer (R14) | `Lastwerk_1.0.3_x64-setup.exe` mit 7-Zip entpackt, `strings` (ASCII und UTF-16) über Installer und alle Dateien: keine Benutzerpfade, kein Klarname, keine private Adresse (einzige Adresse aus OpenSSL) |
+| Einstellungen | Issues, Wiki, Projekte, Discussions aus; Interaction limit nur Collaborators bis 15. April 2027; Workflows nur Lesen, keine Freigabe von Pull Requests durch Actions; Fork-PRs aller Externen nur nach Freigabe; Ruleset "main schützen" (kein Force-Push, kein Löschen); private Schwachstellenmeldung und Dependabot-Warnungen an; Schlüssel nur in der Umgebung `release` (Zweigregel `main`), keine Repository-Secrets |
+
+Korrektur dabei: `scripts/check-history.sh` übergab trufflehog unter Git Bash einen MSYS-Pfad (`/tmp/...`), den das Windows-Programm nicht kennt; der Abbruch mit Exit 1 galt als Treffer. Jetzt Windows-Pfad über `cygpath`, und nur Exit 183 gilt als Treffer.
+
+Offen beim Eigentümer: E-Mail-Datenschutz im GitHub-Konto ("Keep my email addresses private", "Block command line pushes that expose my email"), Freigabe des neuen Repositorys für die Claude-GitHub-App, falls sie auf einzelne Repositories beschränkt ist, Sicherung von Schlüssel und Passwort aus dem Benutzerordner `.tauri`, einmalige Neuinstallation von 1.0.3 über installierte 1.0.x, Verlängerung des Interaction limit im April 2027. Ob der Trailer `Claude-Session` wirklich wegfällt, zeigt der nächste Commit einer Cloud-Session.
 
 ## Blocker
 

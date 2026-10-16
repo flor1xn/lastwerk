@@ -11,6 +11,11 @@ ignore = [
     # (app/src-tauri). Kein Laufzeitcode, keine bekannte Sicherheitslücke, keine sichere
     # Aktualisierung möglich (T06). Entfernen, sobald Tauri auf neuere Bindungen wechselt.
     { id = "RUSTSEC-2024-0370", reason = "unmaintained, nur Makro zur Übersetzungszeit in den GTK3-Bindungen von Tauri" },
+    # zip 4.6.1 ist zurückgezogen (yanked), wie alle Versionen von zip unter 9.0.3 (Stand
+    # 16. Oktober 2026), ohne gemeldete Sicherheitslücke. Es kommt nur über tauri-plugin-updater
+    # (auch 2.14.0 verlangt zip 4) und entpackt dort nur signierte Update-Archive. Lastwerk
+    # selbst nutzt zip 9 (crates/cli). Entfernen, sobald das Plugin zip 9 nutzt (T40).
+    { crate = "zip@4.6.1", reason = "yanked ohne Sicherheitshinweis, nur über tauri-plugin-updater, keine neuere passende Version" },
 ]
 
 [licenses]

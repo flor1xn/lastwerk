@@ -12,8 +12,9 @@ use lastwerk_core::{
     FTP_FRACTION_OF_BEST_20_MIN, LoadConfig, Sex, Sport, estimate_hr_max, suggest_css, suggest_ftp,
 };
 use lastwerk_store::{
-    ImportOptions, NewThreshold, RecomputeReport, SETTING_ATHLETE_BIRTH_YEAR, SETTING_ATHLETE_SEX,
-    Store, ThresholdKind, ThresholdOrigin, ThresholdRecord,
+    ImportOptions, NewThreshold, RecomputeReport, SETTING_ATHLETE_BIRTH_YEAR,
+    SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, SETTING_ATHLETE_SEX, SETTING_ATHLETE_SEX_ORIGIN, Store,
+    ThresholdKind, ThresholdOrigin, ThresholdRecord,
 };
 
 use crate::error::CliError;
@@ -74,6 +75,7 @@ fn origin_label(origin: ThresholdOrigin) -> &'static str {
     match origin {
         ThresholdOrigin::Manual => "manuell",
         ThresholdOrigin::SuggestedAccepted => "Vorschlag übernommen",
+        ThresholdOrigin::Garmin => "aus Garmin",
     }
 }
 
@@ -458,6 +460,8 @@ pub fn athlete_set(
             Sex::Female => "female",
         };
         store.set_setting(SETTING_ATHLETE_SEX, text)?;
+        // Ein eigener Wert geht vor Garmin (SPEC 8.6): der Abgleich lässt ihn danach stehen.
+        store.set_setting(SETTING_ATHLETE_SEX_ORIGIN, "manual")?;
         wr(
             out,
             format_args!(
@@ -472,6 +476,7 @@ pub fn athlete_set(
     }
     if let Some(year) = req.birth_year {
         store.set_setting(SETTING_ATHLETE_BIRTH_YEAR, &year.to_string())?;
+        store.set_setting(SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, "manual")?;
         let age = now.year() - year;
         wr(
             out,

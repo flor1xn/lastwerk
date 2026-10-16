@@ -8,7 +8,8 @@
 
   interface Props {
     testid?: string;
-    /** Mit Zahl der Erholungstage (Einstellungen, Erststart). */
+    /** Mit Zahl der Erholungstage, geänderter Schwellen und neu berechneter Aktivitäten
+     * (Einstellungen, Erststart). */
     detail?: boolean;
     /** Schmale Seitenleiste: bei einem Fehler nur "unvollständig", der volle Text als Tooltip
      * (manche Fehlertexte sind zwei Sätze lang). */
@@ -35,7 +36,17 @@
               count: $garminSync.summary.new_activities,
               days: $garminSync.summary.recovery_days,
             })
-          : $t('ui.garmin.sync.done', { count: $garminSync.summary.new_activities })}
+          : $t('ui.garmin.sync.done', {
+              count: $garminSync.summary.new_activities,
+            })}{#if detail && $garminSync.summary.thresholds_changed > 0}<span
+            data-testid={`${testid}-thresholds`}
+            >, {$t('ui.garmin.sync.thresholds', {
+              n: $garminSync.summary.thresholds_changed,
+            })}</span
+          >{/if}{#if detail && $garminSync.summary.recomputed > 0}<span
+            data-testid={`${testid}-recomputed`}
+            >, {$t('ui.garmin.sync.recomputed', { n: $garminSync.summary.recomputed })}</span
+          >{/if}
       </span>
     {:else}
       <span class="dot warn" aria-hidden="true"></span>

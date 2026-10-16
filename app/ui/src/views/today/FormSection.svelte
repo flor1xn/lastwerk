@@ -6,6 +6,7 @@
   import StatRow from '../../lib/components/StatRow.svelte';
   import { formName } from '../../lib/dashboard';
   import { formatNumber } from '../../lib/format';
+  import { garminSync } from '../../lib/garmin';
   import { locale, t } from '../../lib/i18n';
 
   // Form-Verlauf: TSB groß mit Zustand als Text, Fitness und Ermüdung daneben, darunter der
@@ -21,7 +22,11 @@
 
 <Section
   label={$t('ui.dash.form.title')}
-  statement={state ? $t(`ui.form.${state}_hint`) : $t('ui.dash.form.empty')}
+  statement={state
+    ? $t(`ui.form.${state}_hint`)
+    : $garminSync.kind === 'running'
+      ? $t('ui.dash.form.loading')
+      : $t('ui.dash.form.empty')}
   testid="today-form"
 >
   {#if form && state}

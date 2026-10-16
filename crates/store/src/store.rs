@@ -280,7 +280,8 @@ impl Store {
     ///
     /// Je Art gilt der jüngste Eintrag mit `valid_from <= on`. Es zählen Einträge der
     /// Sportart und Einträge für alle Sportarten (`all`). Bei gleichem `valid_from` gewinnt
-    /// der der Sportart, danach der später angelegte. `None`, wenn kein einziger Wert gilt.
+    /// ein Eintrag, der nicht aus Garmin stammt (Entscheidung E1, SPEC 8.6), danach der der
+    /// Sportart, danach der später angelegte. `None`, wenn kein einziger Wert gilt.
     /// `sex` kommt aus der Einstellung [`SETTING_ATHLETE_SEX`].
     pub fn thresholds_for(&self, sport: Sport, on: NaiveDate) -> Result<Option<Thresholds>> {
         Ok(self.threshold_lookup(sport, on)?.map(|l| l.thresholds))
@@ -446,7 +447,7 @@ pub(crate) fn activity_from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Activ
 
 /// Spalten von `activity_load` in der Reihenfolge, die [`load_from_row`] erwartet.
 pub(crate) const LOAD_COLUMNS: &str =
-    "activity_id, method, value, intensity_factor, threshold_id, status, computed_at";
+    "activity_id, method, value, intensity_factor, threshold_id, status, computed_at, missing";
 
 pub(crate) fn load_from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<LoadRow> {
     let status: String = r.get(5)?;
@@ -459,6 +460,7 @@ pub(crate) fn load_from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<LoadRow> 
         threshold_id: r.get(4)?,
         status: conversion(5, LoadStatus::parse(&status))?,
         computed_at: conversion(6, parse_utc(&at))?,
+        missing: r.get(7)?,
     })
 }
 
@@ -480,7 +482,7 @@ pub(crate) fn threshold_lookup(
     let rows = db.with(
         "SELECT id, kind, value, valid_from FROM threshold \
          WHERE valid_from <= ?1 AND sport IN (?2, 'all') \
-         ORDER BY kind, valid_from DESC, (sport = ?2) DESC, id DESC",
+         ORDER BY kind, valid_from DESC, (origin = 'garmin') ASC, (sport = ?2) DESC, id DESC",
         |stmt| {
             stmt.query_map(params![fmt_date(on), sport_text], |r| {
                 let kind: String = r.get(1)?;
@@ -604,12 +606,13 @@ pub(crate) fn upsert_activity(db: &Db<'_>, a: &ActivityRow) -> Result<i64> {
 pub(crate) fn upsert_activity_load(db: &Db<'_>, l: &LoadRow) -> Result<()> {
     db.with(
         "INSERT INTO activity_load \
-             (activity_id, method, value, intensity_factor, threshold_id, status, computed_at) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) \
+             (activity_id, method, value, intensity_factor, threshold_id, status, computed_at, \
+              missing) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) \
          ON CONFLICT(activity_id, method) DO UPDATE SET \
              value = excluded.value, intensity_factor = excluded.intensity_factor, \
              threshold_id = excluded.threshold_id, status = excluded.status, \
-             computed_at = excluded.computed_at",
+             computed_at = excluded.computed_at, missing = excluded.missing",
         |s| {
             s.execute(params![
                 l.activity_id,
@@ -618,7 +621,8 @@ pub(crate) fn upsert_activity_load(db: &Db<'_>, l: &LoadRow) -> Result<()> {
                 l.intensity_factor,
                 l.threshold_id,
                 l.status.as_str(),
-                fmt_utc(l.computed_at)
+                fmt_utc(l.computed_at),
+                l.missing
             ])
         },
     )?;

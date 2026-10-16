@@ -40,6 +40,13 @@ export function sessionsOn(plan: Plan, date: string): PlanSession[] {
 }
 
 /** Liegt der Tag innerhalb der Wochen des Plans? Sonst ist "frei" die falsche Aussage. */
+/** Erster Tag des Plans, wenn er nach `date` beginnt (T41: der Plan aus der Einrichtung beginnt
+ * am nächsten Montag), sonst null. */
+export function planStartsAfter(plan: Plan, date: string): string | null {
+  const first = plan.weeks[0]?.days[0]?.date ?? null;
+  return first !== null && first > date ? first : null;
+}
+
 export function planCovers(plan: Plan, date: string): boolean {
   return plan.weeks.some((w) => w.days.some((d) => d.date === date));
 }

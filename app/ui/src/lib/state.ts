@@ -10,6 +10,7 @@ export const VIEWS = [
   'progress',
   'performance',
   'recovery',
+  'health',
   'plan',
   'activities',
   'detail',

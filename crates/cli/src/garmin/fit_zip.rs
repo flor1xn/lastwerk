@@ -106,7 +106,9 @@ pub fn extract_fit(zip_bytes: &[u8], target: &Path, max_bytes: u64) -> Result<u6
             // Verschlüsselt oder mit unbekanntem Verfahren: nicht lesbar, nächster Eintrag.
             Err(_) => continue,
         };
-        if entry.is_dir() || !is_fit_name(entry.name()) {
+        // Seit zip 9 kann der Name ungültig kodiert sein: dann kein FIT, nächster Eintrag.
+        let is_fit = entry.name().is_ok_and(|name| is_fit_name(&name));
+        if entry.is_dir() || !is_fit {
             continue;
         }
         if entry.size() > max_bytes {

@@ -11,6 +11,8 @@
     "allow-get-week-overview",
     "allow-get-dashboard",
     "allow-get-recovery",
+    "allow-get-health",
+    "allow-delete-sensitive-data",
     "allow-get-performance",
     "allow-get-progress",
     "allow-list-activities",

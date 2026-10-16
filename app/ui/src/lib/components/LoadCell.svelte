@@ -2,6 +2,7 @@
   import type { LoadInfo } from '../backend/types';
   import { formatNumber } from '../format';
   import { locale, t } from '../i18n';
+  import { missingText } from '../load';
   import EstimatedBadge from './EstimatedBadge.svelte';
 
   interface Props {
@@ -11,6 +12,14 @@
   }
 
   let { load, showMethod = true }: Props = $props();
+
+  // Fehlt ein bestimmter Wert (T39), nennt der Tooltip ihn und wo er einzutragen ist.
+  const reason = $derived.by(() => {
+    const missing = missingText(load);
+    return missing
+      ? `${$t(missing.what)}. ${$t(missing.hint)}`
+      : $t(`ui.load.status.${load.status}`);
+  });
 </script>
 
 {#if load.status === 'ok' && load.value !== null}
@@ -23,11 +32,8 @@
   </span>
 {:else}
   <!-- Fehlende Daten sind nie 0 (SPEC 5.4): Text statt Zahl, der Grund steht im Tooltip. -->
-  <span
-    class="na"
-    data-testid="load"
-    data-status={load.status}
-    title={$t(`ui.load.status.${load.status}`)}>{$t('common.not_computable')}</span
+  <span class="na" data-testid="load" data-status={load.status} title={reason}
+    >{$t('common.not_computable')}</span
   >
 {/if}
 

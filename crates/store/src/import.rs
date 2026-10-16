@@ -37,7 +37,8 @@ use crate::store::{
 /// - 1: Stand bis T32 (stillschweigend, ohne Zeile in `cache_meta` ist es 0).
 /// - 2: T33, Bestleistungen im Raster `POWER_CURVE_DURATIONS_S` statt fünf Dauern.
 /// - 3: T37, Bestzeiten im Laufen (`activity_best_effort`).
-pub const DERIVED_CACHE_VERSION: u32 = 3;
+/// - 4: T39, `activity_load.missing` nennt die fehlende Schwelle.
+pub const DERIVED_CACHE_VERSION: u32 = 4;
 
 const CACHE_META_DERIVED: &str = "derived_version";
 

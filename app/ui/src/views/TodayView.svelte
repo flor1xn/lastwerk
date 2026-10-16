@@ -11,7 +11,7 @@
   import { Loader } from '../lib/loader.svelte';
   import { keyText, templateName } from '../lib/plan';
   import { dataVersion, view } from '../lib/state';
-  import { activePlanId, planCovers, sessionsOn } from '../lib/today';
+  import { activePlanId, planCovers, planStartsAfter, sessionsOn } from '../lib/today';
   import AdherenceSection from './today/AdherenceSection.svelte';
   import CalendarSection from './today/CalendarSection.svelte';
   import DistributionSection from './today/DistributionSection.svelte';
@@ -48,6 +48,7 @@
   const data = $derived(loader.data);
   const sessions = $derived(data?.plan ? sessionsOn(data.plan, today) : []);
   const covered = $derived(data?.plan ? planCovers(data.plan, today) : false);
+  const startsOn = $derived(data?.plan ? planStartsAfter(data.plan, today) : null);
   const main = $derived(sessions[0] ?? null);
   const rest = $derived(sessions.slice(1));
   const reasons = $derived(
@@ -112,6 +113,16 @@
       {:else if data.plan && covered}
         <h2 class="hero-title" data-testid="today-title">{$t('ui.today.rest_title')}</h2>
         <p class="hero-meta muted">{$t('ui.today.rest_hint')}</p>
+      {:else if data.plan && startsOn}
+        <h2 class="hero-title" data-testid="today-title">
+          {$t('ui.today.starts_title', { date: formatDate(startsOn, $locale) })}
+        </h2>
+        <p class="hero-meta muted">{$t('ui.today.starts_hint')}</p>
+        <div class="actions">
+          <button class="primary" onclick={() => view.set('plan')}
+            >{$t('ui.today.open_plan')}</button
+          >
+        </div>
       {:else if data.plan}
         <h2 class="hero-title" data-testid="today-title">{$t('ui.today.not_covered')}</h2>
         <div class="actions">

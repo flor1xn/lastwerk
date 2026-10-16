@@ -348,8 +348,16 @@ fn the_first_run_downloads_imports_and_writes_recovery_days() {
     );
     assert_eq!(s.aborted, None);
     assert!(s.last_sync_updated);
-    // Aufrufe: 1 Seite, 4 Dateien, Profil, HRV, Body Battery, Ruhepuls, 11 Schlaftage.
-    assert_eq!(s.calls, 1 + 4 + 1 + 1 + 1 + 1 + 11);
+    // Aufrufe: 1 Seite, 4 Dateien, Profil, HRV, Body Battery, Ruhepuls, 11 Schlaftage. Dazu
+    // seit T39: 4 Aufrufe der Phase Konto, je ein Aufruf Schritte, Bergwert, Garmins Last,
+    // Ausdauerwert und Fitnessalter, je Tag 6 Tageswerte für 11 Tage (ohne Freigabe keine
+    // Hydration). Seit T40: 3 Schwellenverläufe in der Phase Konto, je ein Aufruf
+    // VO2max-Verlauf, Belastungsfokus, Lauftoleranz, 2 Aufrufe Rennprognosen und je Tag
+    // Trainingsstatus und Etagen. Die Attrappe beantwortet sie ohne Daten.
+    assert_eq!(
+        s.calls,
+        1 + 4 + 1 + 1 + 1 + 1 + 11 + 4 + 5 + 6 * 11 + 3 + 1 + 1 + 1 + 2 + 2 * 11
+    );
     assert_eq!(fake.count("fit:"), 4);
     // Der Name besteht nur aus der Kennung.
     for id in [1001, 1002, 1003, 1004] {
@@ -379,7 +387,8 @@ fn the_first_run_downloads_imports_and_writes_recovery_days() {
     assert_eq!(r.source, RECOVERY_SOURCE);
     assert_eq!(r.imported_at, now());
 
-    // Fortschritt: alle drei Phasen kommen vor, in dieser Reihenfolge, und enden mit done == total.
+    // Fortschritt: alle fünf Phasen (seit T39 mit Konto und Tageswerten) kommen vor, seit T40 in
+    // dieser Reihenfolge (Last früh da), und enden mit done == total.
     let order: Vec<SyncPhase> = phases.iter().map(|p| p.phase).fold(Vec::new(), |mut v, p| {
         if v.last() != Some(&p) {
             v.push(p);
@@ -389,9 +398,11 @@ fn the_first_run_downloads_imports_and_writes_recovery_days() {
     assert_eq!(
         order,
         [
+            SyncPhase::Account,
             SyncPhase::Activities,
+            SyncPhase::Import,
             SyncPhase::Recovery,
-            SyncPhase::Import
+            SyncPhase::Wellness
         ]
     );
     for phase in [
@@ -739,8 +750,10 @@ fn a_lockout_in_the_middle_of_the_run_sets_no_last_sync_but_keeps_what_is_there(
     assert_eq!(store.activities().unwrap().len(), 2);
     assert_eq!(fake.count("hrv:"), 0);
     assert_eq!(s.recovery_days, 0);
-    // Nach dem Abbruch kein weiterer Aufruf (keine Wiederholung gegen die Sperre).
-    assert_eq!(s.calls, 4);
+    // Nach dem Abbruch kein weiterer Aufruf (keine Wiederholung gegen die Sperre). Davor liefen
+    // seit T40 die 7 Aufrufe der Phase Konto (4 und 3 Schwellenverläufe), die die Attrappe ohne
+    // Daten und ohne Zählung beantwortet.
+    assert_eq!(s.calls, 7 + 4);
     // Die Meldung nennt das Ende der Sperre, aber keinen Pfad.
     let message = abort_message(&abort);
     assert!(message.contains("gesperrt"), "{message}");
@@ -798,7 +811,9 @@ fn other_runs_ending_errors_end_the_run_without_last_sync() {
         let mut store = store_with_backfill(10);
         let s = run(&mut store, &fake, &dir, d(2026, 5, 14));
         assert_eq!(s.aborted.as_ref().map(|a| a.code.as_str()), Some(code));
-        assert_eq!(s.calls, 1, "{code}");
+        // Die 7 Aufrufe der Phase Konto (seit T40 zuerst) beantwortet die Attrappe ohne Daten,
+        // der erste eigene Aufruf beendet den Lauf.
+        assert_eq!(s.calls, 7 + 1, "{code}");
         assert_eq!(store.garmin_settings().unwrap().last_sync, None);
         assert_eq!(s.new_activities, 0);
         assert!(!abort_message(s.aborted.as_ref().unwrap()).is_empty());
