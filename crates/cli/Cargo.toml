@@ -39,7 +39,7 @@ uuid = { version = "1.28", default-features = false, features = ["v4"] }
 # Verschlüsselung, kein bzip2, lzma, zstd, ppmd. `deflate-flate2-zlib-rs` ist nur das
 # Entpacken von Deflate mit dem reinen Rust-Backend zlib-rs; das Feature `deflate` brächte
 # zusätzlich zopfli (Komprimierer) mit. Vermerk: docs/tasks/T22-garmin-sync.md.
-zip = { version = "8.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+zip = { version = "9.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [dev-dependencies]
 insta = { version = "1.49", default-features = false }
