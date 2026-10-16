@@ -36,8 +36,8 @@ use tauri_plugin_updater::UpdaterExt;
 use crate::dto::{
     ActivityDetail, ActivityFilter, ActivityItem, AddFitFilesResult, AthleteInput, AthleteSet,
     AvailabilityDay, BridgeStatus, Dashboard, ExportResult, FitMigrationDto, GeneratePlanInput,
-    GoalInput, ImportSummary, Performance, PlanDetail, PlanListItem, PlanningInputs, Progress,
-    RecoveryPage, RestoreResult, Settings, SettingsPatch, ThresholdInput, ThresholdList,
+    GoalInput, HealthPage, ImportSummary, Performance, PlanDetail, PlanListItem, PlanningInputs,
+    Progress, RecoveryPage, RestoreResult, Settings, SettingsPatch, ThresholdInput, ThresholdList,
     ThresholdSet, UpdateInfo, WeekOverview,
 };
 use crate::dto::{GarminStatus, GarminSyncSummary};
@@ -50,7 +50,7 @@ use crate::service::quick::{self, QuickPlanInput};
 
 /// Befehle, die das Frontend aufrufen darf. Muss zu `generate_handler!` unten, zu `build.rs`
 /// (Berechtigungen) und zu `capabilities/default.json` passen, ein Test prüft das.
-pub const COMMAND_NAMES: [&str; 44] = [
+pub const COMMAND_NAMES: [&str; 46] = [
     "get_settings",
     "set_settings",
     "import_folder",
@@ -60,6 +60,8 @@ pub const COMMAND_NAMES: [&str; 44] = [
     "get_progress",
     "get_performance",
     "get_recovery",
+    "get_health",
+    "delete_sensitive_data",
     "list_activities",
     "get_activity",
     "list_thresholds",
@@ -386,6 +388,21 @@ async fn get_recovery(
         service::recovery::recovery(store, &today, days)
     })
     .await
+}
+
+/// Seite "Gesundheit" (T39): Tages- und Trainingswerte aus Garmin, `days` ist 30, 90 oder 365.
+#[tauri::command(rename_all = "snake_case")]
+async fn get_health(state: State<'_, AppState>, today: String, days: u32) -> Result<HealthPage> {
+    with_store(&state, move |store| {
+        service::health::health(store, &today, days)
+    })
+    .await
+}
+
+/// "S3-Werte löschen" (T39): entfernt alle Zeilen von `sensitive_day`.
+#[tauri::command(rename_all = "snake_case")]
+async fn delete_sensitive_data(state: State<'_, AppState>) -> Result<u32> {
+    with_store(&state, service::health::delete_sensitive).await
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -1025,6 +1042,8 @@ pub fn run() {
             get_progress,
             get_performance,
             get_recovery,
+            get_health,
+            delete_sensitive_data,
             list_activities,
             get_activity,
             list_thresholds,

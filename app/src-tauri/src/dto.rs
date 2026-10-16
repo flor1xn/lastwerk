@@ -19,6 +19,9 @@ pub struct LoadInfo {
     pub intensity_factor: Option<f64>,
     /// rTSS, sTSS und Session-RPE sind Faustregeln und gelten als geschätzt (SPEC 8.1).
     pub estimated: bool,
+    /// Bei `missing_threshold` die fehlende Art (`ftp_w`, `lthr_bpm`, `hr_max_bpm`,
+    /// `hr_rest_bpm`, `run_speed_mps`, `css_mps`, `sex`), sonst `null` (T39, SPEC 8.6).
+    pub missing: Option<String>,
 }
 
 /// Zeile der Aktivitätsliste.
@@ -116,6 +119,16 @@ pub struct ActivityDetail {
     pub decoupling: DetailDecoupling,
     /// Runden aus der Datei, leer bei weniger als zwei Runden oder ohne lesbare Datei.
     pub laps: Vec<LapItem>,
+    /// Garmins eigene Last, nur zur Anzeige neben der eigenen (Entscheidung E2, T39). `null`,
+    /// wenn die Aktivität nicht aus Garmin stammt oder Garmin keine gemeldet hat.
+    pub garmin_load: Option<GarminLoadInfo>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct GarminLoadInfo {
+    pub training_load: Option<f64>,
+    /// Garmins Schlüssel, zum Beispiel `AEROBIC_BASE`.
+    pub training_effect: Option<String>,
 }
 
 /// Last eines Tages je Sportart (nur zählende Aktivitäten, SPEC 6.4).
@@ -310,6 +323,9 @@ pub struct Athlete {
     /// `male`, `female` oder `null`.
     pub sex: Option<String>,
     pub birth_year: Option<i32>,
+    /// Herkunft: `garmin`, `manual` oder `null` (T39).
+    pub sex_origin: Option<String>,
+    pub birth_year_origin: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -338,6 +354,9 @@ pub struct Settings {
     pub version: String,
     /// Abgleich mit Garmin beim Start der App (`garmin.sync_on_start`, Standard an, T23).
     pub garmin_sync_on_start: bool,
+    /// Hydration (S3) darf abgerufen werden (`garmin.share.hydration` genau `true`, T39).
+    /// Standard aus.
+    pub garmin_share_hydration: bool,
     /// Die abgeleiteten Werte stammen von einem älteren Programmstand (T33): Die Oberfläche
     /// liest beim Start einmal ein, damit neue Kennzahlen auch für alte Dateien entstehen.
     pub cache_outdated: bool,
@@ -356,6 +375,8 @@ pub struct SettingsPatch {
     pub onboarded: Option<bool>,
     /// Abgleich mit Garmin beim Start an oder aus (T23). Nur ein JSON-Wahrheitswert ist gültig.
     pub garmin_sync_on_start: Option<bool>,
+    /// Gibt den Abruf der Hydration (S3) frei oder sperrt ihn (T39). Nur ein Wahrheitswert.
+    pub garmin_share_hydration: Option<bool>,
 }
 
 /// Was der Austauschordner `exchange/out` hergibt (SPEC 5.4). Nur Anzahlen und der jüngste Tag,
@@ -925,8 +946,54 @@ pub struct GarminSyncSummary {
     pub recovery_days: u32,
     pub dropped_values: u32,
     pub calls: u32,
+    /// Seit T39: geänderte Schwellen aus Garmin, danach neu gerechnete Aktivitäten, neue oder
+    /// geänderte Zeilen der Tages-, Trainings- und S3-Werte und von Garmins Last.
+    pub thresholds_changed: u32,
+    pub recomputed: u32,
+    pub wellness_days: u32,
+    pub training_days: u32,
+    pub sensitive_days: u32,
+    pub garmin_loads: u32,
     /// Fehler einzelner Aufrufe je Code.
     pub errors_by_code: Vec<ErrorCount>,
     pub aborted: Option<GarminAbort>,
     pub last_sync_updated: bool,
+}
+
+/// Seite "Gesundheit" (T39): Tages- und Trainingswerte aus Garmin über 30, 90 oder 365 Tage.
+/// Ein Tag ohne einen einzigen Wert fehlt; fehlende Werte sind `null`, nie 0 (SPEC 5.4).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct HealthPage {
+    pub days: u32,
+    pub points: Vec<HealthPoint>,
+    /// Die Hydration (S3) ist freigegeben. Sonst ist `hydration_ml` immer `null`.
+    pub sensitive_released: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct HealthPoint {
+    pub date: String,
+    pub steps: Option<f64>,
+    pub step_distance_km: Option<f64>,
+    pub hr_min_bpm: Option<f64>,
+    pub hr_max_bpm: Option<f64>,
+    pub respiration_waking_brpm: Option<f64>,
+    pub respiration_sleep_brpm: Option<f64>,
+    pub spo2_avg_pct: Option<f64>,
+    pub spo2_low_pct: Option<f64>,
+    pub intensity_moderate_min: Option<f64>,
+    pub intensity_vigorous_min: Option<f64>,
+    pub stress_avg: Option<f64>,
+    pub stress_max: Option<f64>,
+    pub readiness_score: Option<f64>,
+    /// Garmins Stufe, zum Beispiel `HIGH`.
+    pub readiness_level: Option<String>,
+    /// Garmins akute Last, nur Anzeige (E2).
+    pub garmin_acute_load: Option<f64>,
+    pub fitness_age: Option<f64>,
+    pub vo2max_running: Option<f64>,
+    pub vo2max_cycling: Option<f64>,
+    pub endurance_score: Option<f64>,
+    pub hill_score: Option<f64>,
+    pub hydration_ml: Option<f64>,
 }

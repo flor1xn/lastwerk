@@ -127,6 +127,12 @@ pub fn summary_dto(s: &SyncSummary) -> GarminSyncSummary {
         recovery_days: s.recovery_days,
         dropped_values: s.dropped_values,
         calls: s.calls,
+        thresholds_changed: s.thresholds_changed,
+        recomputed: s.recomputed,
+        wellness_days: s.wellness_days,
+        training_days: s.training_days,
+        sensitive_days: s.sensitive_days,
+        garmin_loads: s.garmin_loads,
         errors_by_code: errors
             .iter()
             .map(|(code, count)| ErrorCount {
