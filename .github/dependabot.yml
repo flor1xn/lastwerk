@@ -8,6 +8,11 @@ updates:
     directory: /app/ui
     schedule:
       interval: weekly
+    ignore:
+      # @types/node folgt der Node-Hauptversion der CI und der Entwicklung (Node 22,
+      # engines in app/ui/package.json). Typen für eine neuere Hauptversion wären falsch.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: pip
     directory: /bridge
     schedule:
