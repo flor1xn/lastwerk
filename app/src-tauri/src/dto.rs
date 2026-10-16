@@ -193,7 +193,7 @@ pub struct PerfThreshold {
     pub sport: Option<Sport>,
     pub value: f64,
     pub valid_from: String,
-    /// `manual` oder `suggested_accepted`.
+    /// `manual`, `suggested_accepted` oder `garmin` (seit T39).
     pub origin: String,
 }
 
@@ -407,7 +407,7 @@ pub struct ThresholdItem {
     pub valid_from: String,
     /// Letzter Tag der Gültigkeit, `null` ohne späteren Wert.
     pub valid_until: Option<String>,
-    /// `manual` oder `suggested_accepted`.
+    /// `manual`, `suggested_accepted` oder `garmin` (seit T39).
     pub origin: String,
     pub note: Option<String>,
 }

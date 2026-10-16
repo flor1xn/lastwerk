@@ -114,4 +114,7 @@ Keine.
 
 ## Blocker oder Vermerke
 
+- 16. Oktober 2026: Der Erststart hat nur noch die Schritte Sprache und Garmin (Auftrag: "nur zur Garmin-Anmeldung, keine Schwellenwertfragen"). Ziel und Coach bleiben im Planer und in den Einstellungen. Die Sprache bleibt als erster Schritt, damit der Rest lesbar ist.
+- 16. Oktober 2026: Neue Version im Changelog ist 1.1.0 (größere Neuerung mit Migration und neuer Seite), nicht 1.0.4.
+
 - 16. Oktober 2026: Werte ohne Datum bei Garmin (maximale Herzfrequenz und Ruhepuls aus den Zonen) bekommen beim ersten Auftreten den Beginn des Abgleichfensters als Gültigkeitsdatum, bei einer späteren Änderung den Tag des Abgleichs (Konvention, SPEC 8.6). Sonst bekämen frühere Aktivitäten keine Last. Bitte bestätigen oder anders entscheiden.
