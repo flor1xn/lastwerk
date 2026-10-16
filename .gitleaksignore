@@ -1,5 +1,8 @@
 # Fehlalarme von gitleaks (Regel generic-api-key), je Zeile der Fingerabdruck aus
 # `gitleaks detect -v`. Nur echte Fehlalarme eintragen, nie ein Geheimnis.
-# T39: Bezeichner einer Kennzahl ({ key: 'vo2max_cycling', ...}) in HealthView.svelte,
-# im Folgecommit in `field` umbenannt; der Eintrag gilt dem älteren Commit.
+# T39: Bezeichner einer Kennzahl in HealthView.svelte (Feldname und Name der Kennzahl), im
+# Folgecommit umbenannt. Der zweite Eintrag gilt einer früheren Fassung dieser Datei, deren
+# Kommentar dasselbe Muster enthielt. Beide Commits bleiben, die Geschichte wird nicht
+# umgeschrieben.
 7ddf0a56427511fd6c41a28f0578535fffc44f5b:app/ui/src/views/HealthView.svelte:generic-api-key:68
+e64170f7b4636424ea4d5f10ccd927c6f2d1ce23:.gitleaksignore:generic-api-key:3
