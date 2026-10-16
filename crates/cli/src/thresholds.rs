@@ -74,6 +74,7 @@ fn origin_label(origin: ThresholdOrigin) -> &'static str {
     match origin {
         ThresholdOrigin::Manual => "manuell",
         ThresholdOrigin::SuggestedAccepted => "Vorschlag übernommen",
+        ThresholdOrigin::Garmin => "aus Garmin",
     }
 }
 

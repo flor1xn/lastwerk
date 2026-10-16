@@ -12,6 +12,11 @@ use crate::error::{Result, StoreError};
 pub struct Migration {
     pub version: u32,
     pub sql: &'static str,
+    /// Die Migration baut eine Tabelle neu, auf die Fremdschlüssel zeigen. Sie läuft dann mit
+    /// ausgeschalteten Fremdschlüsseln, danach muss `PRAGMA foreign_key_check` leer sein
+    /// (Verfahren der SQLite-Dokumentation zu ALTER TABLE; innerhalb einer Transaktion lässt
+    /// sich `foreign_keys` nicht umschalten).
+    pub foreign_keys_off: bool,
 }
 
 /// Alle Migrationen in aufsteigender Reihenfolge ohne Lücken, beginnend bei 1.
@@ -19,32 +24,65 @@ pub const MIGRATIONS: &[Migration] = &[
     Migration {
         version: 1,
         sql: include_str!("../migrations/0001_initial.sql"),
+        foreign_keys_off: false,
     },
     Migration {
         version: 2,
         sql: include_str!("../migrations/0002_zone_time_estimated.sql"),
+        foreign_keys_off: false,
     },
     Migration {
         version: 3,
         sql: include_str!("../migrations/0003_recovery_day.sql"),
+        foreign_keys_off: false,
     },
     Migration {
         version: 4,
         sql: include_str!("../migrations/0004_recovery_garmin.sql"),
+        foreign_keys_off: false,
     },
     Migration {
         version: 5,
         sql: include_str!("../migrations/0005_cache_meta.sql"),
+        foreign_keys_off: false,
     },
     Migration {
         version: 6,
         sql: include_str!("../migrations/0006_best_effort.sql"),
+        foreign_keys_off: false,
+    },
+    Migration {
+        version: 7,
+        sql: include_str!("../migrations/0007_garmin_full.sql"),
+        foreign_keys_off: true,
     },
 ];
 
 /// Neueste Schemaversion dieses Programms.
 pub fn latest_version() -> u32 {
     MIGRATIONS.last().map_or(0, |m| m.version)
+}
+
+/// Eine Migration in einer Transaktion. Mit `check_keys` muss `foreign_key_check` vor dem
+/// Abschluss leer sein, sonst bleibt der alte Stand.
+fn run_one(conn: &mut Connection, m: &Migration, check_keys: bool) -> Result<()> {
+    let tx = conn.transaction()?;
+    tx.execute_batch(m.sql)?;
+    if check_keys {
+        let broken: i64 =
+            tx.query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |r| {
+                r.get(0)
+            })?;
+        if broken > 0 {
+            return Err(StoreError::InvalidData(format!(
+                "migration {} leaves {broken} broken references",
+                m.version
+            )));
+        }
+    }
+    tx.pragma_update(None, "user_version", m.version)?;
+    tx.commit()?;
+    Ok(())
 }
 
 /// Liest `PRAGMA user_version`.
@@ -72,10 +110,17 @@ pub(crate) fn migrate_with(conn: &mut Connection, migrations: &[Migration]) -> R
     for m in migrations.iter().filter(|m| m.version > found) {
         // Eine Transaktion je Migration: bricht ein Skript ab, bleibt der alte Stand
         // erhalten. `user_version` ändert sich innerhalb der Transaktion mit.
-        let tx = conn.transaction()?;
-        tx.execute_batch(m.sql)?;
-        tx.pragma_update(None, "user_version", m.version)?;
-        tx.commit()?;
+        if m.foreign_keys_off {
+            let enabled: bool = conn.query_row("PRAGMA foreign_keys", [], |r| r.get(0))?;
+            conn.pragma_update(None, "foreign_keys", false)?;
+            let result = run_one(conn, m, true);
+            if enabled {
+                conn.pragma_update(None, "foreign_keys", true)?;
+            }
+            result?;
+        } else {
+            run_one(conn, m, false)?;
+        }
     }
     Ok(())
 }
@@ -124,6 +169,10 @@ mod tests {
             "setting",
             "cache_meta",
             "activity_best_effort",
+            "wellness_day",
+            "training_day",
+            "garmin_activity_load",
+            "sensitive_day",
         ] {
             assert!(t.iter().any(|n| n == expected), "{expected} fehlt: {t:?}");
         }
@@ -173,11 +222,13 @@ mod tests {
             .map(|m| Migration {
                 version: m.version,
                 sql: m.sql,
+                foreign_keys_off: m.foreign_keys_off,
             })
             .collect();
         list.push(Migration {
             version: n,
             sql: "ALTER TABLE goal ADD COLUMN note TEXT;",
+            foreign_keys_off: false,
         });
         migrate_with(&mut conn, &list).unwrap();
         assert_eq!(current_version(&conn).unwrap(), n);
@@ -325,14 +376,106 @@ mod tests {
             .map(|m| Migration {
                 version: m.version,
                 sql: m.sql,
+                foreign_keys_off: m.foreign_keys_off,
             })
             .collect();
         list.push(Migration {
             version: n,
             sql: "CREATE TABLE half (a); SELECT * FROM does_not_exist;",
+            foreign_keys_off: false,
         });
         assert!(migrate_with(&mut conn, &list).is_err());
         assert_eq!(current_version(&conn).unwrap(), latest_version());
         assert!(!tables(&conn).iter().any(|t| t == "half"));
+    }
+
+    /// Migration 7 (T39): Stand 6 mit Schwellen, auf die Belastungen verweisen, wird gehoben.
+    /// `threshold` ist neu angelegt, kennt `garmin`, behält IDs und Verweise; die neuen Tabellen
+    /// sind leer, `activity_load.missing` ist leer, Fremdschlüssel sind danach wieder an.
+    #[test]
+    fn migration_7_rebuilds_threshold_and_keeps_references() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.pragma_update(None, "foreign_keys", true).unwrap();
+        migrate_with(&mut conn, &MIGRATIONS[..6]).unwrap();
+        assert_eq!(current_version(&conn).unwrap(), 6);
+        for sql in [
+            "INSERT INTO threshold (id, sport, kind, value, valid_from, origin, note) \
+             VALUES (7, 'cycling', 'ftp_w', 250, '2026-01-01', 'manual', 'Test')",
+            "INSERT INTO source_file (rel_path, sha256, size_bytes, mtime_utc, imported_at, status) \
+             VALUES ('a.fit', 'x', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', 'ok')",
+            "INSERT INTO activity (source_file_id, sport, start_utc, local_offset_s, local_date, \
+                                   duration_s) \
+             VALUES (1, 'cycling', '2026-01-02T00:00:00Z', 0, '2026-01-02', 60)",
+            "INSERT INTO activity_load (activity_id, method, value, threshold_id, status, \
+                                        computed_at) \
+             VALUES (1, 'tss', 50, 7, 'ok', '2026-01-02T00:00:00Z')",
+            "INSERT INTO recovery_day (local_date, resting_hr_bpm, source, imported_at) \
+             VALUES ('2026-01-02', 50, 'garmin-app', '2026-01-02T00:00:00Z')",
+        ] {
+            conn.execute(sql, []).unwrap();
+        }
+        // Vor der Migration ist `garmin` keine erlaubte Herkunft.
+        assert!(
+            conn.execute(
+                "INSERT INTO threshold (sport, kind, value, valid_from, origin) \
+                 VALUES ('all', 'hr_max_bpm', 190, '2026-01-01', 'garmin')",
+                [],
+            )
+            .is_err()
+        );
+
+        migrate_with(&mut conn, &MIGRATIONS[..7]).unwrap();
+        assert_eq!(current_version(&conn).unwrap(), 7);
+        let fk: bool = conn
+            .query_row("PRAGMA foreign_keys", [], |r| r.get(0))
+            .unwrap();
+        assert!(fk);
+        let (id, value, note): (i64, f64, String) = conn
+            .query_row("SELECT id, value, note FROM threshold", [], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+            })
+            .unwrap();
+        assert_eq!((id, note.as_str()), (7, "Test"));
+        assert!((value - 250.0).abs() < f64::EPSILON);
+        let (tid, missing): (i64, Option<String>) = conn
+            .query_row("SELECT threshold_id, missing FROM activity_load", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+        assert_eq!((tid, missing), (7, None));
+        conn.execute(
+            "INSERT INTO threshold (sport, kind, value, valid_from, origin) \
+             VALUES ('all', 'hr_max_bpm', 190, '2026-01-01', 'garmin')",
+            [],
+        )
+        .unwrap();
+        // Der Fremdschlüssel greift wieder: ein Verweis ins Leere scheitert.
+        assert!(
+            conn.execute("UPDATE activity_load SET threshold_id = 999", [])
+                .is_err()
+        );
+        for table in [
+            "wellness_day",
+            "training_day",
+            "garmin_activity_load",
+            "sensitive_day",
+        ] {
+            let n: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(n, 0, "{table}");
+        }
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM recovery_day", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 1);
+        let idx: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'threshold_lookup'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(idx, 1);
     }
 }

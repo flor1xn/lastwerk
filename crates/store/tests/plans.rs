@@ -302,6 +302,7 @@ impl Seed<'_> {
             .unwrap();
         self.store
             .upsert_activity_load(&LoadRow {
+                missing: None,
                 activity_id: id,
                 method: "tss".to_string(),
                 value: (status == LoadStatus::Ok).then_some(load),

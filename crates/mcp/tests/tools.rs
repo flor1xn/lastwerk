@@ -68,6 +68,7 @@ fn add(
         .unwrap();
     let row = match load {
         Some(v) => LoadRow {
+            missing: None,
             activity_id: id,
             method: "tss".into(),
             value: Some(v),
@@ -77,6 +78,7 @@ fn add(
             computed_at: now(),
         },
         None => LoadRow {
+            missing: None,
             activity_id: id,
             method: "none".into(),
             value: None,

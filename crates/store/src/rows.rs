@@ -193,6 +193,9 @@ pub struct LoadRow {
     pub threshold_id: Option<i64>,
     pub status: LoadStatus,
     pub computed_at: DateTime<Utc>,
+    /// Bei `missing_threshold` die fehlende Art (`ftp_w`, `lthr_bpm`, ..., `sex`), sonst `None`
+    /// (seit T39, SPEC 8.6).
+    pub missing: Option<String>,
 }
 
 /// Art eines Schwellenwerts in `threshold.kind`.
@@ -255,6 +258,9 @@ impl ThresholdKind {
 pub enum ThresholdOrigin {
     Manual,
     SuggestedAccepted,
+    /// Beim Abgleich aus Garmin übernommen (seit T39, SPEC 8.6). Verliert bei gleichem Datum
+    /// gegen jede andere Herkunft.
+    Garmin,
 }
 
 impl ThresholdOrigin {
@@ -262,6 +268,7 @@ impl ThresholdOrigin {
         match self {
             Self::Manual => "manual",
             Self::SuggestedAccepted => "suggested_accepted",
+            Self::Garmin => "garmin",
         }
     }
 
@@ -269,6 +276,7 @@ impl ThresholdOrigin {
         match s {
             "manual" => Ok(Self::Manual),
             "suggested_accepted" => Ok(Self::SuggestedAccepted),
+            "garmin" => Ok(Self::Garmin),
             _ => Err(ParseError(format!("threshold origin {s:?}"))),
         }
     }

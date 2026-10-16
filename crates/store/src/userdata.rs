@@ -1,7 +1,8 @@
 //! Export und Import der Nutzerdaten als JSON (SPEC 6.1, 6.3).
 //!
 //! Nutzerdaten sind nicht aus FIT ableitbar: `threshold`, `goal`, `availability`, `plan`,
-//! `manual_session`, `setting`, `recovery_day` (seit T14). Der Cache gehört nicht dazu.
+//! `manual_session`, `setting`, `recovery_day` (seit T14), `wellness_day`, `training_day`,
+//! `garmin_activity_load` und `sensitive_day` (seit T39). Der Cache gehört nicht dazu.
 //!
 //! `recovery_day` hält Gesundheitswerte (HRV, Ruhepuls, Schlaf). Die Sicherung enthält sie,
 //! damit nach einer Wiederherstellung nichts fehlt, und gehört wie die ganze Sicherung nicht
@@ -13,6 +14,9 @@ use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Result, StoreError};
+use crate::garmin_data::{
+    GarminActivityLoad, SensitiveDay, TrainingDay, WellnessDay, export_table, import_table,
+};
 use crate::store::Store;
 
 /// Version des Backup-Formats (`backup_version`). Wird erhöht, wenn sich Felder ändern. Der
@@ -115,6 +119,21 @@ pub struct UserDataExport {
     /// leer.
     #[serde(default)]
     pub recovery_days: Vec<RecoveryDayExport>,
+    /// Tageswerte aus Garmin (seit T39, S2). Fehlt der Schlüssel, gilt die Liste als leer. Je
+    /// Zeile ein Objekt mit `local_date`, den Spalten aus 6.2, `source` und `imported_at`.
+    #[serde(default)]
+    pub wellness_days: Vec<serde_json::Map<String, serde_json::Value>>,
+    /// Trainingswerte aus Garmin (seit T39, S2).
+    #[serde(default)]
+    pub training_days: Vec<serde_json::Map<String, serde_json::Value>>,
+    /// Garmins Last je Aktivität (seit T39, nur Anzeige).
+    #[serde(default)]
+    pub garmin_activity_loads: Vec<serde_json::Map<String, serde_json::Value>>,
+    /// S3-Werte (seit T39, nur nach Freigabe geholt). Die Sicherung enthält sie wie alle
+    /// Gesundheitswerte, damit nach einer Wiederherstellung nichts fehlt; sie verlässt den
+    /// Rechner nur durch den Nutzer.
+    #[serde(default)]
+    pub sensitive_days: Vec<serde_json::Map<String, serde_json::Value>>,
     pub settings: Vec<SettingExport>,
 }
 
@@ -249,6 +268,10 @@ impl Store {
                     })
                 },
             )?,
+            wellness_days: export_table::<WellnessDay>(c)?,
+            training_days: export_table::<TrainingDay>(c)?,
+            garmin_activity_loads: export_table::<GarminActivityLoad>(c)?,
+            sensitive_days: export_table::<SensitiveDay>(c)?,
             settings: collect(c, "SELECT key, value FROM setting ORDER BY key", |r| {
                 Ok(SettingExport {
                     key: r.get(0)?,
@@ -277,6 +300,10 @@ impl Store {
             "availability",
             "manual_session",
             "recovery_day",
+            "wellness_day",
+            "training_day",
+            "garmin_activity_load",
+            "sensitive_day",
             "setting",
         ] {
             tx.execute(&format!("DELETE FROM {table}"), [])?;
@@ -407,6 +434,10 @@ impl Store {
                 ],
             )?;
         }
+        import_table::<WellnessDay>(&tx, &e.wellness_days)?;
+        import_table::<TrainingDay>(&tx, &e.training_days)?;
+        import_table::<GarminActivityLoad>(&tx, &e.garmin_activity_loads)?;
+        import_table::<SensitiveDay>(&tx, &e.sensitive_days)?;
         for s in &e.settings {
             tx.execute(
                 "INSERT INTO setting (key, value) VALUES (?1, ?2)",

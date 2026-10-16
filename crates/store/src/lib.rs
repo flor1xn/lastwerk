@@ -34,6 +34,7 @@ mod catalog;
 mod derived;
 pub mod duplicates;
 mod error;
+mod garmin_data;
 mod garmin_settings;
 mod goals;
 mod history;
@@ -54,6 +55,11 @@ pub use catalog::{embedded_zone_catalog, parse_zone_catalog};
 pub use derived::SETTING_ATHLETE_BIRTH_YEAR;
 pub use duplicates::DuplicateRule;
 pub use error::{Result, StoreError};
+pub use garmin_data::{
+    Cell, Column, DayRecord, GARMIN_APP_SOURCE, GarminActivityLoad, GarminThresholdOutcome,
+    SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, SETTING_ATHLETE_SEX_ORIGIN, SETTING_GARMIN_SHARE_HYDRATION,
+    SensitiveDay, TableSpec, TrainingDay, WellnessDay,
+};
 pub use garmin_settings::{
     DEFAULT_BACKFILL_DAYS, GarminSettings, MAX_BACKFILL_DAYS, MIN_BACKFILL_DAYS,
     SETTING_GARMIN_BACKFILL_DAYS, SETTING_GARMIN_LAST_SYNC, SETTING_GARMIN_SYNC_ON_START,
