@@ -22,7 +22,8 @@
       "progress": "Progress",
       "performance": "Performance",
       "calendar": "Calendar",
-      "recovery": "Recovery"
+      "recovery": "Recovery",
+      "health": "Health"
     },
     "sport": {
       "all": "All sports",
@@ -61,7 +62,19 @@
         "unknown": "No computation available."
       },
       "if": "IF",
-      "if_hint": "Intensity factor"
+      "if_hint": "Intensity factor",
+      "missing": {
+        "ftp_w": "FTP missing",
+        "lthr_bpm": "Lactate threshold heart rate (LTHR) missing",
+        "hr_max_bpm": "Maximum heart rate missing",
+        "hr_rest_bpm": "Resting heart rate missing",
+        "run_speed_mps": "Running threshold speed missing",
+        "css_mps": "Critical swim speed (CSS) missing",
+        "sex": "Sex missing"
+      },
+      "missing_hint": "Garmin did not provide this value. Enter it under Settings, Thresholds.",
+      "missing_hint_athlete": "Garmin did not provide this value. Enter it under Settings, Athlete.",
+      "to_settings": "Open settings"
     },
     "error": {
       "invalid_date": "Invalid date.",
@@ -210,7 +223,23 @@
       "pace": "Pace",
       "speed": "Speed",
       "pace_series": "Pace (min/km)",
-      "series_title_run": "Pace, power and heart rate"
+      "series_title_run": "Pace, power and heart rate",
+      "garmin": {
+        "load": "Garmin's training load",
+        "effect_label": "Training effect (Garmin)",
+        "tag": "from Garmin",
+        "note": "Garmin's figures are shown for reference only. Lastwerk calculates with its own load.",
+        "effect": {
+          "AEROBIC_BASE": "Base",
+          "TEMPO": "Tempo",
+          "LACTATE_THRESHOLD": "Lactate threshold",
+          "VO2MAX": "VO2max",
+          "ANAEROBIC_CAPACITY": "Anaerobic capacity",
+          "SPEED": "Speed",
+          "RECOVERY": "Recovery",
+          "NO_BENEFIT": "No benefit"
+        }
+      }
     },
     "settings": {
       "data": "Data",
@@ -246,7 +275,7 @@
     },
     "threshold": {
       "title": "Thresholds",
-      "hint": "A value applies from its date until the next value of the same kind. Earlier activities keep their load.",
+      "hint": "After sign-in the values come from Garmin automatically, with Garmin's date. Your own value on the same day or later takes precedence. A value applies from its date until the next one of the same kind, earlier activities keep their load.",
       "none": "No thresholds yet. Without a threshold the load is not computable.",
       "col_kind": "Kind",
       "sport": "Sport",
@@ -277,6 +306,13 @@
         "hr_rest_bpm": "bpm",
         "run_speed_mps": "m/s",
         "css_mps": "m/s"
+      },
+      "add_hint": "For your own values that Garmin does not provide or that you set differently.",
+      "origin": "Origin",
+      "origin_value": {
+        "garmin": "Garmin",
+        "manual": "Manual",
+        "suggested_accepted": "Suggestion accepted"
       }
     },
     "athlete": {
@@ -287,7 +323,11 @@
       "male": "Male",
       "female": "Female",
       "birth_year": "Birth year",
-      "save": "Save"
+      "save": "Save",
+      "origin": {
+        "garmin": "from Garmin",
+        "manual": "own value"
+      }
     },
     "pmc": {
       "title": "Curve: fitness, fatigue, form",
@@ -309,26 +349,12 @@
         "title": "Language and appearance",
         "lead": "Choose language and theme. You can change both later in the settings."
       },
-      "thresholds": {
-        "title": "Thresholds and personal details",
-        "lead": "Thresholds (for example FTP or resting heart rate) and personal details make the load computable.",
-        "if_skipped": "Without thresholds, load per sport stays not computable. You can add them later."
-      },
-      "goal": {
-        "title": "Goal and availability",
-        "lead": "A goal and your time per weekday are the basis of the weekly plan.",
-        "if_skipped": "Without a goal and availability, Lastwerk cannot create a plan."
-      },
       "garmin": {
         "title": "Connect Garmin (optional)",
-        "lead": "Lastwerk can fetch activities and recovery values directly from Garmin.",
+        "lead": "Lastwerk fetches activities, recovery values and thresholds directly from Garmin.",
         "explain": "You sign in on the Garmin page in a separate window, and Lastwerk sees neither password nor code. Afterwards Lastwerk fetches new activities and recovery values to this computer, read only.",
-        "if_skipped": "Without Garmin, recovery values are missing. Activities still come from your own FIT files, and you can connect later in the settings."
-      },
-      "coach": {
-        "title": "Local coach (optional)",
-        "lead": "A language model on your computer can adjust and explain your plan. It never calculates.",
-        "if_skipped": "The planner stays fully usable without the coach. You can set it up later in the settings."
+        "if_skipped": "Without Garmin, recovery values are missing and you enter thresholds yourself in the settings. Activities still come from your own FIT files, and you can connect later in the settings.",
+        "takes": "After sign-in Lastwerk takes thresholds (FTP, lactate threshold, maximum heart rate, resting heart rate), sex and birth year from Garmin. You can enter your own values later in the settings, and they then take precedence."
       }
     },
     "lead": {
@@ -339,7 +365,8 @@
       "detail": "Metrics, zones and course of this activity.",
       "settings": "Data, thresholds, appearance and version.",
       "progress": "Volume and load across weeks, months and years.",
-      "performance": "Your best values per duration and how they develop."
+      "performance": "Your best values per duration and how they develop.",
+      "health": "Daily and training values from Garmin, each with its latest value and trend. Lastwerk does not calculate with them."
     },
     "about": {
       "title": "About Lastwerk",
@@ -690,7 +717,7 @@
     "garmin": {
       "window_title": "Sign in to Garmin",
       "title": "Garmin",
-      "statement": "Activities and recovery values straight from Garmin, without a companion program.",
+      "statement": "Activities, recovery, daily and training values and thresholds straight from Garmin, without a companion program.",
       "risk": "Unofficial access: Garmin offers no open interface to private users. Lastwerk uses the path of the Garmin app, and Garmin can change or block it at any time.",
       "connect": "Connect with Garmin",
       "waiting": "The Garmin sign-in window is open. You enter password and code only there.",
@@ -727,8 +754,22 @@
         "phase_import": "Import {done} of {total}",
         "done": "New activities: {count}",
         "done_detail": "New activities: {count}, recovery days: {days}",
-        "aborted": "Sync incomplete"
-      }
+        "aborted": "Sync incomplete",
+        "phase_account": "Account {done} of {total}",
+        "phase_wellness": "Daily values {done} of {total}",
+        "thresholds": "thresholds changed from Garmin: {n}",
+        "recomputed": "activities recomputed: {n}"
+      },
+      "hydration": {
+        "toggle": "Fetch hydration from Garmin",
+        "hint": "Sensitive health data: Lastwerk stores it separately and never passes it to the MCP server. Off by default.",
+        "delete": "Delete hydration",
+        "delete_confirm": "Delete all stored hydration values? This cannot be undone. If the release stays on, the next sync fetches values again.",
+        "delete_yes": "Delete",
+        "delete_no": "Cancel",
+        "deleted": "Deleted days with hydration: {n}"
+      },
+      "never_fetched": "Lastwerk never fetches menstrual or pregnancy data."
     },
     "planner": {
       "title": "Your plan in three questions",
@@ -1042,7 +1083,8 @@
         "origin_label": "Origin",
         "origin": {
           "manual": "manual",
-          "suggested_accepted": "suggestion accepted"
+          "suggested_accepted": "suggestion accepted",
+          "garmin": "from Garmin"
         },
         "note": "Suggestion: 95 % of the month's best 20-minute power (rule of thumb, Q16 secondary source only). It holds only if the 20 minutes were ridden all out, and is never applied by itself."
       }
@@ -1112,6 +1154,59 @@
         "value": "Daily value"
       },
       "note": "Baseline and bounds follow rule R12 (Q6, 7-day mean secondary source only, thresholds rule of thumb). The values describe training data and are not a medical statement."
+    },
+    "health": {
+      "none": "No values yet. They arrive with the Garmin sync, which you can connect under Settings, Garmin.",
+      "to_settings": "Open settings",
+      "daily": "Daily values",
+      "daily_statement": "Values per day from Garmin. Days without a value stay gaps.",
+      "training": "Training",
+      "training_statement": "Garmin's own estimates. Lastwerk only shows them and calculates with its own load.",
+      "hydration": "Hydration",
+      "hydration_statement": "Sensitive values, fetched only after you allow it and stored separately.",
+      "note": "These values describe training data, not health in a medical sense.",
+      "as_of": "As of {date}",
+      "from_garmin": "from Garmin",
+      "spark_label": "{name} trend, {days} days",
+      "metric": {
+        "steps": "Steps",
+        "step_distance_km": "Distance",
+        "hr_min_bpm": "Daily heart rate lowest",
+        "hr_max_bpm": "Daily heart rate highest",
+        "respiration_waking_brpm": "Respiration awake",
+        "respiration_sleep_brpm": "Respiration asleep",
+        "spo2_avg_pct": "SpO2 average",
+        "spo2_low_pct": "SpO2 lowest",
+        "intensity_moderate_min": "Intensity minutes moderate",
+        "intensity_vigorous_min": "Intensity minutes vigorous",
+        "stress_avg": "Stress average",
+        "stress_max": "Stress highest",
+        "readiness_score": "Training readiness",
+        "garmin_acute_load": "Garmin's acute load",
+        "fitness_age": "Fitness age",
+        "vo2max_running": "VO2max running",
+        "vo2max_cycling": "VO2max cycling",
+        "endurance_score": "Endurance score",
+        "hill_score": "Hill score",
+        "hydration_ml": "Hydration"
+      },
+      "unit": {
+        "km": "km",
+        "bpm": "bpm",
+        "brpm": "breaths/min",
+        "pct": "%",
+        "min": "min",
+        "years": "years",
+        "vo2": "ml/kg/min",
+        "ml": "ml"
+      },
+      "level": {
+        "POOR": "Poor",
+        "LOW": "Low",
+        "MODERATE": "Moderate",
+        "HIGH": "High",
+        "PRIME": "Prime"
+      }
     }
   },
   "sport": {

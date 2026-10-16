@@ -149,3 +149,71 @@ describe('Seitenleiste und Start', () => {
     expect(disabled.garmin.syncs).toBe(0);
   });
 });
+
+describe('Einstellungen, Garmin seit T39', () => {
+  it('gibt Hydration als Einstellung frei, Standard aus, und nennt die nie geholten Daten', async () => {
+    const backend = mock();
+    render(SettingsView);
+    const toggle = (await screen.findByTestId('garmin-share-hydration')) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    expect(screen.getByTestId('garmin-sensitive').textContent).toContain('MCP-Server');
+    expect(screen.getByTestId('garmin-never').textContent).toContain(
+      'Menstruations- und Schwangerschaftsdaten',
+    );
+    await fireEvent.click(toggle);
+    await waitFor(async () =>
+      expect((await backend.getSettings()).garmin_share_hydration).toBe(true),
+    );
+  });
+
+  it('löscht Hydration erst nach der Bestätigung und meldet die Zahl', async () => {
+    const backend = mock({ garminConnected: true });
+    await backend.setSettings({ garmin_share_hydration: true });
+    await backend.garminSync('manual', () => {});
+    const spy = vi.spyOn(backend, 'deleteSensitiveData');
+    render(SettingsView);
+    await fireEvent.click(await screen.findByTestId('garmin-delete-sensitive'));
+    expect(screen.getByTestId('garmin-delete-confirm').textContent).toContain('nicht rückgängig');
+    await fireEvent.click(screen.getByTestId('garmin-delete-no'));
+    expect(spy).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByTestId('garmin-delete-sensitive'));
+    await fireEvent.click(screen.getByTestId('garmin-delete-yes'));
+    const done = await screen.findByTestId('garmin-deleted');
+    expect(done.textContent).toMatch(/Gelöschte Tage mit Hydration: [1-9]\d*/);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('garmin-delete-confirm')).toBeNull();
+  });
+
+  it('zeigt geänderte Schwellen und neu berechnete Aktivitäten nach dem Abgleich', async () => {
+    mock({ garminConnected: true });
+    render(SettingsView);
+    await fireEvent.click(await screen.findByTestId('garmin-sync-now'));
+    await waitFor(() =>
+      expect(screen.getByTestId('garmin-sync-state').textContent).toContain(
+        'Schwellenwerte aus Garmin geändert: 2, neu berechnete Aktivitäten: 41',
+      ),
+    );
+    // Der zweite Abgleich ändert nichts: Die Zusätze fehlen.
+    await fireEvent.click(screen.getByTestId('garmin-sync-now'));
+    await waitFor(() => expect(screen.queryByTestId('garmin-sync-state-thresholds')).toBeNull());
+    expect(screen.queryByTestId('garmin-sync-state-recomputed')).toBeNull();
+  });
+
+  it('zeigt die Herkunft der Schwellen und der Angaben zur Person', async () => {
+    const backend = mock();
+    render(SettingsView);
+    const table = await screen.findByTestId('threshold-table');
+    expect(table.textContent).toContain('Herkunft');
+    expect(table.textContent).toContain('Garmin');
+    expect(table.textContent).toContain('Manuell');
+    expect(screen.getByTestId('athlete-sex-origin').textContent).toContain('aus Garmin');
+    expect(screen.getByTestId('athlete-birth-year-origin').textContent).toContain('aus Garmin');
+    await backend.setAthlete({ birth_year: 1990 });
+    cleanup();
+    render(SettingsView);
+    expect((await screen.findByTestId('athlete-birth-year-origin')).textContent).toContain(
+      'eigener Wert',
+    );
+    expect(screen.getByTestId('athlete-sex-origin').textContent).toContain('aus Garmin');
+  });
+});

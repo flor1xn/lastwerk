@@ -1,16 +1,11 @@
 <script lang="ts">
   import { getBackend } from '../../lib/backend';
-  import type { PlanningInputs, Settings } from '../../lib/backend/types';
+  import type { Settings } from '../../lib/backend/types';
   import ErrorNote from '../../lib/components/ErrorNote.svelte';
   import { errorKey } from '../../lib/errors';
   import { t } from '../../lib/i18n';
-  import AvailabilityPanel from '../plan/AvailabilityPanel.svelte';
-  import GoalPanel from '../plan/GoalPanel.svelte';
   import AppearanceSection from '../settings/AppearanceSection.svelte';
-  import AthleteSection from '../settings/AthleteSection.svelte';
-  import CoachSetup from '../settings/CoachSetup.svelte';
   import GarminConnect from '../settings/GarminConnect.svelte';
-  import ThresholdSection from '../settings/ThresholdSection.svelte';
 
   interface Props {
     /** Wird nach dem letzten Schritt aufgerufen, nachdem der Abschluss gespeichert ist. */
@@ -19,14 +14,15 @@
 
   let { onfinish }: Props = $props();
 
-  // Reihenfolge der Schritte. Überspringbar heißt: mit Hinweis, was dann fehlt.
-  const STEPS = ['language', 'thresholds', 'goal', 'coach', 'garmin'] as const;
+  // Reihenfolge der Schritte. Überspringbar heißt: mit Hinweis, was dann fehlt. Seit T39 nur
+  // Sprache und Garmin: Schwellen, Geschlecht und Geburtsjahr kommen nach der Anmeldung aus
+  // Garmin. Eigene Werte, Ziel und Coach bleiben in den Einstellungen und im Planer.
+  const STEPS = ['language', 'garmin'] as const;
   type Step = (typeof STEPS)[number];
-  const SKIPPABLE: Step[] = ['thresholds', 'goal', 'coach', 'garmin'];
+  const SKIPPABLE: Step[] = ['garmin'];
 
   let index = $state(0);
   let settings = $state<Settings | null>(null);
-  let inputs = $state<PlanningInputs | null>(null);
   let loadError = $state<unknown>(null);
   let errorMessage = $state<string | null>(null);
   let finishing = $state(false);
@@ -34,16 +30,11 @@
   const step = $derived(STEPS[index]);
   const last = $derived(index === STEPS.length - 1);
 
-  async function loadSettings() {
-    settings = await getBackend().getSettings();
-  }
-
   $effect(() => {
-    const backend = getBackend();
-    void Promise.all([backend.getSettings(), backend.getPlanningInputs()])
-      .then(([s, i]) => {
+    void getBackend()
+      .getSettings()
+      .then((s) => {
         settings = s;
-        inputs = i;
       })
       .catch((e: unknown) => {
         loadError = e;
@@ -81,7 +72,7 @@
 <main class="wizard" data-testid="wizard">
   {#if loadError}
     <ErrorNote error={loadError} />
-  {:else if !settings || !inputs}
+  {:else if !settings}
     <p class="muted">{$t('common.loading')}</p>
   {:else}
     <header>
@@ -96,22 +87,11 @@
       <div class="body" data-testid={`wizard-step-${step}`}>
         {#if step === 'language'}
           <AppearanceSection />
-        {:else if step === 'thresholds'}
-          <ThresholdSection />
-          <AthleteSection {settings} onchange={() => void loadSettings()} />
-        {:else if step === 'goal'}
-          <GoalPanel {inputs} onchange={(i) => (inputs = i)} />
-          <AvailabilityPanel {inputs} onchange={(i) => (inputs = i)} />
-        {:else if step === 'coach'}
-          <!-- Lokaler Coach (T29): Ollama einrichten und ein Modell wählen. Der Download läuft
-               im gemeinsamen Zustand weiter, der Assistent wartet nicht darauf. -->
-          <section class="panel" data-testid="coach-step">
-            <CoachSetup />
-          </section>
         {:else}
           <!-- Anmeldung im Fenster von Garmin (SPEC 5.6). Kein Feld für Zugangsdaten. -->
           <section class="panel" data-testid="garmin-step">
             <p>{$t('ui.onboarding.garmin.explain')}</p>
+            <p data-testid="garmin-takes">{$t('ui.onboarding.garmin.takes')}</p>
             <p class="muted" data-testid="garmin-risk">{$t('ui.garmin.risk')}</p>
             <GarminConnect />
           </section>

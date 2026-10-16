@@ -13,6 +13,7 @@ const TEXT = {
       progress: 'Fortschritt',
       performance: 'Leistung',
       recovery: 'Erholung',
+      health: 'Gesundheit',
       plan: 'Plan',
       activities: 'Aktivitäten',
       detail: 'Detail',
@@ -50,6 +51,7 @@ const TEXT = {
       progress: 'Progress',
       performance: 'Performance',
       recovery: 'Recovery',
+      health: 'Health',
       plan: 'Plan',
       activities: 'Activities',
       detail: 'Detail',
@@ -191,6 +193,17 @@ for (const lang of ['de', 'en'] as const) {
     await page.locator('[data-testid="rec-range"] button[data-value="30"]').click();
     await expect(page.getByTestId('lead')).toContainText('30');
     await shot(page, `01d-erholung-${lang}`);
+
+    // 1e. Gesundheit (T39): Tages- und Trainingswerte aus Garmin mit Mini-Verlauf.
+    await page.getByTestId('nav-health').click();
+    for (const id of ['health-daily', 'health-training']) {
+      await expect(page.getByTestId(id).locator('.section-statement')).not.toBeEmpty();
+      await expect(page.getByTestId(id).locator('svg.spark').first()).toBeVisible();
+    }
+    await expect(page.getByTestId('health-hydration')).toHaveCount(0);
+    await page.locator('[data-testid="health-range"] button[data-value="365"]').click();
+    await expect(page.getByTestId('health-vo2max_running')).toBeVisible();
+    await shot(page, `01e-gesundheit-${lang}`);
 
     // 2. Aktivitätsliste: Zeilen, Duplikate sichtbar, nicht berechenbare Lasten als Text.
     await page.getByTestId('nav-activities').click();

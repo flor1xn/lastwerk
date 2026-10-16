@@ -98,6 +98,7 @@
             <th>{$t('ui.threshold.sport')}</th>
             <th class="num">{$t('ui.threshold.value')}</th>
             <th>{$t('ui.threshold.valid')}</th>
+            <th>{$t('ui.threshold.origin')}</th>
             <th>{$t('ui.threshold.note')}</th>
           </tr>
         </thead>
@@ -118,7 +119,10 @@
                     : $t('ui.threshold.open'),
                 })}
               </td>
-              <td class="muted">{item.note ?? ''}</td>
+              <td data-testid={`threshold-origin-${item.id}`}
+                >{$t(`ui.threshold.origin_value.${item.origin}`)}</td
+              >
+              <td class="muted note">{item.note ?? ''}</td>
             </tr>
           {/each}
         </tbody>
@@ -136,6 +140,7 @@
 
   <form onsubmit={save} data-testid="threshold-form">
     <h4>{$t('ui.threshold.add')}</h4>
+    <p class="muted form-hint">{$t('ui.threshold.add_hint')}</p>
     <div class="fields">
       <label>
         {$t('ui.threshold.sport')}
@@ -206,6 +211,16 @@
   h4 {
     margin: 12px 0 6px;
     font-size: var(--fs-small);
+  }
+
+  .form-hint {
+    margin: 0 0 8px;
+    font-size: var(--fs-small);
+  }
+
+  /* Notizen bis 200 Zeichen: umbrechen statt die Tabelle zu verbreitern. */
+  .note {
+    overflow-wrap: anywhere;
   }
 
   .fields {

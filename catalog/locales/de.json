@@ -22,7 +22,8 @@
       "progress": "Fortschritt",
       "performance": "Leistung",
       "calendar": "Kalender",
-      "recovery": "Erholung"
+      "recovery": "Erholung",
+      "health": "Gesundheit"
     },
     "sport": {
       "all": "Alle Sportarten",
@@ -61,7 +62,19 @@
         "unknown": "Es liegt keine Berechnung vor."
       },
       "if": "IF",
-      "if_hint": "Intensitätsfaktor"
+      "if_hint": "Intensitätsfaktor",
+      "missing": {
+        "ftp_w": "FTP fehlt",
+        "lthr_bpm": "Schwellenherzfrequenz (LTHR) fehlt",
+        "hr_max_bpm": "Maximale Herzfrequenz fehlt",
+        "hr_rest_bpm": "Ruhepuls fehlt",
+        "run_speed_mps": "Laufschwellengeschwindigkeit fehlt",
+        "css_mps": "Kritische Schwimmgeschwindigkeit (CSS) fehlt",
+        "sex": "Geschlecht fehlt"
+      },
+      "missing_hint": "Garmin hat diesen Wert nicht geliefert. Eintragen unter Einstellungen, Schwellenwerte.",
+      "missing_hint_athlete": "Garmin hat diesen Wert nicht geliefert. Eintragen unter Einstellungen, Athlet.",
+      "to_settings": "Zu den Einstellungen"
     },
     "error": {
       "invalid_date": "Ungültiges Datum.",
@@ -210,7 +223,23 @@
       "pace": "Tempo",
       "speed": "Geschwindigkeit",
       "pace_series": "Tempo (min/km)",
-      "series_title_run": "Tempo, Leistung und Herzfrequenz"
+      "series_title_run": "Tempo, Leistung und Herzfrequenz",
+      "garmin": {
+        "load": "Garmins Trainingslast",
+        "effect_label": "Trainingseffekt (Garmin)",
+        "tag": "von Garmin",
+        "note": "Garmins Zahlen stehen nur zur Ansicht da. Lastwerk rechnet mit der eigenen Last.",
+        "effect": {
+          "AEROBIC_BASE": "Grundlage",
+          "TEMPO": "Tempo",
+          "LACTATE_THRESHOLD": "Laktatschwelle",
+          "VO2MAX": "VO2max",
+          "ANAEROBIC_CAPACITY": "Anaerobe Kapazität",
+          "SPEED": "Schnelligkeit",
+          "RECOVERY": "Erholung",
+          "NO_BENEFIT": "Kein Effekt"
+        }
+      }
     },
     "settings": {
       "data": "Daten",
@@ -246,7 +275,7 @@
     },
     "threshold": {
       "title": "Schwellenwerte",
-      "hint": "Ein Wert gilt ab seinem Datum bis zum nächsten Wert derselben Art. Frühere Aktivitäten behalten ihre Last.",
+      "hint": "Nach der Anmeldung kommen die Werte automatisch aus Garmin, mit dem Datum von Garmin. Ein eigener Wert am selben Tag oder später hat Vorrang. Ein Wert gilt ab seinem Datum bis zum nächsten derselben Art, frühere Aktivitäten behalten ihre Last.",
       "none": "Noch keine Schwellenwerte. Ohne Schwellenwert ist die Last nicht berechenbar.",
       "col_kind": "Art",
       "sport": "Sportart",
@@ -277,6 +306,13 @@
         "hr_rest_bpm": "bpm",
         "run_speed_mps": "m/s",
         "css_mps": "m/s"
+      },
+      "add_hint": "Für eigene Werte, die Garmin nicht liefert oder die du anders festlegst.",
+      "origin": "Herkunft",
+      "origin_value": {
+        "garmin": "Garmin",
+        "manual": "Manuell",
+        "suggested_accepted": "Vorschlag übernommen"
       }
     },
     "athlete": {
@@ -287,7 +323,11 @@
       "male": "Männlich",
       "female": "Weiblich",
       "birth_year": "Geburtsjahr",
-      "save": "Speichern"
+      "save": "Speichern",
+      "origin": {
+        "garmin": "aus Garmin",
+        "manual": "eigener Wert"
+      }
     },
     "pmc": {
       "title": "Verlauf: Fitness, Ermüdung, Form",
@@ -309,26 +349,12 @@
         "title": "Sprache und Erscheinungsbild",
         "lead": "Wähle Sprache und Thema. Beides lässt sich später in den Einstellungen ändern."
       },
-      "thresholds": {
-        "title": "Schwellenwerte und Angaben zur Person",
-        "lead": "Schwellenwerte (zum Beispiel FTP oder Ruhepuls) und Angaben zur Person machen die Belastung berechenbar.",
-        "if_skipped": "Ohne Schwellenwerte bleibt die Belastung je Sportart nicht berechenbar. Du kannst sie später nachtragen."
-      },
-      "goal": {
-        "title": "Ziel und Verfügbarkeit",
-        "lead": "Ein Ziel und die Zeit pro Wochentag bilden die Grundlage für den Wochenplan.",
-        "if_skipped": "Ohne Ziel und Verfügbarkeit kann Lastwerk keinen Plan erzeugen."
-      },
       "garmin": {
         "title": "Garmin verbinden (optional)",
-        "lead": "Lastwerk kann Aktivitäten und Erholungswerte direkt bei Garmin abholen.",
+        "lead": "Lastwerk holt Aktivitäten, Erholungswerte und Schwellenwerte direkt bei Garmin.",
         "explain": "Du meldest dich in einem Fenster auf der Seite von Garmin an, Lastwerk sieht weder Passwort noch Code. Danach holt Lastwerk neue Aktivitäten und Erholungswerte auf diesen Rechner, nur lesend.",
-        "if_skipped": "Ohne Garmin fehlen die Erholungswerte. Aktivitäten kommen weiter aus eigenen FIT-Dateien, verbinden kannst du später in den Einstellungen."
-      },
-      "coach": {
-        "title": "Lokaler Coach (optional)",
-        "lead": "Ein Sprachmodell auf deinem Rechner kann deinen Plan anpassen und erklären. Es rechnet nie.",
-        "if_skipped": "Ohne Coach bleibt der Planer voll nutzbar. Einrichten kannst du ihn später in den Einstellungen."
+        "if_skipped": "Ohne Garmin fehlen Erholungswerte, und Schwellenwerte trägst du in den Einstellungen selbst ein. Aktivitäten kommen weiter aus eigenen FIT-Dateien, verbinden kannst du später in den Einstellungen.",
+        "takes": "Nach der Anmeldung übernimmt Lastwerk Schwellenwerte (FTP, Laktatschwelle, maximale Herzfrequenz, Ruhepuls), Geschlecht und Geburtsjahr aus Garmin. Eigene Werte trägst du später in den Einstellungen ein, sie haben dann Vorrang."
       }
     },
     "lead": {
@@ -339,7 +365,8 @@
       "detail": "Kennzahlen, Zonen und Verlauf dieser Aktivität.",
       "settings": "Daten, Schwellenwerte, Erscheinungsbild und Version.",
       "progress": "Umfang und Last über Wochen, Monate und Jahre.",
-      "performance": "Deine besten Werte je Dauer und wie sie sich entwickeln."
+      "performance": "Deine besten Werte je Dauer und wie sie sich entwickeln.",
+      "health": "Tages- und Trainingswerte aus Garmin, je mit jüngstem Wert und Verlauf. Lastwerk rechnet nicht damit."
     },
     "about": {
       "title": "Über Lastwerk",
@@ -690,7 +717,7 @@
     "garmin": {
       "window_title": "Bei Garmin anmelden",
       "title": "Garmin",
-      "statement": "Aktivitäten und Erholungswerte direkt von Garmin, ohne Zusatzprogramm.",
+      "statement": "Aktivitäten, Erholungs-, Tages- und Trainingswerte sowie Schwellenwerte direkt von Garmin, ohne Zusatzprogramm.",
       "risk": "Inoffizieller Zugang: Garmin bietet Privatnutzern keine offene Schnittstelle. Lastwerk nutzt den Weg der Garmin-App, Garmin kann ihn jederzeit ändern oder sperren.",
       "connect": "Mit Garmin verbinden",
       "waiting": "Das Anmeldefenster von Garmin ist offen. Passwort und Code gibst du nur dort ein.",
@@ -727,8 +754,22 @@
         "phase_import": "Import {done} von {total}",
         "done": "Neue Aktivitäten: {count}",
         "done_detail": "Neue Aktivitäten: {count}, Erholungstage: {days}",
-        "aborted": "Abgleich unvollständig"
-      }
+        "aborted": "Abgleich unvollständig",
+        "phase_account": "Konto {done} von {total}",
+        "phase_wellness": "Tageswerte {done} von {total}",
+        "thresholds": "Schwellenwerte aus Garmin geändert: {n}",
+        "recomputed": "neu berechnete Aktivitäten: {n}"
+      },
+      "hydration": {
+        "toggle": "Hydration aus Garmin holen",
+        "hint": "Sensible Gesundheitsdaten: Lastwerk speichert sie getrennt und gibt sie nie an den MCP-Server. Standard aus.",
+        "delete": "Hydration löschen",
+        "delete_confirm": "Alle gespeicherten Hydrationswerte löschen? Das lässt sich nicht rückgängig machen. Bleibt die Freigabe an, holt der nächste Abgleich wieder Werte.",
+        "delete_yes": "Löschen",
+        "delete_no": "Abbrechen",
+        "deleted": "Gelöschte Tage mit Hydration: {n}"
+      },
+      "never_fetched": "Menstruations- und Schwangerschaftsdaten holt Lastwerk nie."
     },
     "planner": {
       "title": "Dein Plan in drei Fragen",
@@ -1042,7 +1083,8 @@
         "origin_label": "Herkunft",
         "origin": {
           "manual": "von Hand",
-          "suggested_accepted": "Vorschlag übernommen"
+          "suggested_accepted": "Vorschlag übernommen",
+          "garmin": "aus Garmin"
         },
         "note": "Vorschlag: 95 % der besten 20-Minuten-Leistung des Monats (Faustregel, Q16 nur Sekundärquelle). Er gilt nur, wenn die 20 Minuten voll gefahren waren, und wird nie von selbst übernommen."
       }
@@ -1112,6 +1154,59 @@
         "value": "Tageswert"
       },
       "note": "Basis und Grenzen folgen Regel R12 (Q6, 7-Tage-Mittel nur Sekundärquelle, Schwellen Faustregel). Die Werte beschreiben Trainingsdaten und sind keine medizinische Aussage."
+    },
+    "health": {
+      "none": "Noch keine Werte. Sie kommen mit dem Abgleich aus Garmin, verbinden kannst du unter Einstellungen, Garmin.",
+      "to_settings": "Zu den Einstellungen",
+      "daily": "Tageswerte",
+      "daily_statement": "Werte je Tag aus Garmin. Tage ohne Wert bleiben Lücken.",
+      "training": "Training",
+      "training_statement": "Garmins eigene Einschätzungen. Lastwerk zeigt sie nur und rechnet mit der eigenen Last.",
+      "hydration": "Hydration",
+      "hydration_statement": "Sensible Werte, nur nach deiner Freigabe geholt und getrennt gespeichert.",
+      "note": "Die Werte beschreiben Trainingsdaten, keine Gesundheit im medizinischen Sinn.",
+      "as_of": "Stand {date}",
+      "from_garmin": "von Garmin",
+      "spark_label": "Verlauf {name}, {days} Tage",
+      "metric": {
+        "steps": "Schritte",
+        "step_distance_km": "Strecke",
+        "hr_min_bpm": "Tagesherzfrequenz Tiefst",
+        "hr_max_bpm": "Tagesherzfrequenz Höchst",
+        "respiration_waking_brpm": "Atmung wach",
+        "respiration_sleep_brpm": "Atmung Schlaf",
+        "spo2_avg_pct": "SpO2 Mittel",
+        "spo2_low_pct": "SpO2 Tiefst",
+        "intensity_moderate_min": "Intensitätsminuten moderat",
+        "intensity_vigorous_min": "Intensitätsminuten intensiv",
+        "stress_avg": "Stress Mittel",
+        "stress_max": "Stress Höchst",
+        "readiness_score": "Trainingsbereitschaft",
+        "garmin_acute_load": "Garmins akute Last",
+        "fitness_age": "Fitnessalter",
+        "vo2max_running": "VO2max Lauf",
+        "vo2max_cycling": "VO2max Rad",
+        "endurance_score": "Ausdauerwert",
+        "hill_score": "Bergwert",
+        "hydration_ml": "Hydration"
+      },
+      "unit": {
+        "km": "km",
+        "bpm": "bpm",
+        "brpm": "Atemzüge/min",
+        "pct": "%",
+        "min": "min",
+        "years": "Jahre",
+        "vo2": "ml/kg/min",
+        "ml": "ml"
+      },
+      "level": {
+        "POOR": "Schwach",
+        "LOW": "Niedrig",
+        "MODERATE": "Mäßig",
+        "HIGH": "Hoch",
+        "PRIME": "Optimal"
+      }
     }
   },
   "sport": {

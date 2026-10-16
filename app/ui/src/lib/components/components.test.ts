@@ -17,6 +17,7 @@ const ok = (over: Partial<LoadInfo> = {}): LoadInfo => ({
   method: 'tss',
   intensity_factor: 0.93,
   estimated: false,
+  missing: null,
   ...over,
 });
 
@@ -26,6 +27,7 @@ const failed = (status: LoadInfo['status']): LoadInfo => ({
   method: null,
   intensity_factor: null,
   estimated: false,
+  missing: null,
 });
 
 describe('LoadCell', () => {
@@ -36,6 +38,15 @@ describe('LoadCell', () => {
     expect(cell.dataset.status).toBe('missing_threshold');
     expect(cell.textContent).not.toMatch(/\d/);
     expect(cell.getAttribute('title')).toContain('Schwellenwert');
+  });
+
+  it('nennt im Tooltip den fehlenden Wert und wo er einzutragen ist (T39)', () => {
+    render(LoadCell, { load: { ...failed('missing_threshold'), missing: 'ftp_w' } });
+    const cell = screen.getByTestId('load');
+    expect(cell.textContent).toBe('nicht berechenbar');
+    expect(cell.getAttribute('title')).toBe(
+      'FTP fehlt. Garmin hat diesen Wert nicht geliefert. Eintragen unter Einstellungen, Schwellenwerte.',
+    );
   });
 
   it('zeigt jeden Fehlerstatus als Text, nie als 0', () => {

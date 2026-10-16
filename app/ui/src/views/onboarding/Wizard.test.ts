@@ -32,9 +32,7 @@ async function start(options: { onboarded: boolean; setupStepMs?: number }) {
 }
 
 async function toGarmin() {
-  for (let i = 0; i < 4; i += 1) {
-    await fireEvent.click(await screen.findByTestId('wizard-next'));
-  }
+  await fireEvent.click(await screen.findByTestId('wizard-next'));
   await screen.findByTestId('garmin-step');
 }
 
@@ -49,51 +47,49 @@ describe('Erststart-Assistent', () => {
     expect(screen.queryByTestId('wizard')).toBeNull();
   });
 
-  it('führt durch fünf Schritte ohne Ordnerwahl und zeigt bei überspringbaren den Hinweis', async () => {
+  it('führt durch zwei Schritte ohne Ordnerwahl, Schwellen, Ziel oder Coach (T39)', async () => {
     await start({ onboarded: false });
-    expect((await screen.findByTestId('wizard-progress')).textContent).toContain('1 von 5');
+    expect((await screen.findByTestId('wizard-progress')).textContent).toContain('1 von 2');
+    await screen.findByTestId('wizard-step-language');
     expect(screen.queryByTestId('wizard-skip')).toBeNull();
     await fireEvent.click(screen.getByTestId('wizard-next'));
-    await screen.findByTestId('wizard-step-thresholds');
-    expect(screen.getByTestId('wizard-skip-hint').textContent).toContain('Ohne Schwellenwerte');
-    // Es gibt keinen Schritt und keinen Knopf zur Wahl eines Ordners (T28).
-    expect(screen.queryByTestId('wizard-step-folder')).toBeNull();
+    await screen.findByTestId('wizard-step-garmin');
+    expect(screen.getByTestId('wizard-progress').textContent).toContain('2 von 2');
+    expect(screen.getByTestId('wizard-skip-hint').textContent).toContain(
+      'Schwellenwerte trägst du in den Einstellungen selbst ein',
+    );
+    // Kein Schritt für Ordner, Schwellen, Ziel oder Coach: Schwellen kommen aus Garmin, der Rest
+    // steht in den Einstellungen und im Planer.
+    for (const id of ['folder', 'thresholds', 'goal', 'coach']) {
+      expect(screen.queryByTestId(`wizard-step-${id}`)).toBeNull();
+    }
+    expect(screen.queryByTestId('threshold-section')).toBeNull();
     expect(screen.queryByTestId('data-section')).toBeNull();
-    await fireEvent.click(screen.getByTestId('wizard-skip'));
-    await screen.findByTestId('wizard-step-goal');
     await fireEvent.click(screen.getByTestId('wizard-back'));
-    await screen.findByTestId('wizard-step-thresholds');
+    await screen.findByTestId('wizard-step-language');
   });
 
-  it('der Schritt "Coach" folgt auf "Ziel", ist überspringbar und blockiert nicht', async () => {
-    await start({ onboarded: false, setupStepMs: 30 });
+  it('der Garmin-Schritt sagt, was Lastwerk aus Garmin übernimmt', async () => {
+    await start({ onboarded: false });
     await screen.findByTestId('wizard');
-    for (let i = 0; i < 3; i += 1) {
-      await fireEvent.click(await screen.findByTestId('wizard-next'));
+    await toGarmin();
+    const takes = screen.getByTestId('garmin-takes').textContent ?? '';
+    for (const word of [
+      'FTP',
+      'Laktatschwelle',
+      'Ruhepuls',
+      'Geschlecht',
+      'Geburtsjahr',
+      'Vorrang',
+    ]) {
+      expect(takes).toContain(word);
     }
-    await screen.findByTestId('wizard-step-coach');
-    expect(screen.getByTestId('wizard-title').textContent).toContain('Lokaler Coach');
-    expect(screen.getByTestId('wizard-skip-hint').textContent).toContain('Planer voll nutzbar');
-    expect((await screen.findByTestId('coach-setup-state')).textContent).toContain('Ollama läuft');
-    expect(screen.getByTestId('coach-model-qwen3:4b').textContent).toContain(
-      'Empfohlen für deinen PC',
-    );
-    // Ein Download läuft im gemeinsamen Zustand weiter: Der Nutzer kommt trotzdem zum nächsten Schritt.
-    await fireEvent.click(screen.getByTestId('coach-load-qwen3:8b'));
-    await screen.findByTestId('coach-pull-progress');
-    await fireEvent.click(screen.getByTestId('wizard-next'));
-    await screen.findByTestId('garmin-step');
-    await fireEvent.click(screen.getByTestId('wizard-back'));
-    await screen.findByTestId('wizard-step-coach');
-    expect(screen.getByTestId('wizard-skip')).toBeTruthy();
   });
 
   it('speichert den Abschluss als Einstellung, auch wenn alles übersprungen wird', async () => {
     const backend = await start({ onboarded: false });
     await fireEvent.click(await screen.findByTestId('wizard-next'));
-    for (let i = 0; i < 4; i += 1) {
-      await fireEvent.click(await screen.findByTestId('wizard-skip'));
-    }
+    await fireEvent.click(await screen.findByTestId('wizard-skip'));
     await screen.findByTestId('nav-today');
     expect((await backend.getSettings()).onboarded).toBe(true);
     expect(screen.queryByTestId('wizard')).toBeNull();

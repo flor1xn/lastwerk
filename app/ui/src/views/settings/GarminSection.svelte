@@ -5,6 +5,7 @@
   import { formatDate } from '../../lib/format';
   import { disconnectGarmin, garminStatus, garminSync, runGarminSync } from '../../lib/garmin';
   import { locale, t } from '../../lib/i18n';
+  import { bumpData } from '../../lib/state';
   import GarminConnect from './GarminConnect.svelte';
 
   // Abschnitt "Garmin" der Einstellungen (T23, SPEC 5.6, 10.1: jede Verbindung ist hier
@@ -23,6 +24,8 @@
   let disconnected = $state(false);
   let errorMessage = $state<string | null>(null);
   let bridge = $state<BridgeStatus | null>(null);
+  let confirmingDelete = $state(false);
+  let deleted = $state<number | null>(null);
 
   const connected = $derived($garminStatus?.connected ?? false);
   const running = $derived($garminSync.kind === 'running');
@@ -50,6 +53,36 @@
       onchange();
     } catch (e) {
       event.currentTarget.checked = !on;
+      errorMessage = errorKey(e);
+    } finally {
+      busy = false;
+    }
+  }
+
+  // Hydration ist S3 (SPEC 5.6): Abruf nur nach Freigabe, Standard aus.
+  async function toggleHydration(event: Event & { currentTarget: HTMLInputElement }) {
+    const on = event.currentTarget.checked;
+    errorMessage = null;
+    busy = true;
+    try {
+      await getBackend().setSettings({ garmin_share_hydration: on });
+      onchange();
+    } catch (e) {
+      event.currentTarget.checked = !on;
+      errorMessage = errorKey(e);
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function deleteSensitive() {
+    errorMessage = null;
+    busy = true;
+    try {
+      deleted = await getBackend().deleteSensitiveData();
+      confirmingDelete = false;
+      bumpData();
+    } catch (e) {
       errorMessage = errorKey(e);
     } finally {
       busy = false;
@@ -155,6 +188,59 @@
   </label>
   <p class="muted hint">{$t('ui.garmin.sync_on_start_hint')}</p>
 
+  <div class="sensitive" data-testid="garmin-sensitive">
+    <label class="switch">
+      <input
+        type="checkbox"
+        checked={settings.garmin_share_hydration}
+        disabled={busy}
+        onchange={toggleHydration}
+        data-testid="garmin-share-hydration"
+      />
+      <span>{$t('ui.garmin.hydration.toggle')}</span>
+    </label>
+    <p class="muted hint">{$t('ui.garmin.hydration.hint')}</p>
+    <p class="row">
+      <button
+        onclick={() => {
+          deleted = null;
+          confirmingDelete = true;
+        }}
+        disabled={busy || confirmingDelete}
+        data-testid="garmin-delete-sensitive">{$t('ui.garmin.hydration.delete')}</button
+      >
+    </p>
+    {#if confirmingDelete}
+      <div
+        class="confirm"
+        role="alertdialog"
+        aria-label={$t('ui.garmin.hydration.delete')}
+        data-testid="garmin-delete-confirm"
+      >
+        <p class="warn">{$t('ui.garmin.hydration.delete_confirm')}</p>
+        <p class="row">
+          <button
+            class="primary"
+            onclick={() => void deleteSensitive()}
+            disabled={busy}
+            data-testid="garmin-delete-yes">{$t('ui.garmin.hydration.delete_yes')}</button
+          >
+          <button
+            onclick={() => (confirmingDelete = false)}
+            disabled={busy}
+            data-testid="garmin-delete-no">{$t('ui.garmin.hydration.delete_no')}</button
+          >
+        </p>
+      </div>
+    {/if}
+    {#if deleted !== null}
+      <p class="hint" role="status" data-testid="garmin-deleted">
+        {$t('ui.garmin.hydration.deleted', { n: deleted })}
+      </p>
+    {/if}
+    <p class="muted hint" data-testid="garmin-never">{$t('ui.garmin.never_fetched')}</p>
+  </div>
+
   {#if errorMessage}
     <p class="error" role="alert" data-testid="garmin-error">{$t(errorMessage)}</p>
   {/if}
@@ -206,6 +292,10 @@
     padding: 6px 10px;
     border: 1px solid var(--warn);
     border-radius: 4px;
+  }
+
+  .sensitive {
+    margin-top: 16px;
   }
 
   .advanced {
