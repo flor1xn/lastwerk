@@ -542,6 +542,12 @@ Umsetzung in T14 (Stand 13. Oktober 2026), Regel R12:
 - `Rules` hat den Abschnitt `R12` (Quelle `Q6`, weich), und `reserved` in `rules.default.json` ist leer. Die Version der Regeln bleibt `1.0.0`: ohne Erholungsdaten ändert sich kein Plan (Test: Pläne mit leerer Liste und mit unauffälligen Daten sind Byte für Byte die Pläne ohne die Liste, und die Golden-Dateien blieben unverändert), eine neue Version hätte jeden Plan über `rules_version` verändert.
 - Neuer Begründungsschlüssel `reason.session.recovery_swap` in `plan::reason_keys`. Texte `rule.R12.name` und `.explanation` in beiden Sprachdateien.
 
+Umsetzung in T44 Teil A (Stand 16. Oktober 2026), Tagesentscheidung und Erkenntnisse (8.7):
+
+- `plan::today_decision(&TodayInput, &Rules) -> TodayDecision` (Modul `plan/today.rs`). `TodayInput { date, plan: Option<&Plan>, ctx: Option<&PlanContext>, readiness: ReadinessState, form: Option<FormState>, catalog: &TemplateCatalog }`. `TodayDecision { state, main: Option<Variant>, alternatives: Vec<Variant>, reasons: Vec<DecisionReason>, rules: Vec<&str>, missing: Vec<&str> }`, nur `Serialize`. `DecisionState` (`no_plan`, `rest`, `already_adjusted`, `lighten`, `keep_easy`, `as_planned`, `code()` mit Vorsatz `decision.`), `Variant { kind, sport, template_id, duration_min, hard, planned_load }` mit `VariantKind` (`planned`, `lighter`, `shorter`, `harder`), `DecisionReason` (`readiness_low`, `form_overloaded`, `form_fresh`, `recovery_swap`, `code()` mit Vorsatz `decision.reason.`), Schlüssel für `missing` in `plan::decision_missing` (`readiness`, `form`, `plan_context`).
+- `plan/recovery.rs`: `easy_replacement` ist `pub(crate)`, daneben `hard_replacement`; beide wählen über dieselbe Hilfsfunktion das engste Dauerfenster, das die Dauer enthält.
+- `metrics::insights::rank_insights(&[&str]) -> Vec<&'static str>` mit der festen Liste `PRIORITY` und `MAX_INSIGHTS` (3).
+
 #### lastwerk-fit
 
 ```rust
@@ -1929,6 +1935,29 @@ Für alle übrigen Werte schlägt die App vor und übernimmt nie selbst:
 - CSS: aus zwei Zeitläufen (Q15), zum Beispiel 400 m und 200 m.
 
 Umsetzung in T05: `core::estimate` rechnet die drei Vorschläge als reine Funktionen. Die CLI (`thresholds suggest`) nutzt nur den FTP-Vorschlag aus der Datenbank (beste 20-Minuten-Leistung aller zählenden Radfahrten, mit Datum) und den CSS-Vorschlag aus zwei eingegebenen Zeiten (400 m und 200 m). Die LTHR ist aus dem Cache nicht ableitbar, weil er keine Herzfrequenzreihe speichert und ein 30-Minuten-Test aus einer Datei nicht erkennbar ist. Die CLI weist darauf hin. Ein Vorschlag wird nie gespeichert, `suggested_accepted` entsteht nur über `--from-suggestion`.
+
+### 8.7 Tagesentscheidung (seit T44)
+
+"Heute" beantwortet zuerst, was heute ansteht und warum (Entscheidung E11 in T44). Die Entscheidung (`core::plan::today_decision`) liest nur schon berechnete Zustände und führt keine neue Zahl ein: die Bereitschaft aus R12 (`metrics::readiness::readiness_state`, Q6, Schwellen Faustregel), den Formzustand aus 5.5 (`metrics::form::form_state`, Grenze "überlastet" aus R10, Faustregel) und den Vorlagenkatalog. Die Tabelle selbst ist eine Faustregel, abgeleitet aus R12: Was R12 vor dem Planbeginn mit der ersten harten Einheit tut, schlägt sie für heute vor. Sie ändert den Plan nicht; eine Übernahme läuft über den Coach (9.7).
+
+| Lage am Tag | Zustand | Empfohlen | Alternativen | Gründe, Regeln |
+|---|---|---|---|---|
+| kein aktiver Plan oder Tag außerhalb des Plans | `no_plan` | nichts | keine | keine |
+| keine Einheit | `rest` | Ruhe | keine | R5 |
+| Einheit schon durch R12 getauscht (`reason.session.recovery_swap`) | `already_adjusted` | geplant | keine | `recovery_swap`, R12 |
+| hart geplant, Bereitschaft niedrig oder Form überlastet | `lighten` | leichter: lockere Vorlage derselben Sportart, gleiche Dauer | geplant | `readiness_low` (R12), `form_overloaded` (R10) |
+| hart geplant, sonst | `as_planned` | geplant | leichter | keine |
+| locker geplant, Bereitschaft niedrig oder Form überlastet | `keep_easy` | geplant | kürzer: dieselbe Vorlage mit der Mindestdauer ihres Katalogfensters, nur wenn sie unter der geplanten Dauer liegt | wie `lighten` |
+| locker geplant, Bereitschaft normal, Form frisch, Woche weder Taper noch Rennwoche noch Erholungswoche | `as_planned` | geplant | härter: harte Vorlage derselben Sportart, gleiche Dauer | `form_fresh` (Faustregel aus 5.5) |
+| locker geplant, sonst | `as_planned` | geplant | keine | keine |
+
+- Maßgeblich ist die erste harte Einheit des Tages, sonst die erste. "Locker" heißt `hard = false`, auch mittlere Einheiten und Kraft (Kraft hat keine harte Vorlage, also nie "härter").
+- Leichtere und härtere Vorlage wählt dieselbe Regel wie R12: Das Dauerfenster enthält die geplante Dauer, das engste Fenster gewinnt, bei Gleichstand die Katalogreihenfolge. Lasten aller Varianten über `load_model.session_load`. Gibt es keine lockere Vorlage mit passendem Fenster, bleibt bei `lighten` die Empfehlung leer und nur "geplant" als Alternative.
+- Die härtere Variante gibt es nur, wenn `validate_plan` auf einer Kopie des Plans mit der getauschten Einheit keine harte Verletzung meldet, die der Plan ohne Tausch nicht schon hat (Vergleich nach Regelcode und Datum; betrifft vor allem R1, R3, R4 und R11). Ohne `PlanContext` gibt es diese Prüfung nicht und deshalb keine härtere Variante.
+- Fehlende Eingänge stehen in `missing` (`readiness` bei `readiness.no_data`, `form` ohne Formzustand, `plan_context`) und gelten nie als "normal": Sie schließen die härtere Variante aus, lösen aber auch kein `lighten` aus.
+- Handrechnung der Tests: Basislinie HRV 60 ms, Wert 51 ms ergibt `(60 - 51) / 60 = 0,15`, also `lighten`; 52 ms ergibt 0,133, also `as_planned`. TSB -30,0 ist "belastet" (`as_planned`), -30,1 "überlastet" (`lighten`), +5,0 "frisch" (bei lockerer Einheit "härter").
+
+**Erkenntnisse.** `core::metrics::insights::rank_insights` wählt aus den Zustandscodes der Kennzahlen höchstens drei in fester Reihenfolge, zuerst Warnungen, dann positive Trends: `form.overloaded`, `readiness.low`, `ramp.steep`, `distribution.intensity_heavy`, `adherence.under`, `adherence.over`, `efficiency.rising`, `power_curve.rising`, `ramp.building`. Andere Codes erscheinen nicht. Reihenfolge und Anzahl sind eine Faustregel.
 
 ---
 

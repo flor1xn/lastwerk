@@ -2,7 +2,7 @@
 
 | Feld | Wert |
 |---|---|
-| Status | offen |
+| Status | in Arbeit |
 | Meilenstein | nach 1.0 |
 | cloudfähig | ja |
 | Voraussetzung | Teil A: T41. Teil B: T43 und Teil A |
@@ -71,4 +71,4 @@ Keine.
 
 ## Blocker oder Vermerke
 
-Keine.
+- **Teil A erledigt (2026-10-16).** `crates/core/src/plan/today.rs` mit `today_decision`, `TodayInput`, `TodayDecision`, `DecisionState`, `Variant`, `VariantKind`, `DecisionReason` und den `missing`-Schlüsseln (`plan::decision_missing`); `plan/recovery.rs` mit `easy_replacement` (`pub(crate)`) und `hard_replacement` über eine gemeinsame Wahl des engsten Fensters; `crates/core/src/metrics/insights.rs` mit `rank_insights`, `PRIORITY` und `MAX_INSIGHTS`. SPEC 8.7 neu, SPEC 5.4 ergänzt. Tests mit Handrechnung: HRV 51 und 52 ms gegen 60 ms, TSB -30,0, -30,1 und +5,0, engstes Fenster, Ablehnung von "härter" bei R3, R4 und R11, Taper-, Renn- und Erholungswoche, fehlende Daten, `no_plan`, `rest`, `already_adjusted`, Varianten nur aus dem Katalog. Abweichungen: Der Vergleich der harten Verletzungen läuft nach Regelcode und Datum statt nur nach Code, damit eine bestehende Verletzung derselben Regel an einem anderen Tag eine neue nicht verdeckt. Hat der Katalog bei `lighten` keine lockere Vorlage mit passendem Fenster (zum Beispiel Schwimmen über 60 min), bleibt `main` leer und nur "geplant" steht als Alternative. Ohne `PlanContext` gibt es keine härtere Variante (`missing` enthält `plan_context`). Die Hilfen `blank_week`, `put`, `plan_of`, `continuous_goal` und `avail` in `plan/tests.rs` sind für die neuen Tests `pub(super)`. Teil B steht aus.
