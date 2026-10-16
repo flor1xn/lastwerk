@@ -20,11 +20,11 @@ use std::collections::BTreeMap;
 use chrono::{NaiveDate, TimeDelta};
 use serde::{Deserialize, Serialize};
 
-use super::catalog::{IntensityClass, TemplateCatalog};
+use super::catalog::{IntensityClass, Template, TemplateCatalog};
 use super::context::PlanContext;
 use super::generate::keys;
 use super::rules::{R12, Rules, round1};
-use super::types::{PlanSession, PlanWarning, PlanWeek, Severity};
+use super::types::{PlanSession, PlanSport, PlanWarning, PlanWeek, Severity};
 
 /// Code der Regel in Warnungen und Verletzungen.
 pub const RULE_CODE: &str = "R12";
@@ -244,23 +244,56 @@ pub(crate) fn first_hard_or_swapped(weeks: &[PlanWeek]) -> Option<(usize, usize,
     None
 }
 
-/// Lockere Vorlage derselben Sportart, deren Dauerfenster die Dauer der Einheit enthält. Die
-/// Dauer bleibt dann gleich, damit Verfügbarkeit (R11) und Wochenvolumen (R2) unberührt
-/// bleiben. Unter mehreren Vorlagen gewinnt das engste Fenster, bei Gleichstand die frühere
-/// im Katalog (wie bei der Wahl lockerer Einheiten im Planer).
-fn easy_replacement<'c>(
-    catalog: &'c TemplateCatalog,
-    session: &PlanSession,
-) -> Option<&'c super::catalog::Template> {
-    let mut best: Option<&super::catalog::Template> = None;
-    for t in catalog.select(session.sport, IntensityClass::Easy) {
+/// Vorlage einer Sportart und Klasse, deren Dauerfenster `minutes` enthält. Unter mehreren
+/// gewinnt das engste Fenster (kleinste Obergrenze), bei Gleichstand die frühere im Katalog
+/// (wie bei der Wahl lockerer Einheiten im Planer, Konvention).
+fn narrowest_containing(
+    catalog: &TemplateCatalog,
+    sport: PlanSport,
+    class: IntensityClass,
+    minutes: u32,
+) -> Option<&Template> {
+    let mut best: Option<&Template> = None;
+    for t in catalog.select(sport, class) {
         let w = t.duration_min;
-        let contains = w.min <= session.duration_min && session.duration_min <= w.max;
+        let contains = w.min <= minutes && minutes <= w.max;
         if contains && best.is_none_or(|b| t.duration_min.max < b.duration_min.max) {
             best = Some(t);
         }
     }
     best
+}
+
+/// Lockere Vorlage derselben Sportart, deren Dauerfenster die Dauer der Einheit enthält. Die
+/// Dauer bleibt dann gleich, damit Verfügbarkeit (R11) und Wochenvolumen (R2) unberührt
+/// bleiben. Unter mehreren Vorlagen gewinnt das engste Fenster, bei Gleichstand die frühere
+/// im Katalog (wie bei der Wahl lockerer Einheiten im Planer). Auch die Tagesentscheidung
+/// (`plan::today`, SPEC 8.7) wählt so die leichtere Variante.
+pub(crate) fn easy_replacement<'c>(
+    catalog: &'c TemplateCatalog,
+    session: &PlanSession,
+) -> Option<&'c Template> {
+    narrowest_containing(
+        catalog,
+        session.sport,
+        IntensityClass::Easy,
+        session.duration_min,
+    )
+}
+
+/// Gegenstück zu [`easy_replacement`] für die härtere Variante der Tagesentscheidung (SPEC
+/// 8.7): harte Vorlage derselben Sportart mit derselben Dauer, gleiche Wahlregel. Ob die harte
+/// Einheit an diesem Tag zulässig ist, prüft der Aufrufer mit `validate_plan`.
+pub(crate) fn hard_replacement<'c>(
+    catalog: &'c TemplateCatalog,
+    session: &PlanSession,
+) -> Option<&'c Template> {
+    narrowest_containing(
+        catalog,
+        session.sport,
+        IntensityClass::Hard,
+        session.duration_min,
+    )
 }
 
 /// Ersetzt die erste harte Einheit durch eine lockere, wenn die Erholungsdaten es verlangen.

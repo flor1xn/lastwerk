@@ -38,7 +38,7 @@ pub(super) fn monday() -> NaiveDate {
     date(2027, 1, 4)
 }
 
-fn avail(max_minutes: u16, allow_hard: bool, fixed_rest: bool) -> DayAvailability {
+pub(super) fn avail(max_minutes: u16, allow_hard: bool, fixed_rest: bool) -> DayAvailability {
     DayAvailability {
         max_minutes,
         allow_hard,
@@ -107,7 +107,7 @@ pub(super) fn open_ctx() -> PlanContext {
 // Hilfen zum Bauen von Plänen von Hand
 // ---------------------------------------------------------------------------
 
-fn blank_week(start: NaiveDate, phase: Phase) -> PlanWeek {
+pub(super) fn blank_week(start: NaiveDate, phase: Phase) -> PlanWeek {
     PlanWeek {
         week_start: start,
         phase,
@@ -125,7 +125,7 @@ fn blank_week(start: NaiveDate, phase: Phase) -> PlanWeek {
 
 /// Legt eine Einheit nach Vorlage auf Tag `day` der Woche. Sportart, Härte und Last folgen
 /// aus Katalog und Regeln.
-fn put(week: &mut PlanWeek, day: usize, template: &str, minutes: u32) {
+pub(super) fn put(week: &mut PlanWeek, day: usize, template: &str, minutes: u32) {
     let cat = catalog();
     let t = cat.get(template).expect("Vorlage im Katalog");
     let slot = if week.days[day].sessions.is_empty() {
@@ -150,7 +150,7 @@ fn put_load(week: &mut PlanWeek, day: usize, template: &str, minutes: u32, load:
     week.days[day].sessions.last_mut().unwrap().planned_load = load;
 }
 
-fn plan_of(weeks: Vec<PlanWeek>, goal: Goal) -> Plan {
+pub(super) fn plan_of(weeks: Vec<PlanWeek>, goal: Goal) -> Plan {
     Plan {
         schema_version: PLAN_SCHEMA_VERSION,
         plan_id: "00000000-0000-4000-8000-000000000002".to_string(),
@@ -165,7 +165,7 @@ fn plan_of(weeks: Vec<PlanWeek>, goal: Goal) -> Plan {
     }
 }
 
-fn continuous_goal() -> Goal {
+pub(super) fn continuous_goal() -> Goal {
     Goal {
         kind: GoalKind::Continuous,
         event_date: None,

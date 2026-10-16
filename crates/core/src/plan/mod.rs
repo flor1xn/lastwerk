@@ -1,4 +1,5 @@
-//! Regelbasierter Planer: Typen, Katalog, Regeln, Erzeugung und Prüfung (SPEC 7.1, 7.4, 8.3, 8.4).
+//! Regelbasierter Planer: Typen, Katalog, Regeln, Erzeugung, Prüfung und Tagesentscheidung
+//! (SPEC 7.1, 7.4, 8.3, 8.4, 8.7).
 //!
 //! `core` liest keine Dateien. Katalog (`catalog/templates.json`) und Regeln
 //! (`catalog/rules.default.json`) kommen als deserialisierte Strukturen vom Aufrufer, ebenso
@@ -10,6 +11,7 @@ mod error;
 mod generate;
 pub(crate) mod recovery;
 mod rules;
+mod today;
 mod types;
 mod validate;
 
@@ -27,6 +29,10 @@ pub use recovery::{RecoveryDay, RecoverySignal, recovery_signal};
 pub use rules::{
     ContinuousPhases, EventPhases, GeneratorParams, Hardness, LoadModel, PhaseParams, PhaseProfile,
     RuleMeta, Rules, StructureParams, is_valid_source, round1,
+};
+pub use today::{
+    DecisionReason, DecisionState, TodayDecision, TodayInput, Variant, VariantKind,
+    missing as decision_missing, today_decision,
 };
 pub use types::{
     Goal, GoalKind, Locale, MAX_PLAN_WEEKS, MAX_SESSION_MINUTES, MAX_SESSIONS_PER_DAY,
