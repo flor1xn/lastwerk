@@ -38,7 +38,7 @@
   const points = $derived(data?.points ?? []);
 
   interface MetricDef {
-    key: HealthNumberKey;
+    field: HealthNumberKey;
     digits: number;
     /** Einheit aus der Sprachdatei, `ui.health.unit.<unit>`. */
     unit?: string;
@@ -47,29 +47,29 @@
   }
 
   const DAILY: MetricDef[] = [
-    { key: 'steps', digits: 0 },
-    { key: 'step_distance_km', digits: 1, unit: 'km' },
-    { key: 'hr_min_bpm', digits: 0, unit: 'bpm' },
-    { key: 'hr_max_bpm', digits: 0, unit: 'bpm' },
-    { key: 'respiration_waking_brpm', digits: 1, unit: 'brpm' },
-    { key: 'respiration_sleep_brpm', digits: 1, unit: 'brpm' },
-    { key: 'spo2_avg_pct', digits: 0, unit: 'pct' },
-    { key: 'spo2_low_pct', digits: 0, unit: 'pct' },
-    { key: 'intensity_moderate_min', digits: 0, unit: 'min' },
-    { key: 'intensity_vigorous_min', digits: 0, unit: 'min' },
-    { key: 'stress_avg', digits: 0 },
-    { key: 'stress_max', digits: 0 },
+    { field: 'steps', digits: 0 },
+    { field: 'step_distance_km', digits: 1, unit: 'km' },
+    { field: 'hr_min_bpm', digits: 0, unit: 'bpm' },
+    { field: 'hr_max_bpm', digits: 0, unit: 'bpm' },
+    { field: 'respiration_waking_brpm', digits: 1, unit: 'brpm' },
+    { field: 'respiration_sleep_brpm', digits: 1, unit: 'brpm' },
+    { field: 'spo2_avg_pct', digits: 0, unit: 'pct' },
+    { field: 'spo2_low_pct', digits: 0, unit: 'pct' },
+    { field: 'intensity_moderate_min', digits: 0, unit: 'min' },
+    { field: 'intensity_vigorous_min', digits: 0, unit: 'min' },
+    { field: 'stress_avg', digits: 0 },
+    { field: 'stress_max', digits: 0 },
   ];
   const TRAINING: MetricDef[] = [
-    { key: 'readiness_score', digits: 0, garmin: true },
-    { key: 'garmin_acute_load', digits: 0, garmin: true },
-    { key: 'fitness_age', digits: 0, unit: 'years', garmin: true },
-    { key: 'vo2max_running', digits: 1, unit: 'vo2', garmin: true },
-    { key: 'vo2max_cycling', digits: 1, unit: 'vo2', garmin: true },
-    { key: 'endurance_score', digits: 0, garmin: true },
-    { key: 'hill_score', digits: 0, garmin: true },
+    { field: 'readiness_score', digits: 0, garmin: true },
+    { field: 'garmin_acute_load', digits: 0, garmin: true },
+    { field: 'fitness_age', digits: 0, unit: 'years', garmin: true },
+    { field: 'vo2max_running', digits: 1, unit: 'vo2', garmin: true },
+    { field: 'vo2max_cycling', digits: 1, unit: 'vo2', garmin: true },
+    { field: 'endurance_score', digits: 0, garmin: true },
+    { field: 'hill_score', digits: 0, garmin: true },
   ];
-  const HYDRATION: MetricDef[] = [{ key: 'hydration_ml', digits: 0, unit: 'ml' }];
+  const HYDRATION: MetricDef[] = [{ field: 'hydration_ml', digits: 0, unit: 'ml' }];
 
   interface Shown extends MetricDef {
     latest: HealthPoint;
@@ -86,7 +86,7 @@
       let first: HealthPoint | null = null;
       let latest: HealthPoint | null = null;
       for (const p of points) {
-        if (p[def.key] === null) continue;
+        if (p[def.field] === null) continue;
         first ??= p;
         latest = p;
       }
@@ -98,7 +98,7 @@
         ...def,
         latest,
         span,
-        values: denseSeries(points, (p) => p[def.key], today, span),
+        values: denseSeries(points, (p) => p[def.field], today, span),
       });
     }
     return out;
@@ -123,15 +123,15 @@
 
 {#snippet metrics(list: Shown[])}
   <ul class="cells">
-    {#each list as m (m.key)}
-      <li class="cell" data-testid={`health-${m.key}`}>
+    {#each list as m (m.field)}
+      <li class="cell" data-testid={`health-${m.field}`}>
         <Metric
-          value={formatNumber(m.latest[m.key], $locale, m.digits)}
+          value={formatNumber(m.latest[m.field], $locale, m.digits)}
           unit={m.unit ? $t(`ui.health.unit.${m.unit}`) : undefined}
-          label={$t(`ui.health.metric.${m.key}`)}
+          label={$t(`ui.health.metric.${m.field}`)}
         >
           {#snippet extra()}
-            {#if m.key === 'readiness_score' && m.latest.readiness_level}
+            {#if m.field === 'readiness_score' && m.latest.readiness_level}
               <span class="level" data-testid="health-readiness-level"
                 >{levelText(m.latest.readiness_level)}</span
               >
@@ -146,7 +146,7 @@
         <Sparkline
           values={m.values}
           label={$t('ui.health.spark_label', {
-            name: $t(`ui.health.metric.${m.key}`),
+            name: $t(`ui.health.metric.${m.field}`),
             days: m.span,
           })}
         />
