@@ -13,8 +13,7 @@
   import { errorKey } from '../../lib/errors';
   import { locale, t } from '../../lib/i18n';
   import { Loader } from '../../lib/loader.svelte';
-  import { coachSetupFocus } from '../../lib/coach-setup';
-  import { coachReleased, view } from '../../lib/state';
+  import { coachReleased, openSettings } from '../../lib/state';
   import ProposalCard from './ProposalCard.svelte';
 
   // Gespräch mit dem lokalen Coach (T26, SPEC 9.7). Das Modell macht nur Vorschläge, die der
@@ -65,8 +64,7 @@
 
   /** Zur Einrichtung in den Einstellungen (T29): Ollama einrichten, Modell wählen. */
   function openSetup() {
-    coachSetupFocus.set(true);
-    view.set('settings');
+    openSettings('coach');
   }
 
   async function recheck() {

@@ -1,8 +1,6 @@
 <script lang="ts">
   import { getBackend } from '../lib/backend';
   import type { ActivityDetail } from '../lib/backend/types';
-  import { addDays, localIso } from '../lib/dates';
-  import { viewDefaults } from '../lib/defaults';
   import { activitySeriesData, activitySeriesOptions, readChartColors } from '../lib/charts';
   import ErrorNote from '../lib/components/ErrorNote.svelte';
   import LoadCell from '../lib/components/LoadCell.svelte';
@@ -22,38 +20,22 @@
   import { locale, t } from '../lib/i18n';
   import { missingText, trainingEffectText } from '../lib/load';
   import { Loader } from '../lib/loader.svelte';
-  import { dataVersion, resolvedTheme, selectedActivityId, view } from '../lib/state';
+  import {
+    closeActivity,
+    dataVersion,
+    openSettings,
+    resolvedTheme,
+    selectedActivityId,
+  } from '../lib/state';
 
+  // Detail an Ort und Stelle im Reiter Aktivitäten (T42): Die Ansicht erscheint nur mit gewählter
+  // Aktivität, "Zurück" führt zur Liste.
   const loader = new Loader<ActivityDetail>();
-  let noneAvailable = $state(false);
-  let pickError = $state<unknown>(null);
-
-  // Ohne Auswahl öffnet das Detail die jüngste zählende Aktivität der letzten Tage.
-  async function pickLatest() {
-    const today = localIso();
-    try {
-      const list = await getBackend().listActivities({
-        from: addDays(today, -viewDefaults.listDays),
-        to: today,
-        sport: null,
-      });
-      const first = list.find((a) => a.is_primary);
-      pickError = null;
-      noneAvailable = !first;
-      if (first) selectedActivityId.set(first.id);
-    } catch (e) {
-      pickError = e;
-    }
-  }
 
   $effect(() => {
     const id = $selectedActivityId;
     void $dataVersion;
-    if (id === null) {
-      void pickLatest();
-      return;
-    }
-    noneAvailable = false;
+    if (id === null) return;
     void loader.run(() => getBackend().getActivity(id));
   });
 
@@ -94,16 +76,11 @@
   });
 </script>
 
-{#if $selectedActivityId === null && noneAvailable}
-  <p class="muted" data-testid="detail-none">{$t('ui.detail.none')}</p>
-  <button onclick={() => view.set('activities')}>{$t('ui.detail.to_list')}</button>
-{:else if pickError && $selectedActivityId === null}
-  <ErrorNote error={pickError} />
-{:else if loader.error && $selectedActivityId !== null}
+{#if loader.error}
   <ErrorNote error={loader.error} />
 {:else if d}
   <div class="head">
-    <button onclick={() => view.set('activities')}>{$t('ui.detail.back')}</button>
+    <button onclick={closeActivity} data-testid="detail-back">{$t('ui.detail.back')}</button>
     <h2 data-testid="detail-title">
       {$t(`ui.sport.${d.item.sport}`)} · {formatDate(d.item.local_date, $locale)}
     </h2>
@@ -173,7 +150,7 @@
           {$t(missing.what)}. {$t(missing.hint)}
         </p>
         <p class="reason">
-          <button onclick={() => view.set('settings')} data-testid="load-reason-settings"
+          <button onclick={() => openSettings('profile')} data-testid="load-reason-settings"
             >{$t('ui.load.to_settings')}</button
           >
         </p>

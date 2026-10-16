@@ -4,11 +4,10 @@ import { setBackend } from '../../lib/backend';
 import { MockBackend, type MockOptions } from '../../lib/backend/mock';
 import { resetCoachSetupState } from '../../lib/coach-setup';
 import { setLocale } from '../../lib/i18n';
-import { view } from '../../lib/state';
+import { get } from 'svelte/store';
+import { settingsTab, view } from '../../lib/state';
 import PlanView from '../PlanView.svelte';
 import SettingsView from '../SettingsView.svelte';
-import CoachSetupLine from '../../lib/components/CoachSetupLine.svelte';
-import { pullModel } from '../../lib/coach-setup';
 import CoachSetup from './CoachSetup.svelte';
 
 vi.mock(
@@ -21,6 +20,7 @@ afterEach(() => {
   setBackend(null);
   setLocale('de');
   view.set('today');
+  settingsTab.set('data');
   resetCoachSetupState();
 });
 
@@ -192,37 +192,24 @@ describe('Einrichtung des Coachs, Baustein', () => {
 });
 
 describe('Einrichtung des Coachs, Einstellungen und Plan', () => {
-  it('die Einstellungen zeigen den Abschnitt "Lokaler Coach"', async () => {
+  it('die Einstellungen zeigen den Abschnitt "Lokaler Coach" im Reiter Coach', async () => {
     mock({ ollama: 'running' });
     render(SettingsView);
+    expect(screen.queryByTestId('coach-setup-section')).toBeNull();
+    await fireEvent.click(await screen.findByTestId('tab-settings-coach'));
     const section = await screen.findByTestId('coach-setup-section');
     expect(section.querySelector('h3')?.textContent).toBe('Lokaler Coach');
     await screen.findByTestId('coach-setup-ready');
   });
 
-  it('der Hinweis ohne Modell in der Planansicht führt zum Abschnitt', async () => {
+  it('der Hinweis ohne Modell in der Planansicht führt zum Reiter Coach', async () => {
     mock({ ollama: 'missing' });
     view.set('plan');
     render(PlanView);
     const link = await screen.findByTestId('coach-open-setup');
     expect(link.textContent).toContain('Zur Einrichtung in den Einstellungen');
     await fireEvent.click(link);
-    let current = '';
-    view.subscribe((v) => (current = v))();
-    expect(current).toBe('settings');
-  });
-});
-
-describe('Zeile in der Seitenleiste', () => {
-  it('zeigt einen laufenden Download mit Prozent und ist sonst leer', async () => {
-    mock({ ollama: 'running', setupStepMs: 15 });
-    render(CoachSetupLine);
-    expect(screen.queryByTestId('sidebar-coach-setup')).toBeNull();
-    const run = pullModel('qwen3:8b');
-    const line = await screen.findByTestId('sidebar-coach-setup');
-    expect(line.textContent).toContain('qwen3:8b wird geladen');
-    await waitFor(() => expect(line.textContent).toMatch(/· \d+ %/));
-    await run;
-    await waitFor(() => expect(screen.queryByTestId('sidebar-coach-setup')).toBeNull());
+    expect(get(view)).toBe('settings');
+    expect(get(settingsTab)).toBe('coach');
   });
 });

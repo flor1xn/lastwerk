@@ -19,7 +19,7 @@
   import { formatDate, formatDuration, formatNumber } from '../lib/format';
   import { hasKey, locale, t } from '../lib/i18n';
   import { Loader } from '../lib/loader.svelte';
-  import { dataVersion, view } from '../lib/state';
+  import { dataVersion, openSettings } from '../lib/state';
 
   // Gesundheit (T39): Tages- und Trainingswerte, die der Abgleich aus Garmin holt, je mit dem
   // jüngsten Wert, seinem Tag und einem Mini-Verlauf über den Zeitraum. Lastwerk rechnet mit
@@ -276,10 +276,7 @@
 {/snippet}
 
 <div class="page health" data-testid="health">
-  <header class="page-head">
-    <h1>{$t('ui.nav.health')}</h1>
-    <p class="page-lead" data-testid="lead">{$t('ui.lead.health')}</p>
-  </header>
+  <p class="page-lead" data-testid="lead">{$t('ui.lead.health')}</p>
 
   <div class="controls">
     <Segmented
@@ -298,7 +295,7 @@
   {:else if !any}
     <div class="empty" data-testid="health-empty">
       <p class="muted">{$t('ui.health.none')}</p>
-      <button type="button" onclick={() => view.set('settings')}
+      <button type="button" onclick={() => openSettings('data')}
         >{$t('ui.health.to_settings')}</button
       >
     </div>

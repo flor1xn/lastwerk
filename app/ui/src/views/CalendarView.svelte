@@ -77,10 +77,7 @@
 </script>
 
 <div class="page calendar" data-testid="calendar-view">
-  <header class="page-head">
-    <h1>{$t('ui.nav.calendar')}</h1>
-    <p class="page-lead" data-testid="lead">{lead}</p>
-  </header>
+  <p class="page-lead" data-testid="lead">{lead}</p>
 
   <div class="bar">
     <button

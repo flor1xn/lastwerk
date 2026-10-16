@@ -1,11 +1,12 @@
 <script lang="ts">
+  // Reiter Kalender, Umschalter Woche (T42): Last der Woche je Tag und Sportart. Den Verlauf von
+  // Fitness, Ermüdung und Form zeigt Heute, deshalb hier kein zweites PMC-Diagramm.
   import { getBackend } from '../lib/backend';
   import type { WeekOverview } from '../lib/backend/types';
   import { viewDefaults } from '../lib/defaults';
   import { addDays, localIso, mondayOf } from '../lib/dates';
   import ErrorNote from '../lib/components/ErrorNote.svelte';
   import Metric from '../lib/components/Metric.svelte';
-  import PmcChart from '../lib/components/PmcChart.svelte';
   import Section from '../lib/components/Section.svelte';
   import StatRow from '../lib/components/StatRow.svelte';
   import WeekBars from '../lib/components/WeekBars.svelte';
@@ -24,25 +25,11 @@
   });
 
   const data = $derived(loader.data);
-  const last = $derived(data && data.pmc.length > 0 ? data.pmc[data.pmc.length - 1] : null);
   const total = $derived(data ? data.totals_by_sport.reduce((s, x) => s + x.load, 0) : 0);
-
-  // Der Startwert-Hinweis gilt, wenn der erste Tag mit Last im sichtbaren Verlauf liegt.
-  const startNote = $derived(
-    data?.pmc_first_load_date &&
-      data.pmc.length > 0 &&
-      data.pmc[0].date <= data.pmc_first_load_date &&
-      data.pmc_first_load_date <= data.pmc[data.pmc.length - 1].date
-      ? data.pmc_first_load_date
-      : null,
-  );
 </script>
 
 <div class="page">
-  <header class="page-head">
-    <h1>{$t('ui.nav.week')}</h1>
-    <p class="page-lead" data-testid="lead">{$t('ui.lead.week')}</p>
-  </header>
+  <p class="page-lead" data-testid="lead">{$t('ui.lead.week')}</p>
 
   <div class="nav">
     <button onclick={() => (weekStart = addDays(weekStart, -7))} aria-label={$t('ui.week.previous')}
@@ -93,35 +80,6 @@
         </p>
       {/if}
     </Section>
-
-    <Section label={$t('ui.week.pmc_title')}>
-      {#snippet aside()}
-        {#if last}
-          <p class="stand muted">{formatDate(last.date, $locale)}</p>
-        {/if}
-      {/snippet}
-      {#if data.pmc.length === 0}
-        <p class="muted">{$t('ui.week.no_pmc')}</p>
-      {:else}
-        {#if last}
-          <div data-testid="pmc-values">
-            <StatRow>
-              <Metric value={formatNumber(last.ctl, $locale, 1)} label={$t('ui.week.ctl')} />
-              <Metric value={formatNumber(last.atl, $locale, 1)} label={$t('ui.week.atl')} />
-              <Metric value={formatNumber(last.tsb, $locale, 1)} label={$t('ui.week.tsb')} />
-            </StatRow>
-          </div>
-        {/if}
-        <div class="chart">
-          <PmcChart history={data.pmc} height={260} label={$t('ui.week.pmc_title')} />
-        </div>
-        {#if startNote}
-          <p class="muted note">
-            {$t('ui.week.pmc_start_note', { date: formatDate(startNote, $locale) })}
-          </p>
-        {/if}
-      {/if}
-    </Section>
   {/if}
 </div>
 
@@ -141,20 +99,6 @@
 
   .bars {
     margin-top: var(--space-6);
-  }
-
-  .chart {
-    margin-top: var(--space-5);
-  }
-
-  .stand {
-    margin: 0;
-    font-size: var(--fs-small);
-  }
-
-  .note {
-    margin: var(--space-2) 0 0;
-    font-size: var(--fs-small);
   }
 
   .warn {

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setBackend } from '../../lib/backend';
 import { MockBackend } from '../../lib/backend/mock';
 import { setLocale } from '../../lib/i18n';
+import { settingsTab } from '../../lib/state';
 import SettingsView from '../SettingsView.svelte';
 
 let backend: MockBackend;
@@ -10,12 +11,15 @@ let backend: MockBackend;
 beforeEach(() => {
   backend = new MockBackend({ today: '2026-10-14' });
   setBackend(backend);
+  // Update und Version stehen im Reiter App.
+  settingsTab.set('app');
 });
 
 afterEach(() => {
   cleanup();
   setBackend(null);
   setLocale('de');
+  settingsTab.set('data');
 });
 
 describe('Update auf Knopfdruck', () => {

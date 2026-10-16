@@ -116,11 +116,7 @@
   <p class="muted">{$t('common.loading')}</p>
 {:else}
   <div class="page progress" data-testid="progress">
-    <header class="page-head">
-      <p class="page-eyebrow">{ytd.year}</p>
-      <h1>{$t('ui.nav.progress')}</h1>
-      <p class="page-lead" data-testid="lead">{lead}</p>
-    </header>
+    <p class="page-lead" data-testid="lead">{lead}</p>
 
     <div class="controls">
       <Segmented
