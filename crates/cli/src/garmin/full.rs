@@ -1,28 +1,35 @@
 //! Phasen "Konto" und "Tageswerte" des Abgleichs (T39, SPEC 5.6, 8.6).
 //!
-//! - **Konto:** Profil (Geschlecht, Geburtsjahr, VO2max), FTP, Laktatschwelle und
-//!   Herzfrequenzzonen. Daraus werden Schwellen mit Herkunft `garmin` und, solange der Nutzer
-//!   sie nicht selbst gesetzt hat, Geschlecht und Geburtsjahr.
-//! - **Tageswerte:** Schritte, Bergwert und Garmins Last je Aktivität über Bereichsabfragen im
-//!   ganzen Fenster; Tagesherzfrequenz, Atmung, SpO2, Intensitätsminuten, Stress,
-//!   Trainingsbereitschaft und (nur mit Freigabe) Hydration je Tag für die letzten
-//!   [`DETAIL_DAYS`] Tage; Fitnessalter und Ausdauerwert einmal je Lauf.
+//! - **Konto:** Profil (Geschlecht, Geburtsjahr, VO2max), FTP, Laktatschwelle (Herzfrequenz
+//!   und seit T40 Schwellentempo), Herzfrequenzzonen und seit T40 der Verlauf von FTP,
+//!   Laktatschwellen-Herzfrequenz und Schwellentempo im ganzen Fenster. Daraus werden Schwellen
+//!   mit Herkunft `garmin` und, solange der Nutzer sie nicht selbst gesetzt hat, Geschlecht und
+//!   Geburtsjahr.
+//! - **Tageswerte:** Schritte, Bergwert, VO2max-Verlauf, Garmins Last je Aktivität und (nur mit
+//!   Freigabe) Gewicht und Blutdruck über Bereichsabfragen im ganzen Fenster;
+//!   Tagesherzfrequenz, Atmung, SpO2, Intensitätsminuten, Stress, Trainingsbereitschaft,
+//!   Trainingsstatus, Etagen und (nur mit Freigabe) Hydration und Ernährung je Tag für die
+//!   letzten [`DETAIL_DAYS`] Tage; Lauftoleranz und Rennprognosen für diese Tage, Fitnessalter,
+//!   Ausdauerwert und Belastungsfokus einmal je Lauf.
 //!
-//! Geschrieben wird erst nach allen Phasen ([`write_full`]), vor dem Import, damit neue Dateien
-//! gleich mit den neuen Schwellen gerechnet werden. Was sich an den Schwellen ändert, rechnet
-//! der Abgleich danach für bereits bekannte Aktivitäten neu.
+//! Seit T40 läuft die Phase "Konto" zuerst, und ihre Schwellen werden vor dem Import
+//! geschrieben ([`write_account`]), damit neue Dateien gleich mit ihnen gerechnet werden und die
+//! Last früh da ist. Was sich an den Schwellen ändert, rechnet der Abgleich danach für bereits
+//! bekannte Aktivitäten neu. Die Tageswerte schreibt [`write_days`] am Ende.
 
 use std::collections::BTreeMap;
 
 use chrono::{NaiveDate, TimeDelta};
 use lastwerk_core::Sex;
 use lastwerk_garmin::{
-    MAX_LOAD_SPAN_DAYS, MAX_SCORE_SPAN_DAYS, MAX_STEPS_SPAN_DAYS, SensitiveConsent,
+    MAX_LOAD_SPAN_DAYS, MAX_RANGE_SPAN_DAYS, MAX_SCORE_SPAN_DAYS, MAX_STEPS_SPAN_DAYS,
+    MAX_TOLERANCE_SPAN_DAYS, SensitiveConsent, SeriesSport, ThresholdSeries,
 };
 use lastwerk_store::{
-    DayRecord, GARMIN_APP_SOURCE, GarminActivityLoad, GarminThresholdOutcome,
-    SETTING_ATHLETE_BIRTH_YEAR, SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, SETTING_ATHLETE_SEX,
-    SETTING_ATHLETE_SEX_ORIGIN, SensitiveDay, Store, StoreError, TrainingDay, WellnessDay,
+    BodyDay, BpDay, DayRecord, GARMIN_APP_SOURCE, GarminActivityLoad, GarminThresholdOutcome,
+    NutritionDay, SETTING_ATHLETE_BIRTH_YEAR, SETTING_ATHLETE_BIRTH_YEAR_ORIGIN,
+    SETTING_ATHLETE_SEX, SETTING_ATHLETE_SEX_ORIGIN, SensitiveCategory, SensitiveDay, Store,
+    StoreError, TrainingDay, WellnessDay,
 };
 
 use super::parse_full::{self as pf, GarminThreshold, ProfileValues};
@@ -33,6 +40,53 @@ use super::{Run, Stop, SyncOptions, SyncPhase, SyncProgress, chunks};
 /// Aufrufe, rund 90 Minuten bei 2 s je Aufruf).
 pub const DETAIL_DAYS: i64 = 28;
 
+/// Verläufe der Schwellen, die die Phase "Konto" holt: Kennzahl und Sportart der Abfrage.
+const THRESHOLD_SERIES: [(ThresholdSeries, SeriesSport); 3] = [
+    (
+        ThresholdSeries::FunctionalThresholdPower,
+        SeriesSport::Cycling,
+    ),
+    (
+        ThresholdSeries::LactateThresholdHeartRate,
+        SeriesSport::Running,
+    ),
+    (ThresholdSeries::LactateThresholdSpeed, SeriesSport::Running),
+];
+
+/// Freigaben der S3-Bereiche (Entscheidung E7). Ein Marker existiert nur, wenn der Nutzer den
+/// Bereich in den Einstellungen freigegeben hat; ohne ihn gibt es keinen Aufruf.
+#[derive(Debug, Default, Clone, Copy)]
+pub(super) struct Consents {
+    pub hydration: Option<SensitiveConsent>,
+    pub body: Option<SensitiveConsent>,
+    pub blood_pressure: Option<SensitiveConsent>,
+    pub nutrition: Option<SensitiveConsent>,
+}
+
+impl Consents {
+    /// Liest die Freigaben aus den Einstellungen (nur genau `true` gibt frei).
+    pub fn read(store: &Store) -> Result<Self, StoreError> {
+        let one = |c| -> Result<Option<SensitiveConsent>, StoreError> {
+            Ok(store
+                .sensitive_released(c)?
+                .then(SensitiveConsent::granted_by_user))
+        };
+        Ok(Self {
+            hydration: one(SensitiveCategory::Hydration)?,
+            body: one(SensitiveCategory::Body)?,
+            blood_pressure: one(SensitiveCategory::BloodPressure)?,
+            nutrition: one(SensitiveCategory::Nutrition)?,
+        })
+    }
+
+    pub fn any(&self) -> bool {
+        self.hydration.is_some()
+            || self.body.is_some()
+            || self.blood_pressure.is_some()
+            || self.nutrition.is_some()
+    }
+}
+
 /// Was die Phasen "Konto" und "Tageswerte" gesammelt haben.
 #[derive(Default)]
 pub(super) struct FullFound {
@@ -41,10 +95,13 @@ pub(super) struct FullFound {
     pub wellness: BTreeMap<NaiveDate, WellnessDay>,
     pub training: BTreeMap<NaiveDate, TrainingDay>,
     pub sensitive: BTreeMap<NaiveDate, SensitiveDay>,
+    pub body: BTreeMap<NaiveDate, BodyDay>,
+    pub bp: BTreeMap<NaiveDate, BpDay>,
+    pub nutrition: BTreeMap<NaiveDate, NutritionDay>,
     pub loads: Vec<GarminActivityLoad>,
 }
 
-/// Ergebnis von [`write_full`].
+/// Ergebnis von [`write_account`] und [`write_days`].
 #[derive(Debug, Default)]
 pub(super) struct FullWritten {
     pub thresholds_changed: u32,
@@ -74,13 +131,16 @@ impl Run<'_> {
             .or_insert_with(|| TrainingDay::empty(date, GARMIN_APP_SOURCE, now))
     }
 
-    /// Phase "Konto": vier Aufrufe ohne Datum.
+    /// Phase "Konto": vier Aufrufe ohne Datum und die Verläufe der Schwellen von `start` bis
+    /// `today`.
     pub(super) fn account(
         &mut self,
+        start: NaiveDate,
         today: NaiveDate,
         progress: &mut dyn FnMut(SyncProgress),
     ) -> Result<(), Stop> {
-        let total = 4;
+        let ranges = chunks(start, today, MAX_RANGE_SPAN_DAYS);
+        let total = 4 + (THRESHOLD_SERIES.len() * ranges.len()) as u32;
         let tick = |done: u32, progress: &mut dyn FnMut(SyncProgress)| {
             progress(SyncProgress {
                 phase: SyncPhase::Account,
@@ -115,27 +175,49 @@ impl Run<'_> {
             let found = pf::heart_rate_zones(&v, &mut self.dropped);
             self.full.thresholds.extend(found);
         }
+        let mut done = 4;
+        for (series, sport) in THRESHOLD_SERIES {
+            for &(from, to) in &ranges {
+                tick(done, progress);
+                done += 1;
+                if let Some(v) = self.call(|s| s.threshold_range(series, sport, from, to))? {
+                    let found = pf::threshold_series(&v, series, &mut self.dropped);
+                    self.full.thresholds.extend(
+                        found
+                            .into_iter()
+                            .filter(|t| t.date.is_some_and(|d| (from..=to).contains(&d))),
+                    );
+                }
+            }
+        }
         tick(total, progress);
         Ok(())
     }
 
-    /// Phase "Tageswerte". `hydration` ist nur gesetzt, wenn der Nutzer S3 freigegeben hat.
+    /// Phase "Tageswerte". S3-Bereiche nur mit ihrem Marker in `consents`.
     pub(super) fn wellness(
         &mut self,
         start: NaiveDate,
         today: NaiveDate,
-        hydration: Option<SensitiveConsent>,
+        consents: Consents,
         progress: &mut dyn FnMut(SyncProgress),
     ) -> Result<(), Stop> {
         let detail_start = start.max(today - TimeDelta::days(DETAIL_DAYS - 1));
         let steps = chunks(start, today, MAX_STEPS_SPAN_DAYS);
         let hills = chunks(start, today, MAX_SCORE_SPAN_DAYS);
         let loads = chunks(start, today, MAX_LOAD_SPAN_DAYS);
+        let ranges = chunks(start, today, MAX_RANGE_SPAN_DAYS);
+        let tolerance = chunks(detail_start, today, MAX_TOLERANCE_SPAN_DAYS);
         let endurance_start = start.max(today - TimeDelta::days(MAX_SCORE_SPAN_DAYS - 1));
-        let per_day = 6 + u32::from(hydration.is_some());
+        let per_day =
+            8 + u32::from(consents.hydration.is_some()) + u32::from(consents.nutrition.is_some());
+        let s3_ranges =
+            u32::from(consents.body.is_some()) + u32::from(consents.blood_pressure.is_some());
         let detail_days = (today - detail_start).num_days() + 1;
-        let total =
-            (steps.len() + hills.len() + loads.len() + 2) as u32 + per_day * detail_days as u32;
+        // Einmalig: Ausdauerwert, Fitnessalter, Belastungsfokus, Rennprognosen (zwei Aufrufe).
+        let total = (steps.len() + hills.len() + loads.len() + tolerance.len() + 5) as u32
+            + (1 + s3_ranges) * ranges.len() as u32
+            + per_day * detail_days as u32;
         let mut done = 0u32;
         let mut tick = |progress: &mut dyn FnMut(SyncProgress)| {
             progress(SyncProgress {
@@ -198,8 +280,118 @@ impl Run<'_> {
         {
             self.training_day(today).fitness_age = Some(age);
         }
-
+        for &(from, to) in &ranges {
+            tick(progress);
+            if let Some(v) = self.call(|s| s.max_metrics_range(from, to))? {
+                for (date, run, bike) in pf::vo2max_days(&v) {
+                    if (from..=to).contains(&date) {
+                        let day = self.training_day(date);
+                        day.vo2max_running = run.or(day.vo2max_running);
+                        day.vo2max_cycling = bike.or(day.vo2max_cycling);
+                    }
+                }
+            }
+        }
+        tick(progress);
+        if let Some(v) = self.call(|s| s.load_balance(today))?
+            && let Some(b) = pf::load_balance(&v)
+        {
+            let day = self.training_day(today);
+            [
+                day.load_aerobic_low,
+                day.load_aerobic_low_min,
+                day.load_aerobic_low_max,
+            ] = b.aerobic_low;
+            [
+                day.load_aerobic_high,
+                day.load_aerobic_high_min,
+                day.load_aerobic_high_max,
+            ] = b.aerobic_high;
+            [
+                day.load_anaerobic,
+                day.load_anaerobic_min,
+                day.load_anaerobic_max,
+            ] = b.anaerobic;
+            day.load_balance = b.phrase;
+        }
+        for &(from, to) in &tolerance {
+            tick(progress);
+            if let Some(v) = self.call(|s| s.running_tolerance(from, to))? {
+                for t in pf::running_tolerance(&v) {
+                    if (from..=to).contains(&t.date) {
+                        let day = self.training_day(t.date);
+                        day.run_acute_distance_m = t.acute_distance_m;
+                        day.run_impact_load = t.impact_load;
+                        day.run_tolerance_m = t.tolerance_m;
+                        day.run_tolerance_level = t.level;
+                    }
+                }
+            }
+        }
+        // Rennprognosen: der Verlauf der Detailtage, danach der jüngste Stand, der für seinen Tag
+        // gewinnt. Ein leerer oder fehlender Verlauf ist kein Fehler.
         let name = self.display_name.clone();
+        for latest in [false, true] {
+            tick(progress);
+            let Some(name) = &name else { continue };
+            let reply = if latest {
+                self.call(|s| s.race_predictions_latest(name))?
+            } else {
+                self.call(|s| s.race_predictions_daily(name, detail_start, today))?
+            };
+            for (date, times) in reply.iter().flat_map(pf::race_predictions) {
+                if (detail_start..=today).contains(&date) {
+                    let day = self.training_day(date);
+                    [
+                        day.race_5k_s,
+                        day.race_10k_s,
+                        day.race_half_s,
+                        day.race_marathon_s,
+                    ] = times;
+                }
+            }
+        }
+        for &(from, to) in &ranges {
+            if let Some(consent) = consents.body {
+                tick(progress);
+                if let Some(v) = self.call(|s| s.weight_range(consent, from, to))? {
+                    for (date, values) in pf::body_days(&v) {
+                        if (from..=to).contains(&date) {
+                            let now = self.now;
+                            let day =
+                                self.full.body.entry(date).or_insert_with(|| {
+                                    BodyDay::empty(date, GARMIN_APP_SOURCE, now)
+                                });
+                            [
+                                day.weight_kg,
+                                day.bmi,
+                                day.body_fat_pct,
+                                day.body_water_pct,
+                                day.bone_kg,
+                                day.muscle_kg,
+                            ] = values;
+                        }
+                    }
+                }
+            }
+            if let Some(consent) = consents.blood_pressure {
+                tick(progress);
+                if let Some(v) = self.call(|s| s.blood_pressure_range(consent, from, to))? {
+                    for (date, values) in pf::blood_pressure_days(&v) {
+                        if (from..=to).contains(&date) {
+                            let now = self.now;
+                            let day = self
+                                .full
+                                .bp
+                                .entry(date)
+                                .or_insert_with(|| BpDay::empty(date, GARMIN_APP_SOURCE, now));
+                            [day.systolic_mmhg, day.diastolic_mmhg, day.pulse_bpm] = values;
+                        }
+                    }
+                }
+            }
+        }
+
         let mut date = detail_start;
         while date <= today {
             // Eine Tagesantwort mit anderem `calendarDate` als dem angefragten Tag kommt nie in
@@ -255,7 +447,47 @@ impl Run<'_> {
                 day.readiness_level = level;
                 day.garmin_acute_load = load;
             }
-            if let Some(consent) = hydration {
+            tick(progress);
+            if let Some(v) = self.call(|s| s.training_status_day(date))?
+                && let Some(t) = pf::training_status(&v)
+                && t.date.is_none_or(|d| d == date)
+            {
+                let day = self.training_day(date);
+                day.training_status = t.status;
+                day.garmin_acute_load = day.garmin_acute_load.or(t.acute);
+                day.garmin_chronic_load = t.chronic;
+                day.garmin_acwr = t.acwr;
+            }
+            tick(progress);
+            if let Some(v) = self.call(|s| s.floors_day(date))?
+                && let Some((up, down)) = pf::floors(&v)
+            {
+                let day = self.wellness_day(date);
+                day.floors_up = Some(up);
+                day.floors_down = Some(down);
+            }
+            if let Some(consent) = consents.nutrition {
+                tick(progress);
+                if let Some(v) = self.call(|s| s.nutrition_day(consent, date))?
+                    && let Some((meal_date, values)) = pf::nutrition_day(&v)
+                    && meal_date.is_none_or(|d| d == date)
+                {
+                    let now = self.now;
+                    let day = self
+                        .full
+                        .nutrition
+                        .entry(date)
+                        .or_insert_with(|| NutritionDay::empty(date, GARMIN_APP_SOURCE, now));
+                    [
+                        day.calories_kcal,
+                        day.carbs_g,
+                        day.fat_g,
+                        day.protein_g,
+                        day.calories_goal_kcal,
+                    ] = values;
+                }
+            }
+            if let Some(consent) = consents.hydration {
                 tick(progress);
                 if let Some(v) = self.call(|s| s.hydration_day(consent, date))?
                     && same_day(&v)
@@ -311,10 +543,11 @@ fn athlete_setting(
     Ok(true)
 }
 
-/// Schreibt Schwellen, Athletendaten und Tageswerte (siehe Moduldokumentation und SPEC 8.6).
-pub(super) fn write_full(
+/// Schreibt Schwellen und Athletendaten (siehe Moduldokumentation und SPEC 8.6), vor dem
+/// Import. Leert `found.thresholds`.
+pub(super) fn write_account(
     store: &mut Store,
-    found: FullFound,
+    found: &mut FullFound,
     window_start: NaiveDate,
     opts: &SyncOptions,
 ) -> Result<FullWritten, StoreError> {
@@ -323,7 +556,7 @@ pub(super) fn write_full(
         w.recompute_from = Some(w.recompute_from.map_or(d, |e| e.min(d)));
     };
 
-    for t in &found.thresholds {
+    for t in &std::mem::take(&mut found.thresholds) {
         let date = match t.date {
             Some(d) => d,
             // Ohne Datum: erstes Auftreten ab Fensterbeginn, eine Änderung ab heute, ein
@@ -365,35 +598,58 @@ pub(super) fn write_full(
             NaiveDate::from_ymd_opt(1900, 1, 1).unwrap_or(window_start),
         );
     }
-
-    let in_window = |d: NaiveDate| (window_start..=opts.today).contains(&d);
-    let mut wellness: Vec<WellnessDay> = found
-        .wellness
-        .into_values()
-        .filter(|r| in_window(r.date))
-        .collect();
-    let mut training: Vec<TrainingDay> = found
-        .training
-        .into_values()
-        .filter(|r| in_window(r.date))
-        .collect();
-    let mut sensitive: Vec<SensitiveDay> = found
-        .sensitive
-        .into_values()
-        .filter(|r| in_window(r.date))
-        .collect();
-    let mut loads: Vec<GarminActivityLoad> = found
-        .loads
-        .into_iter()
-        .filter(|r| in_window(r.date))
-        .collect();
-    w.dropped += wellness.iter_mut().map(DayRecord::sanitize).sum::<u32>();
-    w.dropped += training.iter_mut().map(DayRecord::sanitize).sum::<u32>();
-    w.dropped += sensitive.iter_mut().map(DayRecord::sanitize).sum::<u32>();
-    w.dropped += loads.iter_mut().map(DayRecord::sanitize).sum::<u32>();
-    w.wellness_days = store.merge_garmin_rows(&wellness)?;
-    w.training_days = store.merge_garmin_rows(&training)?;
-    w.sensitive_days = store.merge_garmin_rows(&sensitive)?;
-    w.garmin_loads = store.merge_garmin_rows(&loads)?;
     Ok(w)
+}
+
+/// Bereinigt Zeilen im Fenster und mischt sie in ihre Tabelle. Gibt die Zahl der geänderten
+/// Zeilen zurück und zählt verworfene Werte in `dropped`.
+fn merge_window<T: DayRecord>(
+    store: &mut Store,
+    rows: impl IntoIterator<Item = T>,
+    in_window: impl Fn(&T) -> bool,
+    dropped: &mut u32,
+) -> Result<u32, StoreError> {
+    let mut rows: Vec<T> = rows.into_iter().filter(|r| in_window(r)).collect();
+    *dropped += rows.iter_mut().map(DayRecord::sanitize).sum::<u32>();
+    store.merge_garmin_rows(&rows)
+}
+
+/// Schreibt Tages-, Trainings- und S3-Werte und Garmins Last je Aktivität, nach allen Phasen.
+pub(super) fn write_days(
+    store: &mut Store,
+    found: FullFound,
+    window_start: NaiveDate,
+    opts: &SyncOptions,
+    w: &mut FullWritten,
+) -> Result<(), StoreError> {
+    let in_window = |d: NaiveDate| (window_start..=opts.today).contains(&d);
+    let d = &mut w.dropped;
+    w.wellness_days = merge_window(
+        store,
+        found.wellness.into_values(),
+        |r| in_window(r.date),
+        d,
+    )?;
+    w.training_days = merge_window(
+        store,
+        found.training.into_values(),
+        |r| in_window(r.date),
+        d,
+    )?;
+    w.sensitive_days =
+        merge_window(
+            store,
+            found.sensitive.into_values(),
+            |r| in_window(r.date),
+            d,
+        )? + merge_window(store, found.body.into_values(), |r| in_window(r.date), d)?
+            + merge_window(store, found.bp.into_values(), |r| in_window(r.date), d)?
+            + merge_window(
+                store,
+                found.nutrition.into_values(),
+                |r| in_window(r.date),
+                d,
+            )?;
+    w.garmin_loads = merge_window(store, found.loads, |r| in_window(r.date), d)?;
+    Ok(())
 }
