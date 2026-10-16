@@ -49,6 +49,7 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T37](T37-laufbestzeiten.md) | Bestzeiten im Laufen | nach 1.0 | erledigt | T33 | ja | crates/core, store, app |
 | [T38](T38-oeffentlich.md) | Vorbereitung auf ein öffentliches Repository | nach 1.0 | erledigt | T30 | ja, Umstellung durch den Eigentümer | .github, scripts, docs, crates |
 | [T39](T39-garmin-vollabzug.md) | Garmin-Vollabzug und Schwellenwerte aus Garmin | nach 1.0 | erledigt | T22, T23, T28 | ja, **Live manuell** | crates/garmin, store, cli, app, catalog |
+| [T40](T40-garmin-vollabzug-2.md) | Garmin-Vollabzug Teil 2: Verläufe, Trainingsstatus, S3 je Bereich | nach 1.0 | in Arbeit | T39 | ja, **Live manuell** | crates/garmin, store, cli, app, catalog |
 
 ## Reihenfolge
 

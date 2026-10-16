@@ -40,6 +40,53 @@ pub const MAX_SCORE_SPAN_DAYS: i64 = 392;
 /// Längste Spanne der Trainingslast je Aktivität in Tagen (Faustregel; die Sonde fand bis 1792
 /// Tage keine Grenze).
 pub const MAX_LOAD_SPAN_DAYS: i64 = 366;
+/// Längste Spanne der Bereichsabrufe ab T40 (Schwellenverlauf, VO2max, Gewicht, Blutdruck,
+/// Rennprognosen) in Tagen. Sekundärquelle: Längere Spannen beantwortet Garmin beim
+/// Schwellenverlauf mit HTTP 400 (Q31, Spezifikation von pleiades), die Bibliothek begrenzt die
+/// Rennprognosen ebenso auf 366 Tage (Q27, I:2462). Für die übrigen Faustregel.
+pub const MAX_RANGE_SPAN_DAYS: i64 = 366;
+/// Längste Spanne der Lauftoleranz je Abruf in Tagen (Messung der Sonde, `bridge/registry.yaml`
+/// `max_span_days`).
+pub const MAX_TOLERANCE_SPAN_DAYS: i64 = 336;
+
+/// Kennzahl eines Schwellenverlaufs (`/biometric-service/stats/{kennzahl}/range`).
+/// Python-garminconnect `get_functional_threshold_power_range` und `get_lactate_threshold` mit
+/// `latest=False`, I:1696 und I:1807 (Q27); Zeilenformat aus Aufzeichnungen Dritter (Q28).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ThresholdSeries {
+    /// Schwellenleistung in Watt, mit Sportart `CYCLING` für das Rad.
+    FunctionalThresholdPower,
+    /// Laktatschwellen-Herzfrequenz in Schlägen je Minute.
+    LactateThresholdHeartRate,
+    /// Laktatschwellen-Geschwindigkeit in Garmins eigener Einheit (siehe SPEC 8.6, Q30).
+    LactateThresholdSpeed,
+}
+
+impl ThresholdSeries {
+    fn path_name(self) -> &'static str {
+        match self {
+            Self::FunctionalThresholdPower => "functionalThresholdPower",
+            Self::LactateThresholdHeartRate => "lactateThresholdHeartRate",
+            Self::LactateThresholdSpeed => "lactateThresholdSpeed",
+        }
+    }
+}
+
+/// Sportart eines Schwellenverlaufs, wie die Bibliothek sie in der Query sendet (Q27, I:1723).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SeriesSport {
+    Running,
+    Cycling,
+}
+
+impl SeriesSport {
+    fn key(self) -> &'static str {
+        match self {
+            Self::Running => "RUNNING",
+            Self::Cycling => "CYCLING",
+        }
+    }
+}
 
 /// Nachweis, dass der Nutzer die Abfrage sensibler Daten der Klasse S3 (SPEC 5.5) freigegeben hat.
 /// Der Aufrufer darf den Wert erst bilden, nachdem er die ausdrückliche Freigabe des Nutzers in den
@@ -161,6 +208,48 @@ enum Target<'a> {
     HydrationDay {
         date: NaiveDate,
     },
+    ThresholdRange {
+        series: ThresholdSeries,
+        sport: SeriesSport,
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    MaxMetRange {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    TrainingStatusDay {
+        date: NaiveDate,
+    },
+    LoadBalance {
+        date: NaiveDate,
+    },
+    RacePredictionsLatest {
+        display_name: &'a str,
+    },
+    RacePredictionsDaily {
+        display_name: &'a str,
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    RunningTolerance {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    FloorsDay {
+        date: NaiveDate,
+    },
+    WeightRange {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    BloodPressureRange {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    NutritionDay {
+        date: NaiveDate,
+    },
 }
 
 /// Pfade fester Endpunkte. Erlaubt ist nur genau dieser Pfad (mit oder ohne Query), kein
@@ -175,11 +264,13 @@ const EXACT_PATHS: &[&str] = &[
     "/metrics-service/metrics/endurancescore/stats",
     "/metrics-service/metrics/hillscore/stats",
     "/fitnessstats-service/activity/all",
+    "/metrics-service/metrics/runningtolerance/stats",
 ];
 
 /// Pfadpräfixe für Endpunkte mit Datum, Kennung oder Namen im Pfad. Je Endpunkt ein eigener,
 /// möglichst enger Eintrag. Menstruations- und Schwangerschaftsdaten stehen nie hier (SPEC 5.5,
-/// Entscheidung E3), ebenso kein Gewicht, Blutdruck oder Ernährung (S3 ohne Freigabe).
+/// Entscheidung E3). Gewicht, Blutdruck, Ernährung und Trinken (S3) sind nur über Methoden mit
+/// [`SensitiveConsent`] erreichbar.
 const ALLOWED_PREFIXES: &[&str] = &[
     "/activitylist-service/activities/search/activities",
     "/download-service/files/activity/",
@@ -195,6 +286,18 @@ const ALLOWED_PREFIXES: &[&str] = &[
     "/metrics-service/metrics/trainingreadiness/",
     "/fitnessage-service/fitnessage/",
     "/usersummary-service/usersummary/hydration/daily/",
+    "/biometric-service/stats/functionalThresholdPower/range/",
+    "/biometric-service/stats/lactateThresholdHeartRate/range/",
+    "/biometric-service/stats/lactateThresholdSpeed/range/",
+    "/metrics-service/metrics/maxmet/daily/",
+    "/metrics-service/metrics/trainingstatus/daily/",
+    "/metrics-service/metrics/trainingloadbalance/latest/",
+    "/metrics-service/metrics/racepredictions/latest/",
+    "/metrics-service/metrics/racepredictions/daily/",
+    "/wellness-service/wellness/floorsChartData/daily/",
+    "/weight-service/weight/range/",
+    "/bloodpressure-service/bloodpressure/range/",
+    "/nutrition-service/food/logs/",
 ];
 
 /// Ungeschützte Zeichen nach RFC 3986 bleiben, alles andere wird prozentkodiert. Damit kann ein
@@ -324,6 +427,62 @@ impl Target<'_> {
             Self::HydrationDay { date } => {
                 format!("/usersummary-service/usersummary/hydration/daily/{date}")
             }
+            Self::ThresholdRange {
+                series,
+                sport,
+                start,
+                end,
+            } => {
+                check_span(*start, *end, MAX_RANGE_SPAN_DAYS)?;
+                format!(
+                    "/biometric-service/stats/{}/range/{start}/{end}?sport={}&aggregation=daily&aggregationStrategy=LATEST",
+                    series.path_name(),
+                    sport.key()
+                )
+            }
+            Self::MaxMetRange { start, end } => {
+                check_span(*start, *end, MAX_RANGE_SPAN_DAYS)?;
+                format!("/metrics-service/metrics/maxmet/daily/{start}/{end}")
+            }
+            Self::TrainingStatusDay { date } => {
+                format!("/metrics-service/metrics/trainingstatus/daily/{date}")
+            }
+            Self::LoadBalance { date } => {
+                format!("/metrics-service/metrics/trainingloadbalance/latest/{date}")
+            }
+            Self::RacePredictionsLatest { display_name } => format!(
+                "/metrics-service/metrics/racepredictions/latest/{}",
+                encode_path_segment(display_name)?
+            ),
+            Self::RacePredictionsDaily {
+                display_name,
+                start,
+                end,
+            } => {
+                check_span(*start, *end, MAX_RANGE_SPAN_DAYS)?;
+                format!(
+                    "/metrics-service/metrics/racepredictions/daily/{}?fromCalendarDate={start}&toCalendarDate={end}",
+                    encode_path_segment(display_name)?
+                )
+            }
+            Self::RunningTolerance { start, end } => {
+                check_span(*start, *end, MAX_TOLERANCE_SPAN_DAYS)?;
+                format!(
+                    "/metrics-service/metrics/runningtolerance/stats?startDate={start}&endDate={end}&aggregation=daily"
+                )
+            }
+            Self::FloorsDay { date } => {
+                format!("/wellness-service/wellness/floorsChartData/daily/{date}")
+            }
+            Self::WeightRange { start, end } => {
+                check_span(*start, *end, MAX_RANGE_SPAN_DAYS)?;
+                format!("/weight-service/weight/range/{start}/{end}?includeAll=true")
+            }
+            Self::BloodPressureRange { start, end } => {
+                check_span(*start, *end, MAX_RANGE_SPAN_DAYS)?;
+                format!("/bloodpressure-service/bloodpressure/range/{start}/{end}?includeAll=true")
+            }
+            Self::NutritionDay { date } => format!("/nutrition-service/food/logs/{date}"),
         })
     }
 
@@ -646,6 +805,103 @@ impl GarminClient {
         self.get_json(&Target::HydrationDay { date })
     }
 
+    /// Verlauf einer Schwelle, höchstens [`MAX_RANGE_SPAN_DAYS`] Tage, je Änderung eine Zeile
+    /// (`from`, `until`, `series`, `value`). Python-garminconnect I:1696 und I:1807 (Q27),
+    /// Zeilenformat Sekundärquelle (Q28).
+    pub fn threshold_range(
+        &self,
+        series: ThresholdSeries,
+        sport: SeriesSport,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> Result<Value> {
+        self.get_json(&Target::ThresholdRange {
+            series,
+            sport,
+            start,
+            end,
+        })
+    }
+
+    /// VO2max je Tag mit Messung, höchstens [`MAX_RANGE_SPAN_DAYS`] Tage. Python-garminconnect
+    /// `get_max_metrics_range`, I:1683 (Q27); Felder Sekundärquelle (Q28).
+    pub fn max_metrics_range(&self, start: NaiveDate, end: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::MaxMetRange { start, end })
+    }
+
+    /// Trainingsstatus eines Tages mit akuter und chronischer Last. Python-garminconnect
+    /// `get_daily_training_status`, I:2356 (Q27); Felder Sekundärquelle (Q28, Q29).
+    pub fn training_status_day(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::TrainingStatusDay { date })
+    }
+
+    /// Belastungsfokus der letzten vier Wochen. Python-garminconnect
+    /// `get_training_four_week_load_balance`, I:2345 (Q27); Felder Sekundärquelle (Q28).
+    pub fn load_balance(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::LoadBalance { date })
+    }
+
+    /// Jüngste Rennprognosen. Python-garminconnect `get_race_predictions` ohne Parameter, I:2452
+    /// (Q27); Felder Sekundärquelle (Q28).
+    pub fn race_predictions_latest(&self, display_name: &str) -> Result<Value> {
+        self.get_json(&Target::RacePredictionsLatest { display_name })
+    }
+
+    /// Rennprognosen je Tag, höchstens [`MAX_RANGE_SPAN_DAYS`] Tage. Python-garminconnect
+    /// `get_race_predictions` mit `_type="daily"`, I:2459 (Q27).
+    pub fn race_predictions_daily(
+        &self,
+        display_name: &str,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> Result<Value> {
+        self.get_json(&Target::RacePredictionsDaily {
+            display_name,
+            start,
+            end,
+        })
+    }
+
+    /// Lauftoleranz je Tag, höchstens [`MAX_TOLERANCE_SPAN_DAYS`] Tage. Python-garminconnect
+    /// `get_running_tolerance`, I:2394 (Q27); Felder Sekundärquelle (Q32).
+    pub fn running_tolerance(&self, start: NaiveDate, end: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::RunningTolerance { start, end })
+    }
+
+    /// Etagen eines Tages in Viertelstunden. Python-garminconnect `get_floors`, I:1198 (Q27);
+    /// Spaltennamen Sekundärquelle (Q29).
+    pub fn floors_day(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::FloorsDay { date })
+    }
+
+    /// Gewicht und Körperzusammensetzung (sensibel, S3, nur mit Freigabe), höchstens
+    /// [`MAX_RANGE_SPAN_DAYS`] Tage. Python-garminconnect `get_weigh_ins`, I:1522 (Q27).
+    pub fn weight_range(
+        &self,
+        _consent: SensitiveConsent,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> Result<Value> {
+        self.get_json(&Target::WeightRange { start, end })
+    }
+
+    /// Blutdruck (sensibel, S3, nur mit Freigabe), höchstens [`MAX_RANGE_SPAN_DAYS`] Tage.
+    /// Python-garminconnect `get_blood_pressure`, I:1644 (Q27).
+    pub fn blood_pressure_range(
+        &self,
+        _consent: SensitiveConsent,
+        start: NaiveDate,
+        end: NaiveDate,
+    ) -> Result<Value> {
+        self.get_json(&Target::BloodPressureRange { start, end })
+    }
+
+    /// Ernährungstagebuch eines Tages (sensibel, S3, nur mit Freigabe). Python-garminconnect
+    /// `get_nutrition_daily_food_log`, I:4383 (Q27).
+    pub fn nutrition_day(&self, _consent: SensitiveConsent, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::NutritionDay { date })
+    }
+
     // Innenleben
 
     fn lock_calls(&self) -> std::sync::MutexGuard<'_, ()> {
@@ -858,6 +1114,73 @@ mod tests {
                 Target::HydrationDay { date: d("2026-09-01") },
                 "/usersummary-service/usersummary/hydration/daily/2026-09-01".into(),
             ),
+            (
+                Target::ThresholdRange {
+                    series: ThresholdSeries::FunctionalThresholdPower,
+                    sport: SeriesSport::Cycling,
+                    start: d("2026-01-01"),
+                    end: d("2026-09-01"),
+                },
+                "/biometric-service/stats/functionalThresholdPower/range/2026-01-01/2026-09-01?sport=CYCLING&aggregation=daily&aggregationStrategy=LATEST".into(),
+            ),
+            (
+                Target::ThresholdRange {
+                    series: ThresholdSeries::LactateThresholdHeartRate,
+                    sport: SeriesSport::Running,
+                    start: d("2026-01-01"),
+                    end: d("2026-09-01"),
+                },
+                "/biometric-service/stats/lactateThresholdHeartRate/range/2026-01-01/2026-09-01?sport=RUNNING&aggregation=daily&aggregationStrategy=LATEST".into(),
+            ),
+            (
+                Target::ThresholdRange {
+                    series: ThresholdSeries::LactateThresholdSpeed,
+                    sport: SeriesSport::Running,
+                    start: d("2026-01-01"),
+                    end: d("2026-09-01"),
+                },
+                "/biometric-service/stats/lactateThresholdSpeed/range/2026-01-01/2026-09-01?sport=RUNNING&aggregation=daily&aggregationStrategy=LATEST".into(),
+            ),
+            (
+                Target::MaxMetRange { start: d("2026-01-01"), end: d("2026-09-01") },
+                "/metrics-service/metrics/maxmet/daily/2026-01-01/2026-09-01".into(),
+            ),
+            (
+                Target::TrainingStatusDay { date: d("2026-09-01") },
+                "/metrics-service/metrics/trainingstatus/daily/2026-09-01".into(),
+            ),
+            (
+                Target::LoadBalance { date: d("2026-09-01") },
+                "/metrics-service/metrics/trainingloadbalance/latest/2026-09-01".into(),
+            ),
+            (
+                Target::RacePredictionsLatest { display_name: id },
+                format!("/metrics-service/metrics/racepredictions/latest/{id}"),
+            ),
+            (
+                Target::RacePredictionsDaily { display_name: id, start: d("2026-08-01"), end: d("2026-09-01") },
+                format!("/metrics-service/metrics/racepredictions/daily/{id}?fromCalendarDate=2026-08-01&toCalendarDate=2026-09-01"),
+            ),
+            (
+                Target::RunningTolerance { start: d("2026-08-01"), end: d("2026-09-01") },
+                "/metrics-service/metrics/runningtolerance/stats?startDate=2026-08-01&endDate=2026-09-01&aggregation=daily".into(),
+            ),
+            (
+                Target::FloorsDay { date: d("2026-09-01") },
+                "/wellness-service/wellness/floorsChartData/daily/2026-09-01".into(),
+            ),
+            (
+                Target::WeightRange { start: d("2026-01-01"), end: d("2026-09-01") },
+                "/weight-service/weight/range/2026-01-01/2026-09-01?includeAll=true".into(),
+            ),
+            (
+                Target::BloodPressureRange { start: d("2026-01-01"), end: d("2026-09-01") },
+                "/bloodpressure-service/bloodpressure/range/2026-01-01/2026-09-01?includeAll=true".into(),
+            ),
+            (
+                Target::NutritionDay { date: d("2026-09-01") },
+                "/nutrition-service/food/logs/2026-09-01".into(),
+            ),
         ];
         for (target, expected) in cases {
             let path = target.path_and_query().unwrap();
@@ -969,18 +1292,15 @@ mod tests {
     fn unreleased_sensitive_paths_are_rejected() {
         for bad in [
             "/weight-service/weight/dateRange?startDate=2026-09-01&endDate=2026-09-28",
-            "/weight-service/weight/range/2026-09-01/2026-09-28?includeAll=true",
             "/weight-service/weight/dayview/2026-09-01",
-            "/bloodpressure-service/bloodpressure/range/2026-09-01/2026-09-28",
-            "/nutrition-service/food/logs/2026-09-01",
             "/nutrition-service/meals/2026-09-01",
             "/lifestylelogging-service/dailyLog/2026-09-01",
-            "/biometric-service/stats/functionalThresholdPower/range/2026-01-01/2026-09-01",
-            "/metrics-service/metrics/racepredictions/latest/x",
-            "/metrics-service/metrics/runningtolerance/stats",
+            "/nutrition-service/settings/2026-09-01",
+            "/biometric-service/stats/weight/range/2026-01-01/2026-09-01",
+            "/biometric-service/biometric/powerToWeight/latest/2026-09-01",
             "/usersummary-service/usersummary/daily/x",
-            "/wellness-service/wellness/floorsChartData/daily/2026-09-01",
             "/metrics-service/metrics/trainingstatus/aggregated/2026-09-01",
+            "/metrics-service/metrics/runningtolerance/stats/x",
         ] {
             assert!(ensure_allowed(bad).is_err(), "{bad}");
         }
@@ -1025,6 +1345,35 @@ mod tests {
                 start: d("2026-01-01"),
                 end: d("2027-01-02"),
             },
+            Target::ThresholdRange {
+                series: ThresholdSeries::FunctionalThresholdPower,
+                sport: SeriesSport::Cycling,
+                start: d("2026-01-01"),
+                end: d("2027-01-02"),
+            },
+            Target::MaxMetRange {
+                start: d("2026-01-01"),
+                end: d("2027-01-02"),
+            },
+            Target::WeightRange {
+                start: d("2026-01-01"),
+                end: d("2027-01-02"),
+            },
+            Target::BloodPressureRange {
+                start: d("2026-09-02"),
+                end: d("2026-09-01"),
+            },
+            Target::RacePredictionsDaily {
+                display_name: "x",
+                start: d("2026-01-01"),
+                end: d("2027-01-02"),
+            },
+            // 2026-01-01 bis 2026-12-03 sind 337 Tage.
+            Target::RunningTolerance {
+                start: d("2026-01-01"),
+                end: d("2026-12-03"),
+            },
+            Target::RacePredictionsLatest { display_name: "" },
         ];
         for target in bad {
             assert!(matches!(

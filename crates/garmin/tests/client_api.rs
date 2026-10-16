@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 use common::{Reply, Rig, tokens};
 use lastwerk_garmin::{
     ClientConfig, GarminError, MAX_ACTIVITY_LIMIT, MAX_FIT_BYTES, MAX_JSON_BYTES, NetworkKind,
-    SensitiveConsent, code,
+    SensitiveConsent, SeriesSport, ThresholdSeries, code,
 };
 use serde_json::{Value, json};
 
@@ -274,6 +274,80 @@ fn new_read_endpoints_send_the_expected_paths_with_get_only() {
     let sent = rig.server.count();
     assert_eq!(
         rig.client.daily_steps(day, d("2026-09-29")).unwrap_err(),
+        GarminError::InvalidInput("date range")
+    );
+    assert_eq!(rig.server.count(), sent);
+}
+
+#[test]
+fn endpoints_of_t40_send_the_expected_paths_with_get_only() {
+    let rig = rig_json(json!([]));
+    let name = "0a1b2c3d-0000-1111-2222-333344445555";
+    let day = d("2026-09-01");
+    let from = d("2026-01-01");
+    let consent = SensitiveConsent::granted_by_user();
+
+    rig.client
+        .threshold_range(
+            ThresholdSeries::FunctionalThresholdPower,
+            SeriesSport::Cycling,
+            from,
+            day,
+        )
+        .unwrap();
+    rig.client
+        .threshold_range(
+            ThresholdSeries::LactateThresholdSpeed,
+            SeriesSport::Running,
+            from,
+            day,
+        )
+        .unwrap();
+    rig.client.max_metrics_range(from, day).unwrap();
+    rig.client.training_status_day(day).unwrap();
+    rig.client.load_balance(day).unwrap();
+    rig.client.race_predictions_latest(name).unwrap();
+    rig.client
+        .race_predictions_daily(name, d("2026-08-05"), day)
+        .unwrap();
+    rig.client.running_tolerance(d("2026-08-05"), day).unwrap();
+    rig.client.floors_day(day).unwrap();
+    rig.client.weight_range(consent, from, day).unwrap();
+    rig.client.blood_pressure_range(consent, from, day).unwrap();
+    rig.client.nutrition_day(consent, day).unwrap();
+
+    let targets: Vec<String> = rig.gets().into_iter().map(|s| s.target).collect();
+    assert_eq!(
+        targets,
+        [
+            "/biometric-service/stats/functionalThresholdPower/range/2026-01-01/2026-09-01?sport=CYCLING&aggregation=daily&aggregationStrategy=LATEST".to_owned(),
+            "/biometric-service/stats/lactateThresholdSpeed/range/2026-01-01/2026-09-01?sport=RUNNING&aggregation=daily&aggregationStrategy=LATEST".to_owned(),
+            "/metrics-service/metrics/maxmet/daily/2026-01-01/2026-09-01".to_owned(),
+            "/metrics-service/metrics/trainingstatus/daily/2026-09-01".to_owned(),
+            "/metrics-service/metrics/trainingloadbalance/latest/2026-09-01".to_owned(),
+            format!("/metrics-service/metrics/racepredictions/latest/{name}"),
+            format!("/metrics-service/metrics/racepredictions/daily/{name}?fromCalendarDate=2026-08-05&toCalendarDate=2026-09-01"),
+            "/metrics-service/metrics/runningtolerance/stats?startDate=2026-08-05&endDate=2026-09-01&aggregation=daily".to_owned(),
+            "/wellness-service/wellness/floorsChartData/daily/2026-09-01".to_owned(),
+            "/weight-service/weight/range/2026-01-01/2026-09-01?includeAll=true".to_owned(),
+            "/bloodpressure-service/bloodpressure/range/2026-01-01/2026-09-01?includeAll=true".to_owned(),
+            "/nutrition-service/food/logs/2026-09-01".to_owned(),
+        ]
+    );
+    assert!(rig.server.seen().iter().all(|s| s.method == "GET"));
+
+    // Zu lange Spannen werden vor dem Senden abgelehnt (2025-08-30 bis 2026-09-01: 368 Tage).
+    let sent = rig.server.count();
+    assert_eq!(
+        rig.client
+            .weight_range(consent, d("2025-08-30"), day)
+            .unwrap_err(),
+        GarminError::InvalidInput("date range")
+    );
+    assert_eq!(
+        rig.client
+            .max_metrics_range(d("2025-08-30"), day)
+            .unwrap_err(),
         GarminError::InvalidInput("date range")
     );
     assert_eq!(rig.server.count(), sent);
