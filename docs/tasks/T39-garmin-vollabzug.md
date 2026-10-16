@@ -2,7 +2,7 @@
 
 | Feld | Wert |
 |---|---|
-| Status | in Arbeit |
+| Status | erledigt |
 | Meilenstein | nach 1.0 |
 | cloudfähig | ja, **Livetest manuell** (O30, O32) |
 | Voraussetzung | T22, T23, T28 |
