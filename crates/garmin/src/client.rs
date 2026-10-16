@@ -31,6 +31,28 @@ pub const MAX_JSON_BYTES: u64 = 8 * 1024 * 1024;
 pub const MAX_FIT_BYTES: u64 = 256 * 1024 * 1024;
 /// Größte Seite der Aktivitätsliste (Q27: `MAX_ACTIVITY_LIMIT`).
 pub const MAX_ACTIVITY_LIMIT: u32 = 1000;
+/// Längste Spanne der Schrittzahlen je Abruf in Tagen, beide Enden eingerechnet (Q27, `__init__.py`
+/// I:1214, Docstring von `get_daily_steps`).
+pub const MAX_STEPS_SPAN_DAYS: i64 = 28;
+/// Längste Spanne der Ausdauer- und Hügelwerte je Abruf in Tagen (Messung der Sonde,
+/// `bridge/registry.yaml` `max_span_days`).
+pub const MAX_SCORE_SPAN_DAYS: i64 = 392;
+/// Längste Spanne der Trainingslast je Aktivität in Tagen (Faustregel; die Sonde fand bis 1792
+/// Tage keine Grenze).
+pub const MAX_LOAD_SPAN_DAYS: i64 = 366;
+
+/// Nachweis, dass der Nutzer die Abfrage sensibler Daten der Klasse S3 (SPEC 5.5) freigegeben hat.
+/// Der Aufrufer darf den Wert erst bilden, nachdem er die ausdrückliche Freigabe des Nutzers in den
+/// Einstellungen gelesen hat. Der Typ existiert, damit kein S3-Abruf aus Versehen geschehen kann.
+#[derive(Debug, Clone, Copy)]
+pub struct SensitiveConsent(());
+
+impl SensitiveConsent {
+    /// Nur nach gelesener, ausdrücklicher Freigabe des Nutzers aufrufen.
+    pub fn granted_by_user() -> Self {
+        Self(())
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ClientConfig {
@@ -64,7 +86,7 @@ pub struct ActivitySummary {
     pub activity_type: String,
 }
 
-/// Die erlaubten Ziele. Neue Ziele entstehen nur hier, mit Eintrag in [`ALLOWED_PREFIXES`].
+/// Die erlaubten Ziele. Neue Ziele entstehen nur hier, mit Eintrag in [`EXACT_PATHS`] oder [`ALLOWED_PREFIXES`].
 enum Target<'a> {
     SocialProfile,
     Activities {
@@ -97,18 +119,82 @@ enum Target<'a> {
     StressDay {
         date: NaiveDate,
     },
+    UserSettings,
+    CyclingFtp,
+    LactateThreshold,
+    HeartRateZones,
+    DailySteps {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    HeartRateDay {
+        display_name: &'a str,
+        date: NaiveDate,
+    },
+    RespirationDay {
+        date: NaiveDate,
+    },
+    Spo2Day {
+        date: NaiveDate,
+    },
+    IntensityMinutesDay {
+        date: NaiveDate,
+    },
+    TrainingReadiness {
+        date: NaiveDate,
+    },
+    FitnessAge {
+        date: NaiveDate,
+    },
+    EnduranceScore {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    HillScore {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    TrainingLoadActivities {
+        start: NaiveDate,
+        end: NaiveDate,
+    },
+    HydrationDay {
+        date: NaiveDate,
+    },
 }
 
-/// Pfadpräfixe, die der Client je anfragen darf. Ein Pfad außerhalb wird nie gesendet.
-const ALLOWED_PREFIXES: [&str; 8] = [
+/// Pfade fester Endpunkte. Erlaubt ist nur genau dieser Pfad (mit oder ohne Query), kein
+/// Anhängsel.
+const EXACT_PATHS: &[&str] = &[
     "/userprofile-service/socialProfile",
+    "/userprofile-service/userprofile/user-settings",
+    "/biometric-service/biometric/latestFunctionalThresholdPower/CYCLING",
+    "/biometric-service/biometric/latestLactateThreshold",
+    "/biometric-service/heartRateZones",
+    "/wellness-service/wellness/bodyBattery/reports/daily",
+    "/metrics-service/metrics/endurancescore/stats",
+    "/metrics-service/metrics/hillscore/stats",
+    "/fitnessstats-service/activity/all",
+];
+
+/// Pfadpräfixe für Endpunkte mit Datum, Kennung oder Namen im Pfad. Je Endpunkt ein eigener,
+/// möglichst enger Eintrag. Menstruations- und Schwangerschaftsdaten stehen nie hier (SPEC 5.5,
+/// Entscheidung E3), ebenso kein Gewicht, Blutdruck oder Ernährung (S3 ohne Freigabe).
+const ALLOWED_PREFIXES: &[&str] = &[
     "/activitylist-service/activities/search/activities",
     "/download-service/files/activity/",
     "/hrv-service/hrv/",
     "/wellness-service/wellness/dailySleepData/",
     "/userstats-service/wellness/daily/",
-    "/wellness-service/wellness/bodyBattery/reports/daily",
     "/wellness-service/wellness/dailyStress/",
+    "/usersummary-service/stats/steps/daily/",
+    "/wellness-service/wellness/dailyHeartRate/",
+    "/wellness-service/wellness/daily/respiration/",
+    "/wellness-service/wellness/daily/spo2/",
+    "/wellness-service/wellness/daily/im/",
+    "/metrics-service/metrics/trainingreadiness/",
+    "/fitnessage-service/fitnessage/",
+    "/usersummary-service/usersummary/hydration/daily/",
 ];
 
 /// Ungeschützte Zeichen nach RFC 3986 bleiben, alles andere wird prozentkodiert. Damit kann ein
@@ -130,6 +216,15 @@ fn encode_path_segment(segment: &str) -> Result<String> {
 
 fn check_range(start: NaiveDate, end: NaiveDate) -> Result<()> {
     if start > end {
+        return Err(GarminError::InvalidInput("date range"));
+    }
+    Ok(())
+}
+
+/// Spanne einschließlich beider Enden höchstens `max_days` Tage.
+fn check_span(start: NaiveDate, end: NaiveDate, max_days: i64) -> Result<()> {
+    check_range(start, end)?;
+    if (end - start).num_days() + 1 > max_days {
         return Err(GarminError::InvalidInput("date range"));
     }
     Ok(())
@@ -181,6 +276,54 @@ impl Target<'_> {
                 )
             }
             Self::StressDay { date } => format!("/wellness-service/wellness/dailyStress/{date}"),
+            Self::UserSettings => "/userprofile-service/userprofile/user-settings".to_owned(),
+            Self::CyclingFtp => {
+                "/biometric-service/biometric/latestFunctionalThresholdPower/CYCLING".to_owned()
+            }
+            Self::LactateThreshold => {
+                "/biometric-service/biometric/latestLactateThreshold".to_owned()
+            }
+            Self::HeartRateZones => "/biometric-service/heartRateZones".to_owned(),
+            Self::DailySteps { start, end } => {
+                check_span(*start, *end, MAX_STEPS_SPAN_DAYS)?;
+                format!("/usersummary-service/stats/steps/daily/{start}/{end}")
+            }
+            Self::HeartRateDay { display_name, date } => format!(
+                "/wellness-service/wellness/dailyHeartRate/{}?date={date}",
+                encode_path_segment(display_name)?
+            ),
+            Self::RespirationDay { date } => {
+                format!("/wellness-service/wellness/daily/respiration/{date}")
+            }
+            Self::Spo2Day { date } => format!("/wellness-service/wellness/daily/spo2/{date}"),
+            Self::IntensityMinutesDay { date } => {
+                format!("/wellness-service/wellness/daily/im/{date}")
+            }
+            Self::TrainingReadiness { date } => {
+                format!("/metrics-service/metrics/trainingreadiness/{date}")
+            }
+            Self::FitnessAge { date } => format!("/fitnessage-service/fitnessage/{date}"),
+            Self::EnduranceScore { start, end } => {
+                check_span(*start, *end, MAX_SCORE_SPAN_DAYS)?;
+                format!(
+                    "/metrics-service/metrics/endurancescore/stats?startDate={start}&endDate={end}&aggregation=weekly"
+                )
+            }
+            Self::HillScore { start, end } => {
+                check_span(*start, *end, MAX_SCORE_SPAN_DAYS)?;
+                format!(
+                    "/metrics-service/metrics/hillscore/stats?startDate={start}&endDate={end}&aggregation=daily"
+                )
+            }
+            Self::TrainingLoadActivities { start, end } => {
+                check_span(*start, *end, MAX_LOAD_SPAN_DAYS)?;
+                format!(
+                    "/fitnessstats-service/activity/all?startDate={start}&endDate={end}&metric=activityTrainingLoad&metric=trainingEffectLabel&metric=trainingEffectLabelSrvrCalc"
+                )
+            }
+            Self::HydrationDay { date } => {
+                format!("/usersummary-service/usersummary/hydration/daily/{date}")
+            }
         })
     }
 
@@ -207,7 +350,8 @@ fn ensure_allowed(path_and_query: &str) -> Result<()> {
         Some((p, q)) => (p, Some(q)),
         None => (path_and_query, None),
     };
-    let prefix_ok = ALLOWED_PREFIXES.iter().any(|p| path.starts_with(p));
+    let prefix_ok =
+        EXACT_PATHS.contains(&path) || ALLOWED_PREFIXES.iter().any(|p| path.starts_with(p));
     let path_ok = path
         .bytes()
         .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'-' | b'.' | b'_' | b'~' | b'%'))
@@ -417,6 +561,91 @@ impl GarminClient {
         self.get_json(&Target::StressDay { date })
     }
 
+    /// Benutzereinstellungen (Körpergröße, Gewicht, Maßeinheiten und anderes), unverändert als
+    /// JSON. Python-garminconnect `get_user_profile`, `__init__.py` I:574 und I:3515 (Q27).
+    pub fn user_settings(&self) -> Result<Value> {
+        self.get_json(&Target::UserSettings)
+    }
+
+    /// Letzte Schwellenleistung (FTP) Rad. Python-garminconnect `get_cycling_ftp`, I:3344 (Q27).
+    pub fn cycling_ftp(&self) -> Result<Value> {
+        self.get_json(&Target::CyclingFtp)
+    }
+
+    /// Letzte Laktatschwelle (Herzfrequenz und Tempo). Python-garminconnect
+    /// `get_lactate_threshold` (nur der Aufruf "latest"), I:1757 (Q27).
+    pub fn lactate_threshold(&self) -> Result<Value> {
+        self.get_json(&Target::LactateThreshold)
+    }
+
+    /// Herzfrequenzzonen je Sportart. Python-garminconnect, I:3352 (Q27).
+    pub fn heart_rate_zones(&self) -> Result<Value> {
+        self.get_json(&Target::HeartRateZones)
+    }
+
+    /// Schritte je Tag, höchstens [`MAX_STEPS_SPAN_DAYS`] Tage. Python-garminconnect
+    /// `get_daily_steps`, I:1214 (Q27).
+    pub fn daily_steps(&self, start: NaiveDate, end: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::DailySteps { start, end })
+    }
+
+    /// Herzfrequenzverlauf eines Tages. Python-garminconnect `get_heart_rates`, I:1341 (Q27).
+    pub fn heart_rate_day(&self, display_name: &str, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::HeartRateDay { display_name, date })
+    }
+
+    /// Atemfrequenz eines Tages. Python-garminconnect `get_respiration_data`, I:1944 (Q27).
+    pub fn respiration_day(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::RespirationDay { date })
+    }
+
+    /// Sauerstoffsättigung eines Tages. Python-garminconnect `get_spo2_data`, I:1952 (Q27).
+    pub fn spo2_day(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::Spo2Day { date })
+    }
+
+    /// Intensitätsminuten eines Tages. Python-garminconnect `get_intensity_minutes_data`, I:1970
+    /// (Q27).
+    pub fn intensity_minutes_day(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::IntensityMinutesDay { date })
+    }
+
+    /// Trainingsbereitschaft eines Tages. Python-garminconnect `get_training_readiness`, I:2290
+    /// (Q27).
+    pub fn training_readiness(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::TrainingReadiness { date })
+    }
+
+    /// Fitnessalter eines Tages. Python-garminconnect `get_fitnessage_data`, I:2486 (Q27).
+    pub fn fitness_age(&self, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::FitnessAge { date })
+    }
+
+    /// Ausdauerwert, wöchentlich aggregiert, höchstens [`MAX_SCORE_SPAN_DAYS`] Tage.
+    /// Python-garminconnect `get_endurance_score`, I:2368 (Q27).
+    pub fn endurance_score(&self, start: NaiveDate, end: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::EnduranceScore { start, end })
+    }
+
+    /// Hügelwert, täglich aggregiert, höchstens [`MAX_SCORE_SPAN_DAYS`] Tage.
+    /// Python-garminconnect `get_hill_score`, I:2494 (Q27).
+    pub fn hill_score(&self, start: NaiveDate, end: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::HillScore { start, end })
+    }
+
+    /// Trainingslast und Trainingseffekt je Aktivität, höchstens [`MAX_LOAD_SPAN_DAYS`] Tage.
+    /// Python-garminconnect `get_progress_summary_between_dates`, I:2980 (Q27); `requests` kodiert
+    /// die Liste als wiederholtes `metric=`.
+    pub fn training_load_activities(&self, start: NaiveDate, end: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::TrainingLoadActivities { start, end })
+    }
+
+    /// Trinkmenge eines Tages (sensibel, Klasse S3 nach SPEC 5.5, nur mit Freigabe des Nutzers).
+    /// Python-garminconnect `get_hydration_data`, I:1936 (Q27).
+    pub fn hydration_day(&self, _consent: SensitiveConsent, date: NaiveDate) -> Result<Value> {
+        self.get_json(&Target::HydrationDay { date })
+    }
+
     // Innenleben
 
     fn lock_calls(&self) -> std::sync::MutexGuard<'_, ()> {
@@ -575,6 +804,60 @@ mod tests {
                 Target::StressDay { date: d("2026-09-01") },
                 "/wellness-service/wellness/dailyStress/2026-09-01".into(),
             ),
+            (Target::UserSettings, "/userprofile-service/userprofile/user-settings".into()),
+            (
+                Target::CyclingFtp,
+                "/biometric-service/biometric/latestFunctionalThresholdPower/CYCLING".into(),
+            ),
+            (
+                Target::LactateThreshold,
+                "/biometric-service/biometric/latestLactateThreshold".into(),
+            ),
+            (Target::HeartRateZones, "/biometric-service/heartRateZones".into()),
+            (
+                Target::DailySteps { start: d("2026-09-01"), end: d("2026-09-28") },
+                "/usersummary-service/stats/steps/daily/2026-09-01/2026-09-28".into(),
+            ),
+            (
+                Target::HeartRateDay { display_name: id, date: d("2026-09-01") },
+                format!("/wellness-service/wellness/dailyHeartRate/{id}?date=2026-09-01"),
+            ),
+            (
+                Target::RespirationDay { date: d("2026-09-01") },
+                "/wellness-service/wellness/daily/respiration/2026-09-01".into(),
+            ),
+            (
+                Target::Spo2Day { date: d("2026-09-01") },
+                "/wellness-service/wellness/daily/spo2/2026-09-01".into(),
+            ),
+            (
+                Target::IntensityMinutesDay { date: d("2026-09-01") },
+                "/wellness-service/wellness/daily/im/2026-09-01".into(),
+            ),
+            (
+                Target::TrainingReadiness { date: d("2026-09-01") },
+                "/metrics-service/metrics/trainingreadiness/2026-09-01".into(),
+            ),
+            (
+                Target::FitnessAge { date: d("2026-09-01") },
+                "/fitnessage-service/fitnessage/2026-09-01".into(),
+            ),
+            (
+                Target::EnduranceScore { start: d("2026-01-01"), end: d("2026-09-01") },
+                "/metrics-service/metrics/endurancescore/stats?startDate=2026-01-01&endDate=2026-09-01&aggregation=weekly".into(),
+            ),
+            (
+                Target::HillScore { start: d("2026-01-01"), end: d("2026-09-01") },
+                "/metrics-service/metrics/hillscore/stats?startDate=2026-01-01&endDate=2026-09-01&aggregation=daily".into(),
+            ),
+            (
+                Target::TrainingLoadActivities { start: d("2026-01-01"), end: d("2026-09-01") },
+                "/fitnessstats-service/activity/all?startDate=2026-01-01&endDate=2026-09-01&metric=activityTrainingLoad&metric=trainingEffectLabel&metric=trainingEffectLabelSrvrCalc".into(),
+            ),
+            (
+                Target::HydrationDay { date: d("2026-09-01") },
+                "/usersummary-service/usersummary/hydration/daily/2026-09-01".into(),
+            ),
         ];
         for (target, expected) in cases {
             let path = target.path_and_query().unwrap();
@@ -648,6 +931,62 @@ mod tests {
     }
 
     #[test]
+    fn exact_paths_accept_no_suffix() {
+        for bad in [
+            "/biometric-service/heartRateZonesX",
+            "/biometric-service/heartRateZones/1",
+            "/biometric-service/biometric/latestLactateThreshold/powerToWeight",
+            "/biometric-service/biometric/latestFunctionalThresholdPower/RUNNING",
+            "/userprofile-service/socialProfileX",
+        ] {
+            assert!(ensure_allowed(bad).is_err(), "{bad}");
+        }
+        ensure_allowed("/biometric-service/heartRateZones").unwrap();
+    }
+
+    #[test]
+    fn never_fetched_paths_are_rejected() {
+        // SPEC 5.5, Entscheidung E3: Menstruations- und Schwangerschaftsdaten nie abrufen.
+        for bad in [
+            "/periodichealth-service/menstrualcycle/dayview/2026-09-01",
+            "/periodichealth-service/menstrualcycle/calendar/2026-09-01/2026-09-28",
+            "/periodichealth-service/menstrualcycle/lastconfirmed/2026-09-01",
+            "/periodichealth-service/menstrualcycle/summary/2026-09-01",
+            "/periodichealth-service/reports/menstrualcycle/6/2026-09-01",
+            "/periodichealth-service/menstrualcycle/pregnancysnapshot",
+        ] {
+            assert!(ensure_allowed(bad).is_err(), "{bad}");
+        }
+        for entry in EXACT_PATHS.iter().chain(ALLOWED_PREFIXES) {
+            let lower = entry.to_ascii_lowercase();
+            for word in ["periodichealth", "menstrual", "pregnan"] {
+                assert!(!lower.contains(word), "{entry}");
+            }
+        }
+    }
+
+    #[test]
+    fn unreleased_sensitive_paths_are_rejected() {
+        for bad in [
+            "/weight-service/weight/dateRange?startDate=2026-09-01&endDate=2026-09-28",
+            "/weight-service/weight/range/2026-09-01/2026-09-28?includeAll=true",
+            "/weight-service/weight/dayview/2026-09-01",
+            "/bloodpressure-service/bloodpressure/range/2026-09-01/2026-09-28",
+            "/nutrition-service/food/logs/2026-09-01",
+            "/nutrition-service/meals/2026-09-01",
+            "/lifestylelogging-service/dailyLog/2026-09-01",
+            "/biometric-service/stats/functionalThresholdPower/range/2026-01-01/2026-09-01",
+            "/metrics-service/metrics/racepredictions/latest/x",
+            "/metrics-service/metrics/runningtolerance/stats",
+            "/usersummary-service/usersummary/daily/x",
+            "/wellness-service/wellness/floorsChartData/daily/2026-09-01",
+            "/metrics-service/metrics/trainingstatus/aggregated/2026-09-01",
+        ] {
+            assert!(ensure_allowed(bad).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
     fn input_ranges_are_checked() {
         let bad = [
             Target::Activities { start: 0, limit: 0 },
@@ -664,6 +1003,28 @@ mod tests {
                 start: d("2026-09-02"),
                 end: d("2026-09-01"),
             },
+            Target::DailySteps {
+                start: d("2026-09-02"),
+                end: d("2026-09-01"),
+            },
+            Target::DailySteps {
+                start: d("2026-09-01"),
+                end: d("2026-09-29"),
+            },
+            // 2025-01-01 bis 2026-01-28 sind 393 Tage.
+            Target::EnduranceScore {
+                start: d("2025-01-01"),
+                end: d("2026-01-28"),
+            },
+            Target::HillScore {
+                start: d("2025-01-01"),
+                end: d("2026-01-28"),
+            },
+            // 2026-01-01 bis 2027-01-02 sind 367 Tage.
+            Target::TrainingLoadActivities {
+                start: d("2026-01-01"),
+                end: d("2027-01-02"),
+            },
         ];
         for target in bad {
             assert!(matches!(
@@ -679,6 +1040,28 @@ mod tests {
             .path_and_query()
             .is_ok()
         );
+        // Genau an der Grenze (beide Enden gezählt) ist die Spanne erlaubt.
+        let ok = [
+            Target::DailySteps {
+                start: d("2026-09-01"),
+                end: d("2026-09-28"),
+            },
+            Target::EnduranceScore {
+                start: d("2025-01-01"),
+                end: d("2026-01-27"),
+            },
+            Target::HillScore {
+                start: d("2025-01-01"),
+                end: d("2026-01-27"),
+            },
+            Target::TrainingLoadActivities {
+                start: d("2026-01-01"),
+                end: d("2027-01-01"),
+            },
+        ];
+        for target in ok {
+            assert!(target.path_and_query().is_ok());
+        }
     }
 
     #[test]

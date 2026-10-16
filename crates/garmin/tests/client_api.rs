@@ -8,7 +8,8 @@ use std::time::{Duration, Instant};
 use chrono::NaiveDate;
 use common::{Reply, Rig, tokens};
 use lastwerk_garmin::{
-    ClientConfig, GarminError, MAX_ACTIVITY_LIMIT, MAX_FIT_BYTES, MAX_JSON_BYTES, NetworkKind, code,
+    ClientConfig, GarminError, MAX_ACTIVITY_LIMIT, MAX_FIT_BYTES, MAX_JSON_BYTES, NetworkKind,
+    SensitiveConsent, code,
 };
 use serde_json::{Value, json};
 
@@ -214,6 +215,68 @@ fn recovery_endpoints_send_the_expected_paths_and_return_the_json_unchanged() {
         ]
     );
     assert!(rig.server.seen().iter().all(|s| s.method == "GET"));
+}
+
+#[test]
+fn new_read_endpoints_send_the_expected_paths_with_get_only() {
+    let payload = json!({"value": 1});
+    let rig = rig_json(payload.clone());
+    let name = "0a1b2c3d-0000-1111-2222-333344445555";
+    let day = d("2026-09-01");
+
+    assert_eq!(rig.client.cycling_ftp().unwrap(), payload);
+    assert_eq!(
+        rig.client
+            .hydration_day(SensitiveConsent::granted_by_user(), day)
+            .unwrap(),
+        payload
+    );
+    rig.client.user_settings().unwrap();
+    rig.client.lactate_threshold().unwrap();
+    rig.client.heart_rate_zones().unwrap();
+    rig.client.daily_steps(day, d("2026-09-28")).unwrap();
+    rig.client.heart_rate_day(name, day).unwrap();
+    rig.client.respiration_day(day).unwrap();
+    rig.client.spo2_day(day).unwrap();
+    rig.client.intensity_minutes_day(day).unwrap();
+    rig.client.training_readiness(day).unwrap();
+    rig.client.fitness_age(day).unwrap();
+    rig.client.endurance_score(d("2026-01-01"), day).unwrap();
+    rig.client.hill_score(d("2026-01-01"), day).unwrap();
+    rig.client
+        .training_load_activities(d("2026-01-01"), day)
+        .unwrap();
+
+    let targets: Vec<String> = rig.gets().into_iter().map(|s| s.target).collect();
+    assert_eq!(
+        targets,
+        [
+            "/biometric-service/biometric/latestFunctionalThresholdPower/CYCLING".to_owned(),
+            "/usersummary-service/usersummary/hydration/daily/2026-09-01".to_owned(),
+            "/userprofile-service/userprofile/user-settings".to_owned(),
+            "/biometric-service/biometric/latestLactateThreshold".to_owned(),
+            "/biometric-service/heartRateZones".to_owned(),
+            "/usersummary-service/stats/steps/daily/2026-09-01/2026-09-28".to_owned(),
+            format!("/wellness-service/wellness/dailyHeartRate/{name}?date=2026-09-01"),
+            "/wellness-service/wellness/daily/respiration/2026-09-01".to_owned(),
+            "/wellness-service/wellness/daily/spo2/2026-09-01".to_owned(),
+            "/wellness-service/wellness/daily/im/2026-09-01".to_owned(),
+            "/metrics-service/metrics/trainingreadiness/2026-09-01".to_owned(),
+            "/fitnessage-service/fitnessage/2026-09-01".to_owned(),
+            "/metrics-service/metrics/endurancescore/stats?startDate=2026-01-01&endDate=2026-09-01&aggregation=weekly".to_owned(),
+            "/metrics-service/metrics/hillscore/stats?startDate=2026-01-01&endDate=2026-09-01&aggregation=daily".to_owned(),
+            "/fitnessstats-service/activity/all?startDate=2026-01-01&endDate=2026-09-01&metric=activityTrainingLoad&metric=trainingEffectLabel&metric=trainingEffectLabelSrvrCalc".to_owned(),
+        ]
+    );
+    assert!(rig.server.seen().iter().all(|s| s.method == "GET"));
+
+    // Zu lange Spanne wird vor dem Senden abgelehnt.
+    let sent = rig.server.count();
+    assert_eq!(
+        rig.client.daily_steps(day, d("2026-09-29")).unwrap_err(),
+        GarminError::InvalidInput("date range")
+    );
+    assert_eq!(rig.server.count(), sent);
 }
 
 #[test]
