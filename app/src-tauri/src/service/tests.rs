@@ -81,6 +81,7 @@ fn known_sync_folders_are_recognised_in_any_case() {
 #[test]
 fn rtss_stss_and_session_rpe_are_flagged_as_estimated() {
     let row = |method: &str| LoadRow {
+        missing: None,
         activity_id: 1,
         method: method.to_owned(),
         value: Some(50.0),
@@ -104,6 +105,7 @@ fn rtss_stss_and_session_rpe_are_flagged_as_estimated() {
 #[test]
 fn a_failed_load_has_no_value_and_no_method() {
     let r = LoadRow {
+        missing: None,
         activity_id: 1,
         method: "none".to_owned(),
         value: None,

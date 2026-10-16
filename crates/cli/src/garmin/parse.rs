@@ -29,12 +29,12 @@ use serde_json::Value;
 pub struct Dropped(pub u32);
 
 /// `YYYY-MM-DD`, auch wenn Garmin eine Uhrzeit anhängt. Alles andere ist kein Datum.
-fn date_of(v: &Value) -> Option<NaiveDate> {
+pub(super) fn date_of(v: &Value) -> Option<NaiveDate> {
     let text = v.as_str()?;
     NaiveDate::parse_from_str(text.get(..10)?, "%Y-%m-%d").ok()
 }
 
-fn number(v: &Value) -> Option<f64> {
+pub(super) fn number(v: &Value) -> Option<f64> {
     v.as_f64().filter(|x| x.is_finite())
 }
 

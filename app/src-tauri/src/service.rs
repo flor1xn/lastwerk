@@ -11,7 +11,8 @@ use lastwerk_core::{LoadConfig, PmcParams, Sample, Sport, pmc};
 use lastwerk_fit::{parse_activity, read_fit_file};
 use lastwerk_store::{
     ImportOptions, ImportReport, LoadRow, LoadStatus, NewThreshold, SETTING_ATHLETE_BIRTH_YEAR,
-    SETTING_ATHLETE_SEX, SETTING_MCP_RECOVERY_ENABLED, SETTING_PMC_ATL0, SETTING_PMC_CTL0,
+    SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, SETTING_ATHLETE_SEX, SETTING_ATHLETE_SEX_ORIGIN,
+    SETTING_MCP_RECOVERY_ENABLED, SETTING_PMC_ATL0, SETTING_PMC_CTL0,
     SETTING_PMC_TAU_ATL, SETTING_PMC_TAU_CTL, SourceFileRecord, Store, ThresholdKind,
     ThresholdOrigin, embedded_zone_catalog, sha256_hex,
 };
@@ -902,11 +903,14 @@ pub fn set_athlete(
     {
         return Err(AppError::new("invalid_year"));
     }
+    // Ein eigener Wert geht vor Garmin (SPEC 8.6): der Abgleich lässt ihn danach stehen.
     if let Some(sex) = &input.sex {
         store.set_setting(SETTING_ATHLETE_SEX, sex)?;
+        store.set_setting(SETTING_ATHLETE_SEX_ORIGIN, "manual")?;
     }
     if let Some(year) = input.birth_year {
         store.set_setting(SETTING_ATHLETE_BIRTH_YEAR, &year.to_string())?;
+        store.set_setting(SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, "manual")?;
     }
     let from = NaiveDate::from_ymd_opt(1900, 1, 1).ok_or_else(|| AppError::new("internal"))?;
     let recompute = if input.sex.is_some() || input.birth_year.is_some() {

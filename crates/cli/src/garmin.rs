@@ -10,7 +10,10 @@
 //! 2. **Erholung.** HRV, Ruhepuls und Body Battery über Bereichsabfragen, Schlaf je Tag nur für
 //!    die letzten [`SLEEP_DAYS`] Tage des Fensters. Pro Tag wird gemischt: ein vorhandener Wert
 //!    wird nie durch einen fehlenden ersetzt (Garmin liefert Werte nachträglich).
-//! 3. **Import.** Danach der gewöhnliche Import des FIT-Ordners (Duplikatregel 6.4 und
+//! 3. **Konto und Tageswerte (T39).** Schwellen und Profil, Tages- und Trainingswerte, Garmins
+//!    Last je Aktivität, S3 nur mit Freigabe (siehe [`full`]). Schwellen gehen mit Herkunft
+//!    `garmin` nach `threshold`, geänderte Schwellen werden nach dem Import angewandt.
+//! 4. **Import.** Danach der gewöhnliche Import des FIT-Ordners (Duplikatregel 6.4 und
 //!    Belastung greifen wie bei jeder anderen Datei).
 //!
 //! Das Fenster beginnt ohne bisherigen Abgleich `backfill_days` vor heute (Standard 365,
@@ -25,7 +28,9 @@
 //! Meldungen und Fehler enthalten nie einen Pfad, ein Token oder den Anzeigenamen des Kontos.
 
 mod fit_zip;
+mod full;
 mod parse;
+mod parse_full;
 
 use std::collections::{BTreeMap, HashSet};
 use std::io::Write;
@@ -35,11 +40,11 @@ use std::sync::Arc;
 use chrono::{DateTime, NaiveDate, TimeDelta, Utc};
 use lastwerk_garmin::{
     ActivitySummary, Endpoints, GarminClient, GarminError, KeyringStore, MAX_FIT_BYTES, Profile,
-    TokenStore,
+    SensitiveConsent, TokenStore,
 };
 use lastwerk_store::{
-    ImportOptions, MAX_BACKFILL_DAYS, MIN_BACKFILL_DAYS, RecoveryDayRecord, Store, StoreError,
-    UpsertOutcome,
+    ImportOptions, MAX_BACKFILL_DAYS, MIN_BACKFILL_DAYS, RecoveryDayRecord,
+    SETTING_GARMIN_SHARE_HYDRATION, Store, StoreError, UpsertOutcome,
 };
 use serde_json::Value;
 
@@ -47,6 +52,7 @@ use crate::error::CliError;
 use crate::paths;
 
 pub use fit_zip::{ExtractError, extract_fit};
+pub use full::DETAIL_DAYS;
 
 type GResult<T> = Result<T, GarminError>;
 
@@ -61,6 +67,59 @@ pub trait GarminSource {
     fn rhr_range(&self, display_name: &str, start: NaiveDate, end: NaiveDate) -> GResult<Value>;
     fn sleep_day(&self, display_name: &str, date: NaiveDate) -> GResult<Value>;
     fn body_battery(&self, start: NaiveDate, end: NaiveDate) -> GResult<Value>;
+
+    // Vollabzug (T39). Die Vorgaben liefern "keine Daten" (wie eine leere Antwort), damit
+    // Attrappen nur die Aufrufe nachbilden, die ihr Test braucht. Der `GarminClient` setzt
+    // jede Methode um.
+    fn user_settings(&self) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn cycling_ftp(&self) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn lactate_threshold(&self) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn heart_rate_zones(&self) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn daily_steps(&self, _start: NaiveDate, _end: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn heart_rate_day(&self, _display_name: &str, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn respiration_day(&self, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn spo2_day(&self, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn intensity_minutes_day(&self, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn stress_day(&self, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn training_readiness(&self, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn fitness_age(&self, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn endurance_score(&self, _start: NaiveDate, _end: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn hill_score(&self, _start: NaiveDate, _end: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    fn training_load_activities(&self, _start: NaiveDate, _end: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
+    /// S3 (SPEC 5.5): nur mit dem Marker der Freigabe aufrufbar.
+    fn hydration_day(&self, _consent: SensitiveConsent, _date: NaiveDate) -> GResult<Value> {
+        Ok(Value::Null)
+    }
 }
 
 impl GarminSource for GarminClient {
@@ -84,6 +143,54 @@ impl GarminSource for GarminClient {
     }
     fn body_battery(&self, start: NaiveDate, end: NaiveDate) -> GResult<Value> {
         GarminClient::body_battery(self, start, end)
+    }
+    fn user_settings(&self) -> GResult<Value> {
+        GarminClient::user_settings(self)
+    }
+    fn cycling_ftp(&self) -> GResult<Value> {
+        GarminClient::cycling_ftp(self)
+    }
+    fn lactate_threshold(&self) -> GResult<Value> {
+        GarminClient::lactate_threshold(self)
+    }
+    fn heart_rate_zones(&self) -> GResult<Value> {
+        GarminClient::heart_rate_zones(self)
+    }
+    fn daily_steps(&self, start: NaiveDate, end: NaiveDate) -> GResult<Value> {
+        GarminClient::daily_steps(self, start, end)
+    }
+    fn heart_rate_day(&self, display_name: &str, date: NaiveDate) -> GResult<Value> {
+        GarminClient::heart_rate_day(self, display_name, date)
+    }
+    fn respiration_day(&self, date: NaiveDate) -> GResult<Value> {
+        GarminClient::respiration_day(self, date)
+    }
+    fn spo2_day(&self, date: NaiveDate) -> GResult<Value> {
+        GarminClient::spo2_day(self, date)
+    }
+    fn intensity_minutes_day(&self, date: NaiveDate) -> GResult<Value> {
+        GarminClient::intensity_minutes_day(self, date)
+    }
+    fn stress_day(&self, date: NaiveDate) -> GResult<Value> {
+        GarminClient::stress_day(self, date)
+    }
+    fn training_readiness(&self, date: NaiveDate) -> GResult<Value> {
+        GarminClient::training_readiness(self, date)
+    }
+    fn fitness_age(&self, date: NaiveDate) -> GResult<Value> {
+        GarminClient::fitness_age(self, date)
+    }
+    fn endurance_score(&self, start: NaiveDate, end: NaiveDate) -> GResult<Value> {
+        GarminClient::endurance_score(self, start, end)
+    }
+    fn hill_score(&self, start: NaiveDate, end: NaiveDate) -> GResult<Value> {
+        GarminClient::hill_score(self, start, end)
+    }
+    fn training_load_activities(&self, start: NaiveDate, end: NaiveDate) -> GResult<Value> {
+        GarminClient::training_load_activities(self, start, end)
+    }
+    fn hydration_day(&self, consent: SensitiveConsent, date: NaiveDate) -> GResult<Value> {
+        GarminClient::hydration_day(self, consent, date)
     }
 }
 
@@ -119,15 +226,22 @@ pub const MAX_CONSECUTIVE_ERRORS: u32 = 5;
 pub enum SyncPhase {
     Activities,
     Recovery,
+    /// Profil und Schwellen (T39).
+    Account,
+    /// Tages- und Trainingswerte (T39).
+    Wellness,
     Import,
 }
 
 impl SyncPhase {
-    /// Stabiler Name (`activities`, `recovery`, `import`) für Befehle der App.
+    /// Stabiler Name (`activities`, `recovery`, `account`, `wellness`, `import`) für Befehle
+    /// der App.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Activities => "activities",
             Self::Recovery => "recovery",
+            Self::Account => "account",
+            Self::Wellness => "wellness",
             Self::Import => "import",
         }
     }
@@ -170,6 +284,18 @@ pub struct SyncSummary {
     pub recovery_days: u32,
     /// Werte, die außerhalb der Plausibilitätsgrenzen lagen und verworfen wurden.
     pub dropped_values: u32,
+    /// Schwellen aus Garmin, die neu sind oder sich geändert haben (T39).
+    pub thresholds_changed: u32,
+    /// Aktivitäten, deren Belastung danach neu gerechnet wurde (T39).
+    pub recomputed: u32,
+    /// Neu angelegte oder geänderte Zeilen der Tageswerte, Trainingswerte, S3-Werte und von
+    /// Garmins Last je Aktivität (T39).
+    pub wellness_days: u32,
+    pub training_days: u32,
+    pub sensitive_days: u32,
+    pub garmin_loads: u32,
+    /// Ob die Hydration (S3) freigegeben war und abgefragt wurde.
+    pub sensitive_released: bool,
     /// Aufrufe an Garmin (auch fehlgeschlagene).
     pub calls: u32,
     /// Fehler je Art (stabiler Code), ohne die, die den Lauf beendet haben.
@@ -325,8 +451,18 @@ pub fn sync_into(
 ) -> Result<SyncSummary, SyncError> {
     let fit_dir = download_dir;
     let start = window_start(store, opts)?;
+    // S3 nur nach ausdrücklicher Freigabe (SPEC 5.5, Entscheidung E3): ohne sie gibt es keinen
+    // Marker und damit keinen Aufruf.
+    let hydration = (store
+        .get_setting(SETTING_GARMIN_SHARE_HYDRATION)?
+        .as_deref()
+        == Some("true"))
+    .then(SensitiveConsent::granted_by_user);
     let mut run = Run {
         source,
+        now: opts.now,
+        display_name: None,
+        full: full::FullFound::default(),
         calls: 0,
         errors: BTreeMap::new(),
         consecutive_errors: 0,
@@ -339,7 +475,9 @@ pub fn sync_into(
     let mut aborted = None;
     let phases = run
         .activities(fit_dir, start, progress)
-        .and_then(|()| run.recovery(start, opts.today, progress));
+        .and_then(|()| run.recovery(start, opts.today, progress))
+        .and_then(|()| run.account(opts.today, progress))
+        .and_then(|()| run.wellness(start, opts.today, hydration, progress));
     match phases {
         Ok(()) => {}
         Err(Stop::Abort(abort)) => aborted = Some(abort),
@@ -348,6 +486,8 @@ pub fn sync_into(
 
     // Was bis hierher gesammelt wurde, wird auch nach einem Abbruch geschrieben.
     let recovery_days = write_recovery(store, &run.days, start, opts)?;
+    let found = std::mem::take(&mut run.full);
+    let written = full::write_full(store, found, start, opts)?;
     let report = store.import_dir(import_root, opts.now, &ImportOptions::default(), &mut |p| {
         progress(SyncProgress {
             phase: SyncPhase::Import,
@@ -356,6 +496,24 @@ pub fn sync_into(
             total: Some(p.total as u32),
         });
     })?;
+
+    // Neue Dateien sind schon mit den neuen Schwellen gerechnet; bekannte Aktivitäten ab dem
+    // frühesten geänderten Tag werden neu gerechnet (SPEC 6.3, 8.6).
+    let recomputed = match written.recompute_from {
+        Some(from) => {
+            store
+                .recompute_loads(
+                    import_root,
+                    None,
+                    from,
+                    None,
+                    opts.now,
+                    &ImportOptions::default(),
+                )?
+                .recomputed as u32
+        }
+        None => 0,
+    };
 
     let last_sync_updated = aborted.is_none();
     if last_sync_updated {
@@ -369,7 +527,14 @@ pub fn sync_into(
         imported: (report.new + report.updated) as u32,
         import_errors: report.error_count() as u32,
         recovery_days,
-        dropped_values: run.dropped.0,
+        dropped_values: run.dropped.0 + written.dropped,
+        thresholds_changed: written.thresholds_changed,
+        recomputed,
+        wellness_days: written.wellness_days,
+        training_days: written.training_days,
+        sensitive_days: written.sensitive_days,
+        garmin_loads: written.garmin_loads,
+        sensitive_released: hydration.is_some(),
         calls: run.calls,
         errors: run.errors,
         aborted,
@@ -450,6 +615,12 @@ fn abort_of(e: &GarminError) -> SyncAbort {
 
 struct Run<'a> {
     source: &'a dyn GarminSource,
+    /// Für `imported_at` der Zeilen aus T39.
+    now: DateTime<Utc>,
+    /// Anzeigename des Kontos, nur im Speicher des Laufs (für Ruhepuls, Schlaf,
+    /// Tagesherzfrequenz).
+    display_name: Option<String>,
+    full: full::FullFound,
     calls: u32,
     errors: BTreeMap<String, u32>,
     consecutive_errors: u32,
@@ -630,6 +801,7 @@ impl Run<'_> {
             return Ok(());
         };
         let name = profile.display_name;
+        self.display_name = Some(name.clone());
         for (from, to) in rhr_chunks {
             tick(&mut done, progress);
             if let Some(v) = self.call(|s| s.rhr_range(&name, from, to))? {
@@ -897,6 +1069,20 @@ fn write_summary(out: &mut dyn Write, s: &SyncSummary) -> std::io::Result<()> {
     writeln!(out, "  Erholungstage geschrieben: {}", s.recovery_days)?;
     if s.dropped_values > 0 {
         writeln!(out, "  Unplausible Werte verworfen: {}", s.dropped_values)?;
+    }
+    writeln!(
+        out,
+        "  Schwellen aus Garmin geändert: {}",
+        s.thresholds_changed
+    )?;
+    if s.recomputed > 0 {
+        writeln!(out, "  Belastungen neu gerechnet: {}", s.recomputed)?;
+    }
+    writeln!(out, "  Tageswerte geschrieben: {}", s.wellness_days)?;
+    writeln!(out, "  Trainingswerte geschrieben: {}", s.training_days)?;
+    writeln!(out, "  Garmins Last je Aktivität: {}", s.garmin_loads)?;
+    if s.sensitive_released {
+        writeln!(out, "  Hydration (freigegeben): {}", s.sensitive_days)?;
     }
     writeln!(out, "  Aufrufe an Garmin: {}", s.calls)?;
     for (code, n) in &s.errors {

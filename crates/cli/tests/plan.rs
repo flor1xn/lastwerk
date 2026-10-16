@@ -517,7 +517,8 @@ fn backup_restore_and_rebuild_reproduce_user_data_and_figures() {
     assert_eq!(ea.goals.len(), 1);
     assert_eq!(ea.availability.len(), 5);
     assert_eq!(ea.plans.len(), 1);
-    assert_eq!(ea.settings.len(), 1);
+    // Geschlecht und seit T39 seine Herkunft (`athlete.sex_origin`, manuell).
+    assert_eq!(ea.settings.len(), 2);
     assert_eq!(sa.list_plans().unwrap(), sb.list_plans().unwrap());
     let id = sa.list_plans().unwrap()[0].id.clone();
     assert_eq!(sa.load_plan(&id).unwrap(), sb.load_plan(&id).unwrap());

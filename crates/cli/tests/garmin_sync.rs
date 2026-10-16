@@ -348,8 +348,11 @@ fn the_first_run_downloads_imports_and_writes_recovery_days() {
     );
     assert_eq!(s.aborted, None);
     assert!(s.last_sync_updated);
-    // Aufrufe: 1 Seite, 4 Dateien, Profil, HRV, Body Battery, Ruhepuls, 11 Schlaftage.
-    assert_eq!(s.calls, 1 + 4 + 1 + 1 + 1 + 1 + 11);
+    // Aufrufe: 1 Seite, 4 Dateien, Profil, HRV, Body Battery, Ruhepuls, 11 Schlaftage. Dazu
+    // seit T39: 4 Aufrufe der Phase Konto, je ein Aufruf Schritte, Bergwert, Garmins Last,
+    // Ausdauerwert und Fitnessalter, je Tag 6 Tageswerte für 11 Tage (ohne Freigabe keine
+    // Hydration). Die Attrappe beantwortet sie ohne Daten.
+    assert_eq!(s.calls, 1 + 4 + 1 + 1 + 1 + 1 + 11 + 4 + 5 + 6 * 11);
     assert_eq!(fake.count("fit:"), 4);
     // Der Name besteht nur aus der Kennung.
     for id in [1001, 1002, 1003, 1004] {
@@ -379,7 +382,7 @@ fn the_first_run_downloads_imports_and_writes_recovery_days() {
     assert_eq!(r.source, RECOVERY_SOURCE);
     assert_eq!(r.imported_at, now());
 
-    // Fortschritt: alle drei Phasen kommen vor, in dieser Reihenfolge, und enden mit done == total.
+    // Fortschritt: alle fünf Phasen (seit T39 mit Konto und Tageswerten) kommen vor, in dieser Reihenfolge, und enden mit done == total.
     let order: Vec<SyncPhase> = phases.iter().map(|p| p.phase).fold(Vec::new(), |mut v, p| {
         if v.last() != Some(&p) {
             v.push(p);
@@ -391,6 +394,8 @@ fn the_first_run_downloads_imports_and_writes_recovery_days() {
         [
             SyncPhase::Activities,
             SyncPhase::Recovery,
+            SyncPhase::Account,
+            SyncPhase::Wellness,
             SyncPhase::Import
         ]
     );
