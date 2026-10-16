@@ -12,15 +12,15 @@ use lastwerk_cli::planning::{self, DEFAULT_DAY, PlanRequest};
 use lastwerk_cli::texts::Texts;
 use lastwerk_cli::{ics, schema};
 use lastwerk_core::plan::{GoalKind, Hardness, Plan, PlanSport, validate_plan};
-use lastwerk_core::{DailyLoad, pmc};
+use lastwerk_core::{DailyLoad, Sport, pmc};
 use lastwerk_store::{
     AvailabilityRecord, GoalRecord, MAX_AVAILABLE_MINUTES, NewGoal, PlanStatus, PlanSummary, Store,
     UserDataExport,
 };
 
 use crate::dto::{
-    AvailabilityDay, BackupCounts, GeneratePlanInput, GoalInput, GoalItem, PlanDetail,
-    PlanListItem, PlanValidation, PlanningInputs, PmcPointDto, ViolationDto,
+    AvailabilityDay, BackupCounts, GeneratePlanInput, GoalInput, GoalItem, HistoryDefaults,
+    PlanDetail, PlanListItem, PlanValidation, PlanningInputs, PmcPointDto, ViolationDto,
 };
 use crate::error::{AppError, Result};
 use crate::service::parse_date;
@@ -286,6 +286,127 @@ pub fn planning_inputs(store: &Store) -> Result<PlanningInputs> {
         availability: week_availability(&rows),
         availability_set: u8::try_from(rows.len()).unwrap_or(7).min(7),
         default_minutes: DEFAULT_DAY.max_minutes,
+        history: None,
+    })
+}
+
+/// Ziele und Verfügbarkeit wie [`planning_inputs`], dazu der Vorschlag aus der Historie bis
+/// `today` (T41, Befehl `get_planning_inputs`).
+pub fn planning_inputs_at(store: &Store, today: NaiveDate) -> Result<PlanningInputs> {
+    let mut inputs = planning_inputs(store)?;
+    let end = today - TimeDelta::days(i64::from(today.weekday().num_days_from_monday()));
+    let start = end - TimeDelta::days(7 * i64::from(HISTORY_WEEKS));
+    let rows: Vec<(NaiveDate, Sport, i64)> = store
+        .activities_between(start, end - TimeDelta::days(1))?
+        .into_iter()
+        .filter(|a| a.is_primary)
+        .map(|a| (a.row.local_date, a.row.sport, a.row.duration_s))
+        .collect();
+    inputs.history = history_defaults(&rows, start);
+    Ok(inputs)
+}
+
+/// Wochen vor dieser, aus denen der Vorschlag kommt (Faustregel wie `week_history` des
+/// Planers, SPEC 7.2: zwölf Wochen).
+const HISTORY_WEEKS: u32 = 12;
+/// So viele Wochen mit Training braucht ein Vorschlag (Faustregel: weniger ist kein Muster).
+const HISTORY_MIN_WEEKS: u32 = 4;
+
+/// Vorschlag für die drei Fragen aus Aktivitäten (Datum, Sportart, Dauer in Sekunden) der
+/// [`HISTORY_WEEKS`] Wochen ab `start` (ein Montag). Faustregeln (T41):
+///
+/// - Sportart: die Ausdauersportart mit der meisten Zeit.
+/// - Stunden: Median der Wochenzeit aller Sportarten über die Wochen mit Training (Wochen ohne
+///   Training, etwa Urlaub, zählen nicht), auf halbe Stunden gelegt und auf 2 bis 20 begrenzt
+///   (Schieber der Oberfläche).
+/// - Tage: Wochentage mit Training in mindestens der Hälfte dieser Wochen, sonst der häufigste.
+///   Reicht die Zeit je Tag nicht für die kleinste Einheit (20 Minuten), fällt der seltenste Tag
+///   weg.
+///
+/// `None` bei weniger als [`HISTORY_MIN_WEEKS`] Wochen mit Training oder ohne Ausdauer.
+pub fn history_defaults(
+    rows: &[(NaiveDate, Sport, i64)],
+    start: NaiveDate,
+) -> Option<HistoryDefaults> {
+    let mut week_seconds = [0i64; HISTORY_WEEKS as usize];
+    let mut week_days = [[false; 7]; HISTORY_WEEKS as usize];
+    let mut sport_seconds: Vec<(PlanSport, i64)> = Vec::new();
+    for &(date, sport, seconds) in rows {
+        let Ok(week) = usize::try_from((date - start).num_days() / 7) else {
+            continue;
+        };
+        if week >= HISTORY_WEEKS as usize || seconds <= 0 {
+            continue;
+        }
+        week_seconds[week] += seconds;
+        week_days[week][date.weekday().num_days_from_monday() as usize] = true;
+        let plan_sport = match sport {
+            Sport::Cycling => PlanSport::Cycling,
+            Sport::Running => PlanSport::Running,
+            Sport::Swimming => PlanSport::Swimming,
+            _ => continue,
+        };
+        match sport_seconds.iter_mut().find(|(s, _)| *s == plan_sport) {
+            Some((_, total)) => *total += seconds,
+            None => sport_seconds.push((plan_sport, seconds)),
+        }
+    }
+    let active: Vec<usize> = (0..HISTORY_WEEKS as usize)
+        .filter(|&w| week_seconds[w] > 0)
+        .collect();
+    let weeks = active.len() as u32;
+    if weeks < HISTORY_MIN_WEEKS {
+        return None;
+    }
+    // Bei Gleichstand gewinnt die zuerst genannte Sportart (Rad, Lauf, Schwimmen; Konvention).
+    let order = |s: PlanSport| match s {
+        PlanSport::Cycling => 0,
+        PlanSport::Running => 1,
+        _ => 2,
+    };
+    let sport = sport_seconds
+        .iter()
+        .max_by(|a, b| a.1.cmp(&b.1).then(order(b.0).cmp(&order(a.0))))?
+        .0;
+
+    let mut hours: Vec<f64> = active
+        .iter()
+        .map(|&w| week_seconds[w] as f64 / 3600.0)
+        .collect();
+    hours.sort_by(f64::total_cmp);
+    let n = hours.len();
+    let median = if n % 2 == 1 {
+        hours[n / 2]
+    } else {
+        (hours[n / 2 - 1] + hours[n / 2]) / 2.0
+    };
+    let hours = ((median * 2.0).round() / 2.0).clamp(2.0, 20.0);
+
+    let mut counts = [0u32; 7];
+    for &w in &active {
+        for (d, on) in week_days[w].iter().enumerate() {
+            if *on {
+                counts[d] += 1;
+            }
+        }
+    }
+    let mut days: Vec<u8> = (0..7u8)
+        .filter(|&d| 2 * counts[usize::from(d)] >= weeks)
+        .collect();
+    if days.is_empty() {
+        // Der häufigste Tag, bei Gleichstand der spätere (Wochenende, Konvention).
+        let best = (0..7u8).max_by_key(|&d| (counts[usize::from(d)], d))?;
+        days.push(best);
+    }
+    while days.len() > 1 && hours * 60.0 / (days.len() as f64) < 20.0 {
+        let rarest = *days.iter().min_by_key(|&&d| (counts[usize::from(d)], d))?;
+        days.retain(|&d| d != rarest);
+    }
+    Some(HistoryDefaults {
+        sport,
+        hours,
+        days,
+        weeks,
     })
 }
 

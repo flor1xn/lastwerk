@@ -56,7 +56,14 @@
   <form onsubmit={save}>
     <div class="fields">
       <label>
-        {$t('ui.athlete.sex')}
+        <span
+          >{$t(
+            'ui.athlete.sex',
+          )}{#if settings.athlete.sex !== null && settings.athlete.sex_origin !== null}
+            <span class="origin" data-testid="athlete-sex-origin"
+              >&nbsp;· {$t(`ui.athlete.origin.${settings.athlete.sex_origin}`)}</span
+            >{/if}</span
+        >
         <select bind:value={sex}>
           <option value="">{$t('ui.athlete.unset')}</option>
           <option value="male">{$t('ui.athlete.male')}</option>
@@ -64,7 +71,14 @@
         </select>
       </label>
       <label>
-        {$t('ui.athlete.birth_year')}
+        <span
+          >{$t(
+            'ui.athlete.birth_year',
+          )}{#if settings.athlete.birth_year !== null && settings.athlete.birth_year_origin !== null}
+            <span class="origin" data-testid="athlete-birth-year-origin"
+              >&nbsp;· {$t(`ui.athlete.origin.${settings.athlete.birth_year_origin}`)}</span
+            >{/if}</span
+        >
         <input type="text" inputmode="numeric" size="6" maxlength="4" bind:value={birthYear} />
       </label>
       <button class="primary" type="submit" disabled={saving}>{$t('ui.athlete.save')}</button>
@@ -102,6 +116,10 @@
     gap: 2px;
     color: var(--muted);
     font-size: var(--fs-small);
+  }
+
+  .origin {
+    color: var(--muted);
   }
 
   .ok {

@@ -11,8 +11,9 @@ use lastwerk_core::{LoadConfig, PmcParams, Sample, Sport, pmc};
 use lastwerk_fit::{parse_activity, read_fit_file};
 use lastwerk_store::{
     ImportOptions, ImportReport, LoadRow, LoadStatus, NewThreshold, SETTING_ATHLETE_BIRTH_YEAR,
-    SETTING_ATHLETE_SEX, SETTING_MCP_RECOVERY_ENABLED, SETTING_PMC_ATL0, SETTING_PMC_CTL0,
-    SETTING_PMC_TAU_ATL, SETTING_PMC_TAU_CTL, SourceFileRecord, Store, ThresholdKind,
+    SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, SETTING_ATHLETE_SEX, SETTING_ATHLETE_SEX_ORIGIN,
+    SETTING_MCP_RECOVERY_ENABLED, SETTING_PMC_ATL0, SETTING_PMC_CTL0, SETTING_PMC_TAU_ATL,
+    SETTING_PMC_TAU_CTL, SensitiveCategory, SourceFileRecord, Store, ThresholdKind,
     ThresholdOrigin, embedded_zone_catalog, sha256_hex,
 };
 
@@ -22,7 +23,7 @@ use crate::dto::{
     PmcPointDto, PmcSettings, Recompute, Series, Settings, SettingsPatch, SportLoad,
     ThresholdInput, ThresholdItem, ThresholdList, ThresholdSet, WeekOverview, ZoneSchemeTime,
 };
-use crate::dto::{DetailDecoupling, LapItem};
+use crate::dto::{DetailDecoupling, GarminLoadInfo, LapItem};
 use crate::error::{AppError, Result};
 use lastwerk_core::metrics::efficiency::{
     EfSession, aerobic_decoupling, decoupling_state, efficiency_factor,
@@ -35,6 +36,7 @@ pub mod coach_setup;
 pub mod dashboard;
 pub mod fit_files;
 pub mod garmin;
+pub mod health;
 pub mod performance;
 pub mod plans;
 pub mod progress;
@@ -128,7 +130,14 @@ pub fn get_settings(store: &Store, db_in_sync_folder: bool) -> Result<Settings> 
         locale,
         theme,
         pmc: pmc_settings(store)?,
-        athlete: Athlete { sex, birth_year },
+        athlete: Athlete {
+            sex,
+            birth_year,
+            sex_origin: text_setting(store, SETTING_ATHLETE_SEX_ORIGIN)?
+                .filter(|o| o == "garmin" || o == "manual"),
+            birth_year_origin: text_setting(store, SETTING_ATHLETE_BIRTH_YEAR_ORIGIN)?
+                .filter(|o| o == "garmin" || o == "manual"),
+        },
         // Wie der MCP-Server: nur genau `true` gibt frei.
         mcp_recovery_enabled: text_setting(store, KEY_MCP_RECOVERY)?.as_deref() == Some("true"),
         db_in_sync_folder,
@@ -136,6 +145,11 @@ pub fn get_settings(store: &Store, db_in_sync_folder: bool) -> Result<Settings> 
         // Vorgabe aus dem Paket, der Befehl ersetzt sie durch die Version der App.
         version: env!("CARGO_PKG_VERSION").to_owned(),
         garmin_sync_on_start: store.garmin_settings()?.sync_on_start,
+        // Nur genau `true` gibt frei, wie beim Abgleich (SPEC 5.5).
+        garmin_share_hydration: store.sensitive_released(SensitiveCategory::Hydration)?,
+        garmin_share_body: store.sensitive_released(SensitiveCategory::Body)?,
+        garmin_share_blood_pressure: store.sensitive_released(SensitiveCategory::BloodPressure)?,
+        garmin_share_nutrition: store.sensitive_released(SensitiveCategory::Nutrition)?,
         cache_outdated: store.cache_outdated()?,
     })
 }
@@ -178,6 +192,19 @@ pub fn set_settings(
     }
     if let Some(on) = patch.garmin_sync_on_start {
         store.set_garmin_sync_on_start(on)?;
+    }
+    for (category, on) in [
+        (SensitiveCategory::Hydration, patch.garmin_share_hydration),
+        (SensitiveCategory::Body, patch.garmin_share_body),
+        (
+            SensitiveCategory::BloodPressure,
+            patch.garmin_share_blood_pressure,
+        ),
+        (SensitiveCategory::Nutrition, patch.garmin_share_nutrition),
+    ] {
+        if let Some(on) = on {
+            store.set_setting(category.setting(), if on { "true" } else { "false" })?;
+        }
     }
     if let Some(p) = &patch.pmc {
         store.set_setting(KEY_TAU_CTL, &p.tau_ctl_d.to_string())?;
@@ -323,6 +350,7 @@ fn load_info(rows: &[&LoadRow]) -> LoadInfo {
             method: Some(l.method.clone()),
             intensity_factor: l.intensity_factor,
             estimated: METHODS_ESTIMATED.contains(&l.method.as_str()),
+            missing: None,
         },
         Some(l) => LoadInfo {
             status: l.status.as_str().into(),
@@ -330,6 +358,7 @@ fn load_info(rows: &[&LoadRow]) -> LoadInfo {
             method: None,
             intensity_factor: None,
             estimated: false,
+            missing: l.missing.clone(),
         },
         None => LoadInfo {
             status: "unknown".into(),
@@ -337,6 +366,7 @@ fn load_info(rows: &[&LoadRow]) -> LoadInfo {
             method: None,
             intensity_factor: None,
             estimated: false,
+            missing: None,
         },
     }
 }
@@ -429,7 +459,18 @@ pub fn get_activity(store: &Store, id: i64, fit_root: &Path) -> Result<ActivityD
         })
         .collect();
 
-    let read = match store.source_file(a.row.source_file_id)? {
+    let source = store.source_file(a.row.source_file_id)?;
+    let garmin_load = match source
+        .as_ref()
+        .and_then(|f| garmin_activity_id(&f.row.rel_path))
+    {
+        Some(id) => store.garmin_activity_load(id)?.map(|l| GarminLoadInfo {
+            training_load: l.training_load.and_then(|v| round_digits(v, 1)),
+            training_effect: l.training_effect,
+        }),
+        None => None,
+    };
+    let read = match source {
         Some(file) => read_activity_file(fit_root, &file),
         None => Err("file_missing"),
     };
@@ -468,7 +509,18 @@ pub fn get_activity(store: &Store, id: i64, fit_root: &Path) -> Result<ActivityD
             state: decoupling_state(decoupling_percent).code().to_owned(),
         },
         laps,
+        garmin_load,
     })
+}
+
+/// Kennung bei Garmin aus dem Pfad einer Datei des Abgleichs (`garmin/<Kennung>.fit`, SPEC 5.4,
+/// T23). Andere Dateien haben keine.
+fn garmin_activity_id(rel_path: &str) -> Option<u64> {
+    let name = rel_path.strip_prefix("garmin/")?.strip_suffix(".fit")?;
+    if name.is_empty() || !name.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    name.parse().ok()
 }
 
 /// Rundet auf `digits` Nachkommastellen, nicht endliche Werte fallen weg.
@@ -902,11 +954,14 @@ pub fn set_athlete(
     {
         return Err(AppError::new("invalid_year"));
     }
+    // Ein eigener Wert geht vor Garmin (SPEC 8.6): der Abgleich lässt ihn danach stehen.
     if let Some(sex) = &input.sex {
         store.set_setting(SETTING_ATHLETE_SEX, sex)?;
+        store.set_setting(SETTING_ATHLETE_SEX_ORIGIN, "manual")?;
     }
     if let Some(year) = input.birth_year {
         store.set_setting(SETTING_ATHLETE_BIRTH_YEAR, &year.to_string())?;
+        store.set_setting(SETTING_ATHLETE_BIRTH_YEAR_ORIGIN, "manual")?;
     }
     let from = NaiveDate::from_ymd_opt(1900, 1, 1).ok_or_else(|| AppError::new("internal"))?;
     let recompute = if input.sex.is_some() || input.birth_year.is_some() {

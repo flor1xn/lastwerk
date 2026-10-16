@@ -19,6 +19,7 @@ function act(id: number, date: string, load: number | null, primary = true): Act
       method: load === null ? null : 'r_tss',
       intensity_factor: null,
       estimated: false,
+      missing: load === null ? 'run_speed_mps' : null,
     },
     is_primary: primary,
     duplicate_of: primary ? null : 1,

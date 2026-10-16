@@ -6,6 +6,7 @@
   import StatRow from '../../lib/components/StatRow.svelte';
   import { denseSeries, directionOf, readinessStatement, signedPercent } from '../../lib/dashboard';
   import { formatDate, formatNumber } from '../../lib/format';
+  import { garminSync } from '../../lib/garmin';
   import { locale, t } from '../../lib/i18n';
 
   // Bereitschaft: HRV, Ruhepuls und Schlafdauer des jüngsten Tages gegen den eigenen Schnitt der
@@ -13,7 +14,12 @@
   let { dash }: { dash: Dashboard } = $props();
 
   const r = $derived(dash.readiness);
-  const statement = $derived(readinessStatement(r, $t, $locale));
+  // Während des Abgleichs sagt der leere Zustand, dass die Werte unterwegs sind (T41).
+  const statement = $derived(
+    r.last_date === null && $garminSync.kind === 'running'
+      ? $t('ui.dash.readiness.loading')
+      : readinessStatement(r, $t, $locale),
+  );
   const low = $derived(r.state === 'readiness.low');
 
   interface Vital {

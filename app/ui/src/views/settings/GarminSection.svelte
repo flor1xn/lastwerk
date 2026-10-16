@@ -6,6 +6,7 @@
   import { disconnectGarmin, garminStatus, garminSync, runGarminSync } from '../../lib/garmin';
   import { locale, t } from '../../lib/i18n';
   import GarminConnect from './GarminConnect.svelte';
+  import SensitiveShares from './SensitiveShares.svelte';
 
   // Abschnitt "Garmin" der Einstellungen (T23, SPEC 5.6, 10.1: jede Verbindung ist hier
   // sichtbar). Trennen fragt nach. Der Status des eingefrorenen Zusatzprogramms steht nur noch
@@ -155,6 +156,12 @@
   </label>
   <p class="muted hint">{$t('ui.garmin.sync_on_start_hint')}</p>
 
+  <div class="sensitive">
+    <p class="label">{$t('ui.garmin.s3.title')}</p>
+    <SensitiveShares {settings} {onchange} deletable />
+    <p class="muted hint" data-testid="garmin-never">{$t('ui.garmin.never_fetched')}</p>
+  </div>
+
   {#if errorMessage}
     <p class="error" role="alert" data-testid="garmin-error">{$t(errorMessage)}</p>
   {/if}
@@ -206,6 +213,10 @@
     padding: 6px 10px;
     border: 1px solid var(--warn);
     border-radius: 4px;
+  }
+
+  .sensitive {
+    margin-top: 16px;
   }
 
   .advanced {

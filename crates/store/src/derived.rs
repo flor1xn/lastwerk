@@ -64,6 +64,7 @@ pub(crate) fn write_load(
             threshold_id: ThresholdKind::for_method(load.method).and_then(|k| ids.get(&k).copied()),
             status: LoadStatus::Ok,
             computed_at: now,
+            missing: None,
         },
         Err(e) => LoadRow {
             activity_id,
@@ -73,6 +74,12 @@ pub(crate) fn write_load(
             threshold_id: None,
             status: LoadStatus::from_error(&e),
             computed_at: now,
+            // Welcher Wert fehlt, damit die Oberfläche sagt, was der Nutzer eintragen kann
+            // (SPEC 8.6, T39).
+            missing: match &e {
+                lastwerk_core::LoadError::MissingThreshold(name) => Some(name.clone()),
+                _ => None,
+            },
         },
     };
     upsert_activity_load(db, &row)?;

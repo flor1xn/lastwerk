@@ -31,6 +31,17 @@
   const path = $derived(sparkPath(values, W, H, 3, range));
   const lastIndex = $derived(values.reduce<number>((acc, v, i) => (v === null ? acc : i), -1));
   const end = $derived(lastIndex >= 0 ? sparkPoint(values, lastIndex, W, H, 3, range) : null);
+  // Einzelne Werte ohne Nachbarn ergäben keine Linie (spärliche Reihen wie ein Wert je Woche):
+  // Sie erscheinen als kleiner Punkt, Lücken bleiben Lücken.
+  const isolated = $derived(
+    values
+      .map((v, i) =>
+        v !== null && i !== lastIndex && values[i - 1] == null && values[i + 1] == null
+          ? sparkPoint(values, i, W, H, 3, range)
+          : null,
+      )
+      .filter((p): p is { x: number; y: number } => p !== null),
+  );
   const base = $derived(
     baseline !== null && range ? sparkPoint([baseline, baseline], 0, W, H, 3, range) : null,
   );
@@ -50,6 +61,9 @@
   {#if path}
     <path d={path} style:stroke={color} />
   {/if}
+  {#each isolated as p, i (i)}
+    <circle class="single" cx={p.x} cy={p.y} r="1.8" style:fill={color} />
+  {/each}
   {#if end}
     <circle cx={end.x} cy={end.y} r="3.2" style:fill={color} />
   {/if}

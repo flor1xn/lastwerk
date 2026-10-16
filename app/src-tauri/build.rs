@@ -14,6 +14,8 @@ const COMMANDS: &[&str] = &[
     "get_week_overview",
     "get_dashboard",
     "get_recovery",
+    "get_health",
+    "delete_sensitive_data",
     "get_performance",
     "get_progress",
     "list_activities",

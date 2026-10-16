@@ -27,7 +27,9 @@ pub mod throttle;
 pub use auth::{Ticket, TokenSet, needs_refresh, ticket_from_redirect};
 pub use client::{
     ActivitySummary, ClientBuilder, ClientConfig, GarminClient, MAX_ACTIVITY_LIMIT, MAX_FIT_BYTES,
-    MAX_JSON_BYTES, Profile,
+    MAX_JSON_BYTES, MAX_LOAD_SPAN_DAYS, MAX_RANGE_SPAN_DAYS, MAX_SCORE_SPAN_DAYS,
+    MAX_STEPS_SPAN_DAYS, MAX_TOLERANCE_SPAN_DAYS, Profile, SensitiveConsent, SeriesSport,
+    ThresholdSeries,
 };
 pub use clock::{Clock, Jitter, SystemClock, SystemJitter};
 pub use endpoints::Endpoints;

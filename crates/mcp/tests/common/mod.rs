@@ -268,6 +268,7 @@ pub fn build_marker_db(dir: &Path) -> PathBuf {
             .unwrap();
         store
             .upsert_activity_load(&LoadRow {
+                missing: None,
                 activity_id,
                 method: "tss".into(),
                 value: Some(50.0 + f64::from(n % 5) * 10.0),

@@ -15,11 +15,18 @@ import { buildDashboard, type DashboardVariant } from './mock-dashboard';
 import { buildPerformance } from './mock-performance';
 import { buildProgress } from './mock-progress';
 import { buildRecovery } from './mock-recovery';
+import { buildHealth } from './mock-health';
 import { MockPlanning, type MockCall } from './mock-plans';
 import {
   BackendError,
   PERF_RANGES,
   RECOVERY_RANGES,
+  HEALTH_RANGES,
+  SENSITIVE_CATEGORIES,
+  shareKey,
+  type SensitiveCategory,
+  type HealthPoint,
+  type HistoryDefaults,
   SPORTS,
   type ActivityDetail,
   type ActivityFilter,
@@ -56,6 +63,10 @@ import {
   type Progress,
   type RecoveryPage,
   type RecoveryRange,
+  type HealthPage,
+  type HealthRange,
+  type MissingKind,
+  type ThresholdOrigin,
   type PromptPreview,
   type QuickPlanInput,
   type Recompute,
@@ -93,6 +104,10 @@ export interface MockOptions {
   dashboard?: DashboardVariant;
   /** Mit Garmin verbunden? Standard nein (T23). */
   garminConnected?: boolean;
+  /** Vorschlag der drei Fragen aus der Historie (T41). Standard keiner. Mit
+   * `historyAfterSync` erscheint er erst nach dem ersten Abgleich. */
+  history?: HistoryDefaults | null;
+  historyAfterSync?: boolean;
   /** Läuft ein lokales Modell? `false` ist der Zustand ohne Ollama. Standard ja. */
   coach?: boolean;
   /** Wartezeit je Antwort des Coachs in Millisekunden. Standard 0. */
@@ -184,6 +199,7 @@ interface MockThreshold {
   value: number;
   valid_from: string;
   note: string | null;
+  origin: ThresholdOrigin;
 }
 
 const ZONE_META: Record<string, { source: string; status: string; basis: string; zones: number }> =
@@ -236,7 +252,11 @@ export class MockBackend implements Backend {
   /** Welche erfundenen Dashboard-Daten `getDashboard` liefert. Tests setzen sie um. */
   dashboardVariant: DashboardVariant;
 
+  /** Vorschlag aus der Historie (T41). */
+  private history: { value: HistoryDefaults | null; afterSync: boolean };
+
   constructor(options: MockOptions = {}) {
+    this.history = { value: options.history ?? null, afterSync: options.historyAfterSync ?? false };
     this.today = options.today ?? localIso();
     this.importStepMs = options.importStepMs ?? 0;
     this.dashboardVariant = options.dashboard ?? 'rich';
@@ -249,20 +269,30 @@ export class MockBackend implements Backend {
       locale: 'de',
       theme: 'dark',
       pmc: { tau_ctl_d: 42, tau_atl_d: 7, ctl0: 0, atl0: 0 },
-      athlete: { sex: 'male', birth_year: year - 38 },
+      athlete: {
+        sex: 'male',
+        birth_year: year - 38,
+        sex_origin: 'garmin',
+        birth_year_origin: 'garmin',
+      },
       mcp_recovery_enabled: false,
       db_in_sync_folder: false,
       onboarded: options.onboarded ?? true,
       version: '0.0.0',
       garmin_sync_on_start: true,
+      garmin_share_hydration: false,
+      garmin_share_body: false,
+      garmin_share_blood_pressure: false,
+      garmin_share_nutrition: false,
       cache_outdated: options.cacheOutdated ?? false,
     };
     this.garmin.connected = options.garminConnected ?? false;
     // Rad hat einen FTP, der später steigt. Lauf, Schwimmen und Herzfrequenz-Schwelle fehlen
-    // mit Absicht: So zeigt die Oberfläche den Zustand "nicht berechenbar".
-    this.addThreshold('cycling', 'ftp_w', 250, addDays(this.today, -200), null);
+    // mit Absicht: So zeigt die Oberfläche den Zustand "nicht berechenbar". Der erste FTP und
+    // der Ruhepuls stammen aus Garmin (T39), der spätere FTP ist ein eigener Wert.
+    this.addThreshold('cycling', 'ftp_w', 250, addDays(this.today, -200), null, 'garmin');
     this.addThreshold('cycling', 'ftp_w', 260, addDays(this.today, -60), 'Test nach Aufbauphase');
-    this.addThreshold(null, 'hr_rest_bpm', 50, addDays(this.today, -200), null);
+    this.addThreshold(null, 'hr_rest_bpm', 50, addDays(this.today, -200), null, 'garmin');
     this.planning = new MockPlanning({
       today: this.today,
       pmcAt: (date) => this.pmcAt(date),
@@ -348,6 +378,10 @@ export class MockBackend implements Backend {
     ) {
       throw err('invalid_setting');
     }
+    for (const c of SENSITIVE_CATEGORIES) {
+      const v = patch[shareKey(c)];
+      if (v !== undefined && typeof v !== 'boolean') throw err('invalid_setting');
+    }
     if (patch.pmc) {
       const { tau_ctl_d, tau_atl_d, ctl0, atl0 } = patch.pmc;
       const tauOk = (v: number) => Number.isFinite(v) && v > 0;
@@ -365,6 +399,10 @@ export class MockBackend implements Backend {
     if (patch.onboarded !== undefined) this.settings.onboarded = patch.onboarded;
     if (patch.garmin_sync_on_start !== undefined) {
       this.settings.garmin_sync_on_start = patch.garmin_sync_on_start;
+    }
+    for (const c of SENSITIVE_CATEGORIES) {
+      const v = patch[shareKey(c)];
+      if (v !== undefined) this.settings[shareKey(c)] = v;
     }
     return structuredClone(this.settings);
   }
@@ -462,31 +500,35 @@ export class MockBackend implements Backend {
       method: null,
       intensity_factor: null,
       estimated: false,
+      missing: null,
       ...extra,
     });
+    const lacking = (missing: MissingKind) => info('missing_threshold', { missing });
     const ok = (method: LoadMethod, factor: number, exponent: number): LoadInfo => ({
       status: 'ok',
       value: round1(hours * factor ** exponent * 100),
       method,
       intensity_factor: Math.round(factor * 100) / 100,
       estimated: ESTIMATED_METHODS.includes(method),
+      missing: null,
     });
     if (a.implausible) return info('implausible');
     if (a.sport === 'strength' || a.channel === 'none') return info('missing_channel');
     if (a.channel === 'power' && a.np_w) {
       const ftp = this.thresholdAt('ftp_w', a.sport, a.date);
-      return ftp ? ok('tss', a.np_w / ftp, 2) : info('missing_threshold');
+      return ftp ? ok('tss', a.np_w / ftp, 2) : lacking('ftp_w');
     }
     if (a.channel === 'speed' && a.speed_mps) {
       if (a.sport === 'running') {
         const v = this.thresholdAt('run_speed_mps', a.sport, a.date);
-        return v ? ok('r_tss', a.speed_mps / v, 2) : info('missing_threshold');
+        return v ? ok('r_tss', a.speed_mps / v, 2) : lacking('run_speed_mps');
       }
       const css = this.thresholdAt('css_mps', a.sport, a.date);
-      return css ? ok('s_tss', a.speed_mps / css, 3) : info('missing_threshold');
+      return css ? ok('s_tss', a.speed_mps / css, 3) : lacking('css_mps');
     }
     const lthr = this.thresholdAt('lthr_bpm', a.sport, a.date);
-    return lthr && a.avg_hr ? ok('hr_tss', a.avg_hr / lthr, 2) : info('missing_threshold');
+    if (!lthr) return lacking('lthr_bpm');
+    return a.avg_hr ? ok('hr_tss', a.avg_hr / lthr, 2) : info('missing_threshold');
   }
 
   private itemOf(a: RawActivity): ActivityItem {
@@ -530,6 +572,7 @@ export class MockBackend implements Backend {
       best_power: bestPowerOf(a),
       series: seriesOf(a),
       ...detailExtrasOf(a),
+      garmin_load: garminLoadOf(a),
     };
   }
 
@@ -667,7 +710,7 @@ export class MockBackend implements Backend {
         sport: t.sport,
         value: t.value,
         valid_from: t.valid_from,
-        origin: t.note?.includes('Vorschlag') ? 'suggested_accepted' : 'manual',
+        origin: t.origin,
       })),
       mulberry32,
     );
@@ -677,6 +720,54 @@ export class MockBackend implements Backend {
     if (!isIsoDate(today)) throw err('invalid_date');
     if (!RECOVERY_RANGES.includes(days)) throw err('invalid_value');
     return buildRecovery(today, days, this.dashboardVariant, mulberry32);
+  }
+
+  /** S3-Bereiche, deren Werte vorliegen: nur nach Freigabe und einem Abgleich, bis zum Löschen. */
+  private sensitiveStored = new Set<SensitiveCategory>();
+
+  private released(): SensitiveCategory[] {
+    return SENSITIVE_CATEGORIES.filter((c) => this.settings[shareKey(c)]);
+  }
+
+  async getHealth(today: string, days: HealthRange): Promise<HealthPage> {
+    if (!isIsoDate(today)) throw err('invalid_date');
+    if (!HEALTH_RANGES.includes(days)) throw err('invalid_value');
+    return buildHealth(
+      today,
+      days,
+      this.dashboardVariant,
+      this.released(),
+      this.sensitiveStored,
+      mulberry32,
+    );
+  }
+
+  async deleteSensitiveData(category?: SensitiveCategory): Promise<number> {
+    if (category !== undefined && !SENSITIVE_CATEGORIES.includes(category)) {
+      throw err('invalid_value');
+    }
+    const targets = category ? [category] : [...SENSITIVE_CATEGORIES];
+    const field: Record<SensitiveCategory, keyof HealthPoint> = {
+      hydration: 'hydration_ml',
+      body: 'weight_kg',
+      blood_pressure: 'systolic_mmhg',
+      nutrition: 'calories_kcal',
+    };
+    let n = 0;
+    for (const c of targets) {
+      if (!this.sensitiveStored.has(c)) continue;
+      const page = buildHealth(
+        this.today,
+        365,
+        this.dashboardVariant,
+        [c],
+        new Set([c]),
+        mulberry32,
+      );
+      n += page.points.filter((p) => p[field[c]] !== null).length;
+      this.sensitiveStored.delete(c);
+    }
+    return n;
   }
 
   async getDashboard(today: string): Promise<Dashboard> {
@@ -698,9 +789,10 @@ export class MockBackend implements Backend {
     value: number,
     validFrom: string,
     note: string | null,
+    origin: ThresholdOrigin = 'manual',
   ): number {
     const id = this.nextThresholdId++;
-    this.thresholds.push({ id, sport, kind, value, valid_from: validFrom, note });
+    this.thresholds.push({ id, sport, kind, value, valid_from: validFrom, note, origin });
     return id;
   }
 
@@ -727,7 +819,7 @@ export class MockBackend implements Backend {
         value: t.value,
         valid_from: t.valid_from,
         valid_until: this.validUntil(t),
-        origin: 'manual' as const,
+        origin: t.origin,
         note: t.note,
       }));
     const measured = this.thresholds.some((t) => t.kind === 'hr_max_bpm');
@@ -778,8 +870,15 @@ export class MockBackend implements Backend {
     ) {
       throw err('invalid_year');
     }
-    if (input.sex !== undefined) this.settings.athlete.sex = input.sex;
-    if (input.birth_year !== undefined) this.settings.athlete.birth_year = input.birth_year;
+    // Eigene Werte gewinnen gegen die aus Garmin (T39).
+    if (input.sex !== undefined) {
+      this.settings.athlete.sex = input.sex;
+      this.settings.athlete.sex_origin = 'manual';
+    }
+    if (input.birth_year !== undefined) {
+      this.settings.athlete.birth_year = input.birth_year;
+      this.settings.athlete.birth_year_origin = 'manual';
+    }
     const changed = input.sex !== undefined || input.birth_year !== undefined;
     return {
       settings: structuredClone(this.settings),
@@ -806,7 +905,8 @@ export class MockBackend implements Backend {
   }
 
   async getPlanningInputs(): Promise<PlanningInputs> {
-    return this.planning.inputs();
+    const known = !this.history.afterSync || this.garmin.syncs > 0;
+    return { ...this.planning.inputs(), history: known ? this.history.value : null };
   }
 
   async setGoal(input: GoalInput): Promise<PlanningInputs> {
@@ -968,6 +1068,8 @@ export class MockBackend implements Backend {
         { phase: 'activities', done: 2, total: null },
         { phase: 'activities', done: fresh, total: fresh },
         ...[1, 2, 3, 4].map((done) => ({ phase: 'recovery' as const, done, total: 4 })),
+        { phase: 'account', done: 1, total: 1 },
+        ...[1, 2, 3].map((done) => ({ phase: 'wellness' as const, done, total: 3 })),
         ...[1, 2, 3].map((done) => ({ phase: 'import' as const, done, total: 3 })),
       ];
       for (const p of steps) {
@@ -977,6 +1079,10 @@ export class MockBackend implements Backend {
       const abort = this.garmin.abortCode;
       this.garmin.syncs += 1;
       if (!abort) this.garmin.lastSync = this.today;
+      // S3 kommt nur mit Freigabe je Bereich (T39, T40).
+      const released = abort ? [] : this.released();
+      for (const c of released) this.sensitiveStored.add(c);
+      const sensitive = released.length > 0;
       return {
         window_start: addDays(this.today, first ? -365 : -7),
         activities_listed: 2 + fresh,
@@ -987,6 +1093,14 @@ export class MockBackend implements Backend {
         recovery_days: first ? 30 : 7,
         dropped_values: 0,
         calls: 12,
+        // Beim ersten Abgleich meldet die Attrappe geänderte Schwellen aus Garmin, ohne die
+        // erfundenen Schwellen zu ändern (die Lasten der Tests bleiben stabil).
+        thresholds_changed: first ? 2 : 0,
+        recomputed: first ? 41 : 0,
+        wellness_days: first ? 28 : 7,
+        training_days: first ? 28 : 7,
+        sensitive_days: sensitive ? (first ? 28 : 7) : 0,
+        garmin_loads: fresh,
         errors_by_code: [],
         aborted: abort ? { code: abort, until: null } : null,
         last_sync_updated: !abort,
@@ -1012,6 +1126,18 @@ export class MockBackend implements Backend {
 }
 
 // --- Erfundene Daten ---------------------------------------------------------------------
+
+/** Garmins eigene Last, nur für Läufe und Fahrten mit Leistung, erfunden (T39). */
+function garminLoadOf(a: RawActivity): ActivityDetail['garmin_load'] {
+  if (a.sport !== 'running' && !(a.sport === 'cycling' && a.channel === 'power')) return null;
+  const rnd = mulberry32(a.seed ^ 0x1b873593);
+  const effects = ['AEROBIC_BASE', 'TEMPO', 'LACTATE_THRESHOLD', 'VO2MAX', 'MIXED_EFFORT'];
+  const hours = a.duration_s / 3600;
+  return {
+    training_load: rnd() < 0.1 ? null : Math.round(hours * (60 + rnd() * 90)),
+    training_effect: effects[Math.floor(rnd() * effects.length)],
+  };
+}
 
 /** Wochenmuster über etwa 20 Wochen bis `today`. Montag Ruhetag. */
 function buildActivities(today: string): RawActivity[] {

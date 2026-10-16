@@ -37,7 +37,13 @@ export interface LoadInfo {
   intensity_factor: number | null;
   /** rTSS, sTSS und Session-RPE sind Faustregeln und gelten als geschätzt (SPEC 8.1). */
   estimated: boolean;
+  /** Bei `missing_threshold` die fehlende Art, sonst null (T39, SPEC 8.6). */
+  missing: MissingKind | null;
 }
+
+/** Was einer Last fehlen kann: eine Schwellenart oder das Geschlecht (T39). */
+export type MissingKind =
+  'ftp_w' | 'lthr_bpm' | 'hr_max_bpm' | 'hr_rest_bpm' | 'run_speed_mps' | 'css_mps' | 'sex';
 
 export interface ActivityItem {
   id: number;
@@ -119,6 +125,14 @@ export interface ActivityDetail {
   decoupling: DetailDecoupling;
   /** Leer bei weniger als zwei Runden oder ohne lesbare Datei. */
   laps: LapItem[];
+  /** Garmins eigene Last, nur Anzeige, nie Rechengrundlage (E2, T39). */
+  garmin_load: GarminLoadInfo | null;
+}
+
+/** Garmins Trainingslast und Trainingseffekt (Schlüssel wie `AEROBIC_BASE`). */
+export interface GarminLoadInfo {
+  training_load: number | null;
+  training_effect: string | null;
 }
 
 export interface SportLoad {
@@ -327,9 +341,14 @@ export interface PmcSettings {
   atl0: number;
 }
 
+export type ValueOrigin = 'garmin' | 'manual';
+
 export interface Athlete {
   sex: 'male' | 'female' | null;
   birth_year: number | null;
+  /** Herkunft der Werte (T39). */
+  sex_origin: ValueOrigin | null;
+  birth_year_origin: ValueOrigin | null;
 }
 
 /** Was `exchange/out` hergibt (SPEC 5.4). Nur Anzahlen und der jüngste Tag, nie ein Pfad. */
@@ -389,6 +408,12 @@ export interface Settings {
   version: string;
   /** Abgleich mit Garmin beim Start der App (Standard an, T23). */
   garmin_sync_on_start: boolean;
+  /** Hydration (S3) darf aus Garmin abgerufen werden (T39). Standard aus. */
+  garmin_share_hydration: boolean;
+  /** Freigaben der übrigen S3-Bereiche (T40, Entscheidung E7). Standard aus. */
+  garmin_share_body: boolean;
+  garmin_share_blood_pressure: boolean;
+  garmin_share_nutrition: boolean;
   /** Abgeleitete Werte von einem älteren Programmstand (T33): beim Start einmal einlesen. */
   cache_outdated: boolean;
 }
@@ -404,12 +429,32 @@ export interface SettingsPatch {
   onboarded?: boolean;
   /** Abgleich mit Garmin beim Start an oder aus. Nur ein Wahrheitswert gilt. */
   garmin_sync_on_start?: boolean;
+  /** Gibt den Abruf der Hydration (S3) frei oder sperrt ihn (T39). */
+  garmin_share_hydration?: boolean;
+  /** Freigaben der übrigen S3-Bereiche (T40). */
+  garmin_share_body?: boolean;
+  garmin_share_blood_pressure?: boolean;
+  garmin_share_nutrition?: boolean;
+}
+
+/** Bereiche sensibler Werte (S3), je Bereich freigegeben und gelöscht (T40, E7). */
+export const SENSITIVE_CATEGORIES = ['body', 'blood_pressure', 'nutrition', 'hydration'] as const;
+export type SensitiveCategory = (typeof SENSITIVE_CATEGORIES)[number];
+
+/** Einstellung, die einen S3-Bereich freigibt. */
+export function shareKey(
+  c: SensitiveCategory,
+): `garmin_share_${SensitiveCategory}` & keyof Settings & keyof SettingsPatch {
+  return `garmin_share_${c}`;
 }
 
 export interface AthleteInput {
   sex?: 'male' | 'female';
   birth_year?: number;
 }
+
+/** Herkunft eines Schwellenwerts. `garmin` seit T39. */
+export type ThresholdOrigin = 'manual' | 'suggested_accepted' | 'garmin';
 
 export interface ThresholdItem {
   id: number;
@@ -420,7 +465,7 @@ export interface ThresholdItem {
   valid_from: string;
   /** Letzter Tag der Gültigkeit, null ohne späteren Wert. */
   valid_until: string | null;
-  origin: 'manual' | 'suggested_accepted';
+  origin: ThresholdOrigin;
   note: string | null;
 }
 
@@ -639,6 +684,19 @@ export interface PlanningInputs {
   availability: AvailabilityDay[];
   availability_set: number;
   default_minutes: number;
+  /** Vorschlag aus der eigenen Historie (T41), nur beim Lesen; zu wenig Historie: null. */
+  history: HistoryDefaults | null;
+}
+
+/** Was die letzten zwölf vollen Wochen über das Training sagen (T41, Faustregeln im Rust-Teil). */
+export interface HistoryDefaults {
+  sport: EnduranceSport;
+  /** Median der Wochenstunden, halbe Stunden, 2 bis 20. */
+  hours: number;
+  /** Wochentage, 0 Montag bis 6 Sonntag. */
+  days: number[];
+  /** Wochen mit Training, auf denen der Vorschlag beruht. */
+  weeks: number;
 }
 
 export interface BackupCounts {
@@ -691,7 +749,13 @@ export interface GarminLoginResult {
   code: string;
 }
 
-export const GARMIN_SYNC_PHASES = ['activities', 'recovery', 'import'] as const;
+export const GARMIN_SYNC_PHASES = [
+  'activities',
+  'recovery',
+  'account',
+  'wellness',
+  'import',
+] as const;
 export type GarminSyncPhase = (typeof GARMIN_SYNC_PHASES)[number];
 
 /** Ereignis `garmin-sync-progress`. `total` fehlt, solange die Zahl nicht bekannt ist. */
@@ -716,6 +780,13 @@ export interface GarminSyncSummary {
   recovery_days: number;
   dropped_values: number;
   calls: number;
+  /** Seit T39: geänderte Schwellen aus Garmin und danach neu gerechnete Aktivitäten. */
+  thresholds_changed: number;
+  recomputed: number;
+  wellness_days: number;
+  training_days: number;
+  sensitive_days: number;
+  garmin_loads: number;
   errors_by_code: { code: string; count: number }[];
   aborted: GarminAbort | null;
   last_sync_updated: boolean;
@@ -941,7 +1012,7 @@ export interface PerfThreshold {
   sport: Sport | null;
   value: number;
   valid_from: string;
-  origin: 'manual' | 'suggested_accepted';
+  origin: ThresholdOrigin;
 }
 
 /** FTP-Vorschlag eines Monats aus der besten 20-Minuten-Leistung (T36, SPEC 8.6). */
@@ -1011,6 +1082,94 @@ export interface RecoveryPage {
   summary: RecoverySummary[];
 }
 
+export const HEALTH_RANGES = [30, 90, 365] as const;
+export type HealthRange = (typeof HEALTH_RANGES)[number];
+
+/** Ein Tag der Seite "Gesundheit" (T39). Fehlende Werte sind null, nie 0. */
+export interface HealthPoint {
+  date: string;
+  steps: number | null;
+  step_distance_km: number | null;
+  hr_min_bpm: number | null;
+  hr_max_bpm: number | null;
+  respiration_waking_brpm: number | null;
+  respiration_sleep_brpm: number | null;
+  spo2_avg_pct: number | null;
+  spo2_low_pct: number | null;
+  intensity_moderate_min: number | null;
+  intensity_vigorous_min: number | null;
+  stress_avg: number | null;
+  stress_max: number | null;
+  readiness_score: number | null;
+  /** Garmins Stufe, zum Beispiel `HIGH`. */
+  readiness_level: string | null;
+  /** Garmins akute Last, nur Anzeige (E2). */
+  garmin_acute_load: number | null;
+  fitness_age: number | null;
+  vo2max_running: number | null;
+  vo2max_cycling: number | null;
+  endurance_score: number | null;
+  hill_score: number | null;
+  hydration_ml: number | null;
+  // Seit T40.
+  floors_up: number | null;
+  floors_down: number | null;
+  /** Garmins Trainingsstatus als Schlüssel, zum Beispiel `productive`. */
+  training_status: string | null;
+  garmin_chronic_load: number | null;
+  garmin_acwr: number | null;
+  load_aerobic_low: number | null;
+  load_aerobic_low_min: number | null;
+  load_aerobic_low_max: number | null;
+  load_aerobic_high: number | null;
+  load_aerobic_high_min: number | null;
+  load_aerobic_high_max: number | null;
+  load_anaerobic: number | null;
+  load_anaerobic_min: number | null;
+  load_anaerobic_max: number | null;
+  /** Garmins Hinweis zum Belastungsfokus als Schlüssel. */
+  load_balance: string | null;
+  race_5k_s: number | null;
+  race_10k_s: number | null;
+  race_half_s: number | null;
+  race_marathon_s: number | null;
+  run_acute_distance_km: number | null;
+  run_impact_load: number | null;
+  run_tolerance_km: number | null;
+  run_tolerance_level: string | null;
+  weight_kg: number | null;
+  bmi: number | null;
+  body_fat_pct: number | null;
+  body_water_pct: number | null;
+  bone_kg: number | null;
+  muscle_kg: number | null;
+  systolic_mmhg: number | null;
+  diastolic_mmhg: number | null;
+  pulse_bpm: number | null;
+  calories_kcal: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  protein_g: number | null;
+  calories_goal_kcal: number | null;
+}
+
+/** Textfelder eines Tages der Seite "Gesundheit" (Garmins Schlüssel). */
+export type HealthTextKey =
+  'readiness_level' | 'training_status' | 'load_balance' | 'run_tolerance_level';
+
+/** Zahlenfelder eines Tages der Seite "Gesundheit". */
+export type HealthNumberKey = Exclude<keyof HealthPoint, 'date' | HealthTextKey>;
+
+/** Grundlage der Seite "Gesundheit" (T39). Nur Tage mit mindestens einem Wert, aufsteigend. */
+export interface HealthPage {
+  days: number;
+  points: HealthPoint[];
+  /** Mindestens ein S3-Bereich ist freigegeben. */
+  sensitive_released: boolean;
+  /** Freigegebene S3-Bereiche; die Werte der übrigen sind immer null (T40). */
+  released: SensitiveCategory[];
+}
+
 /** Summen eines Tages und einer Sportart (T32). `load` nur aus berechenbaren Lasten. */
 export interface ProgressEntry {
   date: string;
@@ -1047,6 +1206,11 @@ export interface Backend {
   getPerformance(today: string, range: PerfRange): Promise<Performance>;
   /** Erholungswerte mit Basislinie und Tageslast für "Erholung" (T34). */
   getRecovery(today: string, days: RecoveryRange): Promise<RecoveryPage>;
+  /** Tages- und Trainingswerte aus Garmin für "Gesundheit" (T39). */
+  getHealth(today: string, days: HealthRange): Promise<HealthPage>;
+  /** Löscht die S3-Werte eines Bereichs, ohne Angabe aller Bereiche, und liefert die Zahl
+   * gelöschter Tage (T39, je Bereich seit T40). */
+  deleteSensitiveData(category?: SensitiveCategory): Promise<number>;
   listActivities(filter: ActivityFilter): Promise<ActivityItem[]>;
   getActivity(id: number): Promise<ActivityDetail>;
   listThresholds(): Promise<ThresholdList>;

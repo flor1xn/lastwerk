@@ -50,7 +50,7 @@ impl Store {
     pub fn loads_between(&self, from: NaiveDate, to: NaiveDate) -> Result<Vec<LoadRow>> {
         let mut stmt = self.conn.prepare(
             "SELECT l.activity_id, l.method, l.value, l.intensity_factor, l.threshold_id, \
-                    l.status, l.computed_at \
+                    l.status, l.computed_at, l.missing \
              FROM activity_load l JOIN activity a ON a.id = l.activity_id \
              WHERE a.local_date >= ?1 AND a.local_date <= ?2 ORDER BY l.activity_id, l.method",
         )?;

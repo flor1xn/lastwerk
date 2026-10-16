@@ -50,6 +50,7 @@ fn store_with_one_load() -> Store {
         .unwrap();
     store
         .upsert_activity_load(&LoadRow {
+            missing: None,
             activity_id,
             method: "tss".into(),
             value: Some(100.0),

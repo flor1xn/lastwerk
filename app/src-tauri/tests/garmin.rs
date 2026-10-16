@@ -138,6 +138,10 @@ fn patch_sync_on_start(on: bool) -> SettingsPatch {
         mcp_recovery_enabled: None,
         onboarded: None,
         garmin_sync_on_start: Some(on),
+        garmin_share_hydration: None,
+        garmin_share_body: None,
+        garmin_share_blood_pressure: None,
+        garmin_share_nutrition: None,
     }
 }
 

@@ -19,6 +19,9 @@ pub struct LoadInfo {
     pub intensity_factor: Option<f64>,
     /// rTSS, sTSS und Session-RPE sind Faustregeln und gelten als geschätzt (SPEC 8.1).
     pub estimated: bool,
+    /// Bei `missing_threshold` die fehlende Art (`ftp_w`, `lthr_bpm`, `hr_max_bpm`,
+    /// `hr_rest_bpm`, `run_speed_mps`, `css_mps`, `sex`), sonst `null` (T39, SPEC 8.6).
+    pub missing: Option<String>,
 }
 
 /// Zeile der Aktivitätsliste.
@@ -116,6 +119,16 @@ pub struct ActivityDetail {
     pub decoupling: DetailDecoupling,
     /// Runden aus der Datei, leer bei weniger als zwei Runden oder ohne lesbare Datei.
     pub laps: Vec<LapItem>,
+    /// Garmins eigene Last, nur zur Anzeige neben der eigenen (Entscheidung E2, T39). `null`,
+    /// wenn die Aktivität nicht aus Garmin stammt oder Garmin keine gemeldet hat.
+    pub garmin_load: Option<GarminLoadInfo>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct GarminLoadInfo {
+    pub training_load: Option<f64>,
+    /// Garmins Schlüssel, zum Beispiel `AEROBIC_BASE`.
+    pub training_effect: Option<String>,
 }
 
 /// Last eines Tages je Sportart (nur zählende Aktivitäten, SPEC 6.4).
@@ -180,7 +193,7 @@ pub struct PerfThreshold {
     pub sport: Option<Sport>,
     pub value: f64,
     pub valid_from: String,
-    /// `manual` oder `suggested_accepted`.
+    /// `manual`, `suggested_accepted` oder `garmin` (seit T39).
     pub origin: String,
 }
 
@@ -310,6 +323,9 @@ pub struct Athlete {
     /// `male`, `female` oder `null`.
     pub sex: Option<String>,
     pub birth_year: Option<i32>,
+    /// Herkunft: `garmin`, `manual` oder `null` (T39).
+    pub sex_origin: Option<String>,
+    pub birth_year_origin: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -338,6 +354,13 @@ pub struct Settings {
     pub version: String,
     /// Abgleich mit Garmin beim Start der App (`garmin.sync_on_start`, Standard an, T23).
     pub garmin_sync_on_start: bool,
+    /// Hydration (S3) darf abgerufen werden (`garmin.share.hydration` genau `true`, T39).
+    /// Standard aus.
+    pub garmin_share_hydration: bool,
+    /// Freigaben der übrigen S3-Bereiche (T40, Entscheidung E7), wie die Hydration.
+    pub garmin_share_body: bool,
+    pub garmin_share_blood_pressure: bool,
+    pub garmin_share_nutrition: bool,
     /// Die abgeleiteten Werte stammen von einem älteren Programmstand (T33): Die Oberfläche
     /// liest beim Start einmal ein, damit neue Kennzahlen auch für alte Dateien entstehen.
     pub cache_outdated: bool,
@@ -356,6 +379,15 @@ pub struct SettingsPatch {
     pub onboarded: Option<bool>,
     /// Abgleich mit Garmin beim Start an oder aus (T23). Nur ein JSON-Wahrheitswert ist gültig.
     pub garmin_sync_on_start: Option<bool>,
+    /// Gibt den Abruf der Hydration (S3) frei oder sperrt ihn (T39). Nur ein Wahrheitswert.
+    pub garmin_share_hydration: Option<bool>,
+    /// Freigaben der übrigen S3-Bereiche (T40). Nur Wahrheitswerte, fehlend heißt unverändert.
+    #[serde(default)]
+    pub garmin_share_body: Option<bool>,
+    #[serde(default)]
+    pub garmin_share_blood_pressure: Option<bool>,
+    #[serde(default)]
+    pub garmin_share_nutrition: Option<bool>,
 }
 
 /// Was der Austauschordner `exchange/out` hergibt (SPEC 5.4). Nur Anzahlen und der jüngste Tag,
@@ -386,7 +418,7 @@ pub struct ThresholdItem {
     pub valid_from: String,
     /// Letzter Tag der Gültigkeit, `null` ohne späteren Wert.
     pub valid_until: Option<String>,
-    /// `manual` oder `suggested_accepted`.
+    /// `manual`, `suggested_accepted` oder `garmin` (seit T39).
     pub origin: String,
     pub note: Option<String>,
 }
@@ -636,6 +668,24 @@ pub struct PlanningInputs {
     pub availability_set: u8,
     /// Standardwert in Minuten für nicht gesetzte Tage.
     pub default_minutes: u16,
+    /// Vorschlag für die drei Fragen aus der eigenen Historie (T41), nur in
+    /// `get_planning_inputs`; sonst und bei zu wenig Historie `null`.
+    pub history: Option<HistoryDefaults>,
+}
+
+/// Was die Historie der letzten zwölf vollen Wochen über das Training sagt (T41, Faustregeln in
+/// `service::plans::history_defaults`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct HistoryDefaults {
+    /// Ausdauersportart mit der meisten Zeit.
+    pub sport: lastwerk_core::plan::PlanSport,
+    /// Median der Wochenstunden aller Sportarten über die Wochen mit Training, auf halbe Stunden
+    /// gelegt, 2 bis 20.
+    pub hours: f64,
+    /// Wochentage (0 Montag bis 6 Sonntag) mit Training in mindestens der Hälfte dieser Wochen.
+    pub days: Vec<u8>,
+    /// Wochen mit Training, auf denen der Vorschlag beruht.
+    pub weeks: u32,
 }
 
 /// Zahl der Zeilen je Tabelle eines Backups.
@@ -925,8 +975,97 @@ pub struct GarminSyncSummary {
     pub recovery_days: u32,
     pub dropped_values: u32,
     pub calls: u32,
+    /// Seit T39: geänderte Schwellen aus Garmin, danach neu gerechnete Aktivitäten, neue oder
+    /// geänderte Zeilen der Tages-, Trainings- und S3-Werte und von Garmins Last.
+    pub thresholds_changed: u32,
+    pub recomputed: u32,
+    pub wellness_days: u32,
+    pub training_days: u32,
+    pub sensitive_days: u32,
+    pub garmin_loads: u32,
     /// Fehler einzelner Aufrufe je Code.
     pub errors_by_code: Vec<ErrorCount>,
     pub aborted: Option<GarminAbort>,
     pub last_sync_updated: bool,
+}
+
+/// Seite "Gesundheit" (T39): Tages- und Trainingswerte aus Garmin über 30, 90 oder 365 Tage.
+/// Ein Tag ohne einen einzigen Wert fehlt; fehlende Werte sind `null`, nie 0 (SPEC 5.4).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct HealthPage {
+    pub days: u32,
+    pub points: Vec<HealthPoint>,
+    /// Mindestens ein S3-Bereich ist freigegeben.
+    pub sensitive_released: bool,
+    /// Freigegebene S3-Bereiche (`hydration`, `body`, `blood_pressure`, `nutrition`, T40). Die
+    /// Werte eines nicht freigegebenen Bereichs sind immer `null`.
+    pub released: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct HealthPoint {
+    pub date: String,
+    pub steps: Option<f64>,
+    pub step_distance_km: Option<f64>,
+    pub hr_min_bpm: Option<f64>,
+    pub hr_max_bpm: Option<f64>,
+    pub respiration_waking_brpm: Option<f64>,
+    pub respiration_sleep_brpm: Option<f64>,
+    pub spo2_avg_pct: Option<f64>,
+    pub spo2_low_pct: Option<f64>,
+    pub intensity_moderate_min: Option<f64>,
+    pub intensity_vigorous_min: Option<f64>,
+    pub stress_avg: Option<f64>,
+    pub stress_max: Option<f64>,
+    pub readiness_score: Option<f64>,
+    /// Garmins Stufe, zum Beispiel `HIGH`.
+    pub readiness_level: Option<String>,
+    /// Garmins akute Last, nur Anzeige (E2).
+    pub garmin_acute_load: Option<f64>,
+    pub fitness_age: Option<f64>,
+    pub vo2max_running: Option<f64>,
+    pub vo2max_cycling: Option<f64>,
+    pub endurance_score: Option<f64>,
+    pub hill_score: Option<f64>,
+    pub hydration_ml: Option<f64>,
+    // Seit T40.
+    pub floors_up: Option<f64>,
+    pub floors_down: Option<f64>,
+    /// Garmins Trainingsstatus als Schlüssel, zum Beispiel `productive`.
+    pub training_status: Option<String>,
+    pub garmin_chronic_load: Option<f64>,
+    pub garmin_acwr: Option<f64>,
+    pub load_aerobic_low: Option<f64>,
+    pub load_aerobic_low_min: Option<f64>,
+    pub load_aerobic_low_max: Option<f64>,
+    pub load_aerobic_high: Option<f64>,
+    pub load_aerobic_high_min: Option<f64>,
+    pub load_aerobic_high_max: Option<f64>,
+    pub load_anaerobic: Option<f64>,
+    pub load_anaerobic_min: Option<f64>,
+    pub load_anaerobic_max: Option<f64>,
+    /// Garmins Hinweis zum Belastungsfokus als Schlüssel, zum Beispiel `aerobic_high_shortage`.
+    pub load_balance: Option<String>,
+    pub race_5k_s: Option<f64>,
+    pub race_10k_s: Option<f64>,
+    pub race_half_s: Option<f64>,
+    pub race_marathon_s: Option<f64>,
+    pub run_acute_distance_km: Option<f64>,
+    pub run_impact_load: Option<f64>,
+    pub run_tolerance_km: Option<f64>,
+    pub run_tolerance_level: Option<String>,
+    pub weight_kg: Option<f64>,
+    pub bmi: Option<f64>,
+    pub body_fat_pct: Option<f64>,
+    pub body_water_pct: Option<f64>,
+    pub bone_kg: Option<f64>,
+    pub muscle_kg: Option<f64>,
+    pub systolic_mmhg: Option<f64>,
+    pub diastolic_mmhg: Option<f64>,
+    pub pulse_bpm: Option<f64>,
+    pub calories_kcal: Option<f64>,
+    pub carbs_g: Option<f64>,
+    pub fat_g: Option<f64>,
+    pub protein_g: Option<f64>,
+    pub calories_goal_kcal: Option<f64>,
 }

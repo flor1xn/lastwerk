@@ -121,6 +121,7 @@ export class MockPlanning {
       availability: days,
       availability_set: this.availability.size,
       default_minutes: DEFAULT_MINUTES,
+      history: null,
     };
   }
 

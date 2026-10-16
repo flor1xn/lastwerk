@@ -28,6 +28,7 @@
   import PlanView from './views/PlanView.svelte';
   import ProgressView from './views/ProgressView.svelte';
   import RecoveryView from './views/RecoveryView.svelte';
+  import HealthView from './views/HealthView.svelte';
   import SettingsView from './views/SettingsView.svelte';
   import Wizard from './views/onboarding/Wizard.svelte';
   import TodayView from './views/TodayView.svelte';
@@ -156,6 +157,8 @@
         <PerformanceView />
       {:else if $view === 'recovery'}
         <RecoveryView />
+      {:else if $view === 'health'}
+        <HealthView />
       {:else if $view === 'plan'}
         <PlanView />
       {:else if $view === 'activities'}
