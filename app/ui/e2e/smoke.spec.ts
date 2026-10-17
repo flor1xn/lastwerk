@@ -21,10 +21,15 @@ const TEXT = {
         ['today-form', 'Form-Verlauf'],
         ['today-ramp', 'Rampe'],
         ['today-distribution', 'Verteilung'],
-        ['today-adherence', 'Planerfüllung'],
-        ['today-efficiency', 'Effizienz'],
-        ['today-power', 'Leistungskurve'],
-        ['today-calendar', 'Belastungskalender'],
+        ['today-week-story', 'Diese Woche'],
+      ],
+      insights: 'Coach-Erkenntnisse',
+      noPlan: 'Noch kein aktiver Plan',
+      discuss: 'Mit Coach besprechen',
+      moved: [
+        ['dash-efficiency', 'Effizienz'],
+        ['dash-power', 'Leistungskurve'],
+        ['dash-calendar', 'Belastungskalender'],
       ],
       readiness: /Schnitts der letzten sieben Tage/,
       lead: /^Deine Form ist /,
@@ -54,10 +59,15 @@ const TEXT = {
         ['today-form', 'Form history'],
         ['today-ramp', 'Ramp'],
         ['today-distribution', 'Distribution'],
-        ['today-adherence', 'Plan adherence'],
-        ['today-efficiency', 'Efficiency'],
-        ['today-power', 'Power curve'],
-        ['today-calendar', 'Load calendar'],
+        ['today-week-story', 'This week'],
+      ],
+      insights: 'Coach insights',
+      noPlan: 'No active plan yet',
+      discuss: 'Discuss with coach',
+      moved: [
+        ['dash-efficiency', 'Efficiency'],
+        ['dash-power', 'Power curve'],
+        ['dash-calendar', 'Load calendar'],
       ],
       readiness: /average of the last seven days/,
       lead: /^Your form is /,
@@ -106,8 +116,17 @@ for (const lang of ['de', 'en'] as const) {
     await expect(page.getByTestId('header-language')).toHaveCount(0);
     await expect(page.getByTestId('header-theme')).toHaveCount(0);
 
-    // 0. Heute (Startseite): Aussage zuerst, Form mit Zustand als Text, Woche in Balken.
-    await expect(page.getByTestId('today-title')).toBeVisible();
+    // 0. Heute (Startseite, T44): Tagesentscheidung als einzige Karte mit genau einer
+    // Primäraktion, Erkenntnisse, Form mit Zustand als Text, Wochen-Story.
+    await expect(page.getByTestId('today-title')).toHaveText(text.dash.noPlan);
+    const decision = page.getByTestId('today-decision');
+    await expect(decision.locator('button.primary')).toHaveCount(1);
+    await expect(decision.locator('button.primary')).toHaveText(text.dash.discuss);
+    await expect(page.locator('.card')).toHaveCount(1);
+    await expect(page.getByTestId('today-insights').locator('.section-label')).toHaveText(
+      text.dash.insights,
+    );
+    expect(await page.getByTestId('insight').count()).toBeLessThanOrEqual(3);
     await expect(page.getByTestId('form-state')).toBeVisible();
     await expect(page.getByTestId('form-value')).toBeVisible();
     await expect(page.getByTestId('lead')).toHaveText(text.dash.lead);
@@ -121,12 +140,12 @@ for (const lang of ['de', 'en'] as const) {
     await expect(page.getByTestId('vital-hrv')).toBeVisible();
     await expect(page.getByTestId('today-pmc').locator('.uplot canvas').first()).toBeVisible();
     await expect(page.getByTestId('today-ramp').locator('.uplot canvas').first()).toBeVisible();
-    await expect(
-      page.getByTestId('today-efficiency').locator('.uplot canvas').first(),
-    ).toBeVisible();
     await expect(page.getByTestId('share-week')).toHaveCount(8);
-    await expect(page.getByTestId('power-row')).toHaveCount(5);
-    expect(await page.locator('[data-testid="calendar"] rect.cell').count()).toBe(365);
+    await expect(page.getByTestId('today-week-story').getByTestId('day')).toHaveCount(7);
+    // Nach Verlauf umgezogen (T44).
+    for (const id of ['today-adherence', 'today-efficiency', 'today-power', 'today-calendar']) {
+      await expect(page.getByTestId(id)).toHaveCount(0);
+    }
     // Die Legende der Bibliothek ("Datum: ...:·") erscheint nirgends.
     await expect(page.locator('.u-legend')).toHaveCount(0);
     await shot(page, `00-heute-${lang}`);
@@ -174,10 +193,23 @@ for (const lang of ['de', 'en'] as const) {
     await expect(page.getByTestId('progress-year').locator('.uplot canvas').first()).toBeVisible();
     await page.locator('[data-testid="progress-metric"] button[data-value="distance"]').click();
     await expect(page.getByTestId('lead')).toContainText('km');
+    // Belastungskalender seit T44 hier statt auf Heute.
+    const calendar = page.getByTestId(text.dash.moved[2][0]);
+    await expect(calendar.locator('.section-label')).toHaveText(text.dash.moved[2][1]);
+    expect(await calendar.locator('[data-testid="calendar"] rect.cell').count()).toBe(365);
     await shot(page, `01b-fortschritt-${lang}`);
 
     // 1c. Leistung (T33): Kurve gezeichnet, Tabelle der Eckdauern, Zeitraum umschaltbar.
     await page.getByTestId('tab-history-performance').click();
+    // Effizienz und Leistungskurve der letzten 90 Tage oben (seit T44).
+    for (const [id, label] of text.dash.moved.slice(0, 2)) {
+      await expect(page.getByTestId(id).locator('.section-label')).toHaveText(label);
+      await expect(page.getByTestId(id).locator('.section-statement')).not.toBeEmpty();
+    }
+    await expect(
+      page.getByTestId('dash-efficiency').locator('.uplot canvas').first(),
+    ).toBeVisible();
+    await expect(page.getByTestId('power-row')).toHaveCount(5);
     await expect(page.getByTestId('perf-curve').locator('.uplot canvas').first()).toBeVisible();
     await expect(page.getByTestId('perf-row')).toHaveCount(12);
     // T37: fünf Strecken von 1 km bis Marathon.
@@ -554,6 +586,35 @@ for (const lang of ['de', 'en'] as const) {
     await page.keyboard.press('Control+k');
     await expect(drawer).toBeHidden();
     await expect(page.getByTestId('nav-coach')).toHaveAttribute('aria-expanded', 'false');
+  });
+}
+
+for (const lang of ['de', 'en'] as const) {
+  test(`Tagesentscheidung und Erkenntnisse öffnen den Coach, ohne zu senden (${lang})`, async ({
+    page,
+  }) => {
+    await page.goto('/?dashboard=low&decision=lighten');
+    if (lang === 'en') await toEnglish(page);
+    const decision = page.getByTestId('today-decision');
+    await expect(decision).toHaveAttribute('data-state', 'lighten');
+    await expect(page.getByTestId('decision-rules')).toContainText('R12');
+    // Alternative zeigt Einzelheiten, ändert nichts und öffnet nichts.
+    await page.getByTestId('decision-alt-planned').click();
+    await expect(page.getByTestId('decision-alt-detail')).toBeVisible();
+    await expect(page.getByTestId('coach-drawer')).toHaveAttribute('data-open', 'false');
+
+    const row = page.locator('[data-testid="insight"][data-code="readiness.low"]');
+    await row.getByRole('button').click();
+    await expect(page.getByTestId('coach-drawer')).toHaveAttribute('data-open', 'true');
+    await expect(page.getByTestId('coach-context')).toContainText(
+      lang === 'de' ? 'Heute' : 'Today',
+    );
+    await expect(page.getByTestId('coach-message')).toHaveCount(0);
+    await page.getByTestId('coach-close').click();
+    await decision.locator('button.primary').click();
+    await expect(page.getByTestId('coach-drawer')).toHaveAttribute('data-open', 'true');
+    await expect(page.getByTestId('coach-message')).toHaveCount(0);
+    await shot(page, `13-heute-entscheidung-coach-${lang}`);
   });
 }
 
