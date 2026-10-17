@@ -906,6 +906,39 @@ pub struct DashLoadDay {
     pub load: f64,
 }
 
+/// Eine Einheit der Tagesentscheidung (SPEC 8.7). `kind` ist `planned`, `lighter`, `shorter`
+/// oder `harder`; `template_id` stammt aus dem Plan oder dem Vorlagenkatalog.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DashVariant {
+    pub kind: String,
+    pub sport: PlanSport,
+    pub template_id: String,
+    pub duration_min: u32,
+    pub hard: bool,
+    pub planned_load: f64,
+}
+
+/// Tagesentscheidung (T44, SPEC 8.7): nur Codes und Vorlagen, Texte entstehen in der Oberfläche.
+/// `state` ist ein Code `decision.*`, `reasons` Codes `decision.reason.*`, `rules` Regelcodes
+/// (`R05`, `R10`, `R12`), `missing` die fehlenden Eingänge (`readiness`, `form`, `plan_context`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DashDecision {
+    pub state: String,
+    /// Empfohlene Einheit. Leer bei `no_plan`, `rest` und bei `lighten` ohne passende lockere
+    /// Vorlage im Katalog.
+    pub main: Option<DashVariant>,
+    pub alternatives: Vec<DashVariant>,
+    pub reasons: Vec<String>,
+    pub rules: Vec<String>,
+    pub missing: Vec<String>,
+}
+
+/// Eine Coach-Erkenntnis: Zustandscode einer Kennzahl (`metrics::insights::rank_insights`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DashInsight {
+    pub code: String,
+}
+
 /// Alles, was "Heute" zeigt, in einem Aufruf.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Dashboard {
@@ -925,6 +958,10 @@ pub struct Dashboard {
     pub readiness: DashReadiness,
     /// Last je Tag der letzten 365 Tage, nur Tage mit zählender Last.
     pub load_days: Vec<DashLoadDay>,
+    /// Was heute ansteht und warum (T44).
+    pub decision: DashDecision,
+    /// Höchstens drei Erkenntnisse, Warnungen vor positiven Trends (T44).
+    pub insights: Vec<DashInsight>,
 }
 
 // --- Garmin (T23, SPEC 5.6) ------------------------------------------------------------------

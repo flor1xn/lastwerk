@@ -25,18 +25,25 @@ use lastwerk_core::metrics::efficiency::{
     EF_WINDOW_DAYS, EfPoint, EfSession, ef_change_percent, ef_points, ef_rolling_mean,
     ef_rolling_series, ef_trend, ef_trend_code,
 };
-use lastwerk_core::metrics::form::form_state;
+use lastwerk_core::metrics::form::{FormState, form_state};
+use lastwerk_core::metrics::insights::rank_insights;
 use lastwerk_core::metrics::power_curve::{compare_power_curves, power_curve_trend_code};
 use lastwerk_core::metrics::ramp::{ctl_ramp, ramp_series, ramp_state};
-use lastwerk_core::metrics::readiness::{ReadinessDeviation, readiness_state, recovery_deviation};
-use lastwerk_core::plan::{Plan, RecoveryDay, Rules, reason_keys};
+use lastwerk_core::metrics::readiness::{
+    ReadinessDeviation, ReadinessState, readiness_state, recovery_deviation,
+};
+use lastwerk_core::plan::{
+    Plan, PlanContext, RecoveryDay, Rules, TemplateCatalog, TodayDecision, TodayInput, Variant,
+    VariantKind, reason_keys, today_decision,
+};
 use lastwerk_core::{BestPower, DailyLoad, PmcPoint, Sport, pmc};
 use lastwerk_store::{ActivityRecord, RecoveryDayRecord, Store, monday_of};
 
 use crate::dto::{
-    DashAdherence, DashDistribution, DashEfPoint, DashEfficiency, DashForm, DashLoadDay, DashPlan,
-    DashPowerCurve, DashPowerDuration, DashRamp, DashRampPoint, DashReadiness, DashRecoveryPoint,
-    DashRecoveryValue, DashWeekAdherence, DashWeekShare, Dashboard, PmcPointDto,
+    DashAdherence, DashDecision, DashDistribution, DashEfPoint, DashEfficiency, DashForm,
+    DashInsight, DashLoadDay, DashPlan, DashPowerCurve, DashPowerDuration, DashRamp, DashRampPoint,
+    DashReadiness, DashRecoveryPoint, DashRecoveryValue, DashVariant, DashWeekAdherence,
+    DashWeekShare, Dashboard, PmcPointDto,
 };
 use crate::error::{AppError, Result};
 use crate::service::parse_date;
@@ -97,7 +104,7 @@ fn round_point(date: NaiveDate, load: f32, p: &PmcPoint) -> PmcPointDto {
 /// Zusammenstellung für "Heute". `today` ist der lokale Tag des Nutzers.
 pub fn dashboard(store: &Store, today: &str) -> Result<Dashboard> {
     let today = parse_date(today)?;
-    let (rules, _) = planning::load_rules().map_err(|_| AppError::new("internal"))?;
+    let (rules, catalog) = planning::load_rules().map_err(|_| AppError::new("internal"))?;
     let plan = store.active_plan()?;
 
     let curve = form_curve(store, today, plan.as_ref(), &rules)?;
@@ -107,6 +114,40 @@ pub fn dashboard(store: &Store, today: &str) -> Result<Dashboard> {
         .filter(|a| a.is_primary)
         .collect();
 
+    let ramp = ramp_block(&curve.full, today, &rules);
+    let distribution = distribution_block(store, &activities, today, &rules)?;
+    let adherence = adherence_block(store, plan.as_ref(), today)?;
+    let efficiency = efficiency_block(&activities, today);
+    let power_curve = power_curve_block(store, &activities, today)?;
+    let (readiness, readiness_now) = readiness_block(store, plan.as_ref(), today, &rules)?;
+
+    let decision = decision_block(
+        store,
+        plan.as_ref(),
+        today,
+        readiness_now,
+        curve.form_state,
+        &rules,
+        catalog,
+    );
+    // Erkenntnisse aus genau den Codes, die die Abschnitte schon zeigen (SPEC 8.7).
+    let power_summary = power_curve_summary(&power_curve.durations);
+    let mut codes: Vec<&str> = vec![
+        ramp.state.as_str(),
+        distribution.state.as_str(),
+        adherence.state.as_str(),
+        efficiency.trend.as_str(),
+        power_summary,
+        readiness.state.as_str(),
+    ];
+    if let Some(f) = &curve.form {
+        codes.push(f.state.as_str());
+    }
+    let insights = rank_insights(&codes)
+        .into_iter()
+        .map(|c| DashInsight { code: c.to_owned() })
+        .collect();
+
     Ok(Dashboard {
         today: today.to_string(),
         form: curve.form,
@@ -114,20 +155,113 @@ pub fn dashboard(store: &Store, today: &str) -> Result<Dashboard> {
         pmc_first_load_date: curve.first_load_date,
         projection: curve.projection,
         plan: plan.as_ref().and_then(dash_plan),
-        ramp: ramp_block(&curve.full, today, &rules),
-        distribution: distribution_block(store, &activities, today, &rules)?,
-        adherence: adherence_block(store, plan.as_ref(), today)?,
-        efficiency: efficiency_block(&activities, today),
-        power_curve: power_curve_block(store, &activities, today)?,
-        readiness: readiness_block(store, plan.as_ref(), today, &rules)?,
+        ramp,
+        distribution,
+        adherence,
+        efficiency,
+        power_curve,
+        readiness,
         load_days: load_days_block(store, today)?,
+        decision,
+        insights,
     })
+}
+
+// --- Tagesentscheidung (T44, SPEC 8.7) -------------------------------------------------
+
+/// Liegt `today` in einer Woche des Plans?
+fn plan_covers(plan: &Plan, today: NaiveDate) -> bool {
+    plan.weeks
+        .iter()
+        .any(|w| w.week_start <= today && today < w.week_start + TimeDelta::days(7))
+}
+
+fn decision_block(
+    store: &Store,
+    plan: Option<&Plan>,
+    today: NaiveDate,
+    readiness: ReadinessState,
+    form: Option<FormState>,
+    rules: &Rules,
+    catalog: TemplateCatalog,
+) -> DashDecision {
+    // Der Kontext kostet einige Abfragen (Historie, Verfügbarkeit, Erholung). Er wird nur
+    // gebaut, wenn der Plan heute überhaupt gilt; ob die härtere Variante geprüft wird,
+    // entscheidet `core`. Lässt er sich nicht bilden, fehlt nur die härtere Variante
+    // (`missing` enthält dann `plan_context`).
+    let ctx: Option<PlanContext> = plan.filter(|p| plan_covers(p, today)).and_then(|p| {
+        let mut notes = Vec::new();
+        planning::validation_context(store, p, rules, catalog.clone(), &mut notes).ok()
+    });
+    let decision = today_decision(
+        &TodayInput {
+            date: today,
+            plan,
+            ctx: ctx.as_ref(),
+            readiness,
+            form,
+            catalog: &catalog,
+        },
+        rules,
+    );
+    dash_decision(&decision)
+}
+
+const fn variant_kind_code(kind: VariantKind) -> &'static str {
+    match kind {
+        VariantKind::Planned => "planned",
+        VariantKind::Lighter => "lighter",
+        VariantKind::Shorter => "shorter",
+        VariantKind::Harder => "harder",
+    }
+}
+
+fn dash_variant(v: &Variant) -> DashVariant {
+    DashVariant {
+        kind: variant_kind_code(v.kind).to_owned(),
+        sport: v.sport,
+        template_id: v.template_id.clone(),
+        duration_min: v.duration_min,
+        hard: v.hard,
+        planned_load: r1(f64::from(v.planned_load)),
+    }
+}
+
+fn dash_decision(d: &TodayDecision) -> DashDecision {
+    DashDecision {
+        state: d.state.code().to_owned(),
+        main: d.main.as_ref().map(dash_variant),
+        alternatives: d.alternatives.iter().map(dash_variant).collect(),
+        reasons: d.reasons.iter().map(|r| r.code().to_owned()).collect(),
+        rules: d.rules.iter().map(|r| (*r).to_owned()).collect(),
+        missing: d.missing.iter().map(|m| (*m).to_owned()).collect(),
+    }
+}
+
+/// Gesamturteil der Leistungskurve für die Erkenntnisse: dieselbe Zählung wie
+/// `powerCurveSummary` in `app/ui/src/lib/dashboard.ts` (überwiegen die gestiegenen Dauern,
+/// gilt "gestiegen"). Die Deutung je Dauer kommt aus `core`, hier wird nur gezählt.
+fn power_curve_summary(durations: &[DashPowerDuration]) -> &'static str {
+    let count = |code: &str| durations.iter().filter(|d| d.trend == code).count();
+    let known = durations.len() - count("power_curve.no_data");
+    let (rising, falling) = (count("power_curve.rising"), count("power_curve.falling"));
+    if known == 0 {
+        "power_curve.no_data"
+    } else if rising > falling {
+        "power_curve.rising"
+    } else if falling > rising {
+        "power_curve.falling"
+    } else {
+        "power_curve.flat"
+    }
 }
 
 // --- Form und Prognose ---------------------------------------------------------------
 
 struct FormCurve {
     form: Option<DashForm>,
+    /// Formzustand des letzten Tages, Eingang der Tagesentscheidung.
+    form_state: Option<FormState>,
     history: Vec<PmcPointDto>,
     projection: Vec<PmcPointDto>,
     first_load_date: Option<String>,
@@ -148,6 +282,7 @@ fn form_curve(
         // eine Aussage, die niemand gemessen hat (SPEC 5.4).
         return Ok(FormCurve {
             form: None,
+            form_state: None,
             history: Vec::new(),
             projection: Vec::new(),
             first_load_date: None,
@@ -191,6 +326,7 @@ fn form_curve(
         .filter(|p| p.date > today)
         .map(|p| round_point(p.date, load_on(p.date), p))
         .collect();
+    let state_now = full.last().map(|p| form_state(p.tsb, rules));
     let form = full.last().map(|p| DashForm {
         tsb: r1(f64::from(p.tsb)),
         ctl: r1(f64::from(p.ctl)),
@@ -199,6 +335,7 @@ fn form_curve(
     });
     Ok(FormCurve {
         form,
+        form_state: state_now,
         history,
         projection,
         first_load_date: Some(first.to_string()),
@@ -483,7 +620,7 @@ fn readiness_block(
     plan: Option<&Plan>,
     today: NaiveDate,
     rules: &Rules,
-) -> Result<DashReadiness> {
+) -> Result<(DashReadiness, ReadinessState)> {
     let records = store.recovery_days(day_before(today, RECOVERY_LOOKBACK_DAYS), today)?;
     let days: Vec<RecoveryDay> = records.iter().map(RecoveryDay::from).collect();
     let dev: Option<ReadinessDeviation> = recovery_deviation(&days, today, rules);
@@ -505,7 +642,7 @@ fn readiness_block(
             sleep_h: opt1(sleep_hours(r)),
         })
         .collect();
-    Ok(DashReadiness {
+    let dash = DashReadiness {
         state: state.code().to_owned(),
         last_date: records.last().map(|r| r.date.to_string()),
         date: dev.as_ref().map(|d| d.date.to_string()),
@@ -530,7 +667,8 @@ fn readiness_block(
             .map(f64::from),
         plan_adjusted: plan_adjusted(plan, today),
         series,
-    })
+    };
+    Ok((dash, state))
 }
 
 // --- Belastungskalender --------------------------------------------------------------

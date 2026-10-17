@@ -586,3 +586,135 @@ fn recovery_page_shows_baseline_floor_low_days_and_load() {
     assert_eq!(hrv.recent, None);
     assert!(lastwerk_app::service::recovery::recovery(&store, "2026-05-31", 14).is_err());
 }
+
+// --- Tagesentscheidung und Erkenntnisse (T44, SPEC 8.7) ---------------------------------
+
+/// Setzt am Tag `day` des aktiven Plans genau eine harte Radeinheit (Schwelle 2x20, 75 min).
+/// Der Planer der Fixtures erzeugt mit der kurzen Historie keine harte Einheit.
+fn put_hard_session(store: &mut Store, day: NaiveDate) {
+    use lastwerk_core::plan::{PlanSession, Slot};
+    let mut plan = store.load_plan(PLAN_ID).unwrap().unwrap();
+    let d = plan
+        .weeks
+        .iter_mut()
+        .flat_map(|w| w.days.iter_mut())
+        .find(|d| d.date == day)
+        .expect("Tag im Plan");
+    d.sessions = vec![PlanSession {
+        slot: Slot::Am,
+        sport: PlanSport::Cycling,
+        template_id: "bike.threshold.2x20".into(),
+        duration_min: 75,
+        planned_load: 90.0,
+        hard: true,
+        rpe: None,
+        reason_keys: Vec::new(),
+    }];
+    store.save_plan(&plan, PlanStatus::Active).unwrap();
+}
+
+#[test]
+fn low_hrv_before_a_hard_session_lightens_it_without_changing_the_plan() {
+    let mut store = with_active_plan("decision-lighten");
+    let today = date(2026, 6, 3);
+    put_hard_session(&mut store, today);
+    // Basis HRV 60 ms an sieben Tagen, heute 42 ms: (60 - 42) / 60 = 0,30, über der Schwelle
+    // von R12 (0,15, Faustregel).
+    let mut days: Vec<RecoveryDayRecord> = (1..=7)
+        .map(|n| {
+            recovery(
+                today - chrono::TimeDelta::days(n),
+                Some(60.0),
+                None,
+                Some(8.0),
+            )
+        })
+        .collect();
+    days.push(recovery(today, Some(42.0), None, Some(8.0)));
+    store.upsert_recovery_days(&days).unwrap();
+    let before = store.load_plan(PLAN_ID).unwrap().unwrap();
+
+    let d = get(&store, "2026-06-03");
+    assert_eq!(d.readiness.state, "readiness.low");
+    let dec = &d.decision;
+    assert_eq!(dec.state, "decision.lighten");
+    let main = dec
+        .main
+        .as_ref()
+        .expect("lockere Radvorlage mit passendem Fenster");
+    assert_eq!(main.kind, "lighter");
+    assert!(!main.hard);
+    assert_eq!(main.sport, PlanSport::Cycling);
+    // Gleiche Dauer wie geplant, Vorlage aus dem Katalog.
+    assert_eq!(main.duration_min, 75);
+    assert_eq!(dec.alternatives.len(), 1);
+    assert_eq!(dec.alternatives[0].kind, "planned");
+    assert_eq!(dec.alternatives[0].template_id, "bike.threshold.2x20");
+    assert!(
+        dec.reasons
+            .contains(&"decision.reason.readiness_low".to_owned())
+    );
+    assert!(dec.rules.contains(&"R12".to_owned()));
+    // Die Entscheidung schreibt nichts in den Plan.
+    assert_eq!(store.load_plan(PLAN_ID).unwrap().unwrap(), before);
+    // Bereitschaft niedrig steht unter den Erkenntnissen.
+    assert!(d.insights.iter().any(|i| i.code == "readiness.low"));
+}
+
+#[test]
+fn without_a_plan_the_decision_is_no_plan_and_insights_stay_short() {
+    let store = with_fixtures("decision-none");
+    let d = get(&store, "2026-05-31");
+    assert_eq!(d.decision.state, "decision.no_plan");
+    assert!(d.decision.main.is_none() && d.decision.alternatives.is_empty());
+    assert!(d.insights.len() <= 3);
+
+    let empty = Store::open_in_memory().unwrap();
+    let d = get(&empty, "2026-06-10");
+    assert_eq!(d.decision.state, "decision.no_plan");
+    assert!(d.insights.is_empty(), "ohne Daten keine Erkenntnis");
+}
+
+#[test]
+fn a_day_without_session_is_rest_and_missing_inputs_are_named() {
+    let mut store = with_active_plan("decision-rest");
+    let today = date(2026, 6, 3);
+    let mut plan = store.load_plan(PLAN_ID).unwrap().unwrap();
+    for d in plan.weeks.iter_mut().flat_map(|w| w.days.iter_mut()) {
+        if d.date == today {
+            d.sessions.clear();
+        }
+    }
+    store.save_plan(&plan, PlanStatus::Active).unwrap();
+    let d = get(&store, "2026-06-03");
+    assert_eq!(d.decision.state, "decision.rest");
+    assert!(d.decision.main.is_none());
+
+    // Ohne Erholungswerte steht die Bereitschaft in `missing`, ein harter Tag bleibt geplant.
+    put_hard_session(&mut store, date(2026, 6, 4));
+    let d = get(&store, "2026-06-04");
+    assert!(d.decision.missing.contains(&"readiness".to_owned()));
+    assert_ne!(d.decision.state, "decision.lighten");
+}
+
+#[test]
+fn insights_are_ranked_codes_of_the_sections_and_at_most_three() {
+    let store = with_active_plan("decision-insights");
+    // Am Sonntag nach einer Woche ohne Training ist der Plan unterfüllt.
+    let d = get(&store, "2026-06-07");
+    assert_eq!(d.adherence.state, "adherence.under");
+    assert!(d.insights.len() <= 3);
+    assert!(d.insights.iter().any(|i| i.code == "adherence.under"));
+    let shown = [
+        d.ramp.state.as_str(),
+        d.distribution.state.as_str(),
+        d.adherence.state.as_str(),
+        d.efficiency.trend.as_str(),
+        d.readiness.state.as_str(),
+        d.form.as_ref().map_or("", |f| f.state.as_str()),
+        "power_curve.rising",
+    ];
+    for i in &d.insights {
+        assert!(shown.contains(&i.code.as_str()), "{}", i.code);
+    }
+}
