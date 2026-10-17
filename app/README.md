@@ -1,6 +1,6 @@
 # app
 
-Desktop-Oberfläche: Tauri 2 mit Svelte 5, Vite und TypeScript. Ruhige Gestaltung nach SPEC 5.5, dunkel zuerst, Deutsch und Englisch. Ansichten: Heute (Start), Kalender (T35), Wochenübersicht, Fortschritt (T32), Leistung (T33), Erholung (T34), Plan, Aktivitätsliste, Detail ohne Karte, Einstellungen. "Heute" ist seit T25 ein Dashboard (Befehl `get_dashboard`). Die Attrappe liefert dafür mit `?dashboard=rich|low|sparse|empty|extreme|gaps` im Browser verschiedene erfundene Datenlagen für die Sichtprüfung.
+Desktop-Oberfläche: Tauri 2 mit Svelte 5, Vite und TypeScript. Ruhige Gestaltung nach SPEC 5.5, dunkel zuerst, Deutsch und Englisch. Navigation seit T42 mit drei Hauptpunkten und Einstellungen: Heute (Start), Plan und Verlauf. Der Verlauf hat die Reiter Kalender (Monat oder Woche), Aktivitäten (Liste, Detail ohne Karte an derselben Stelle), Fortschritt (T32), Leistung (T33) und Körper (Erholung T34 oder Gesundheit T39). Die Einstellungen haben die Reiter Daten und Garmin, Coach, Profil und Schwellen sowie App (Sprache, Thema, Update, Version). "Heute" ist seit T25 ein Dashboard (Befehl `get_dashboard`). Die Attrappe liefert dafür mit `?dashboard=rich|low|sparse|empty|extreme|gaps` im Browser verschiedene erfundene Datenlagen für die Sichtprüfung.
 
 | Ordner | Inhalt |
 |---|---|
@@ -49,5 +49,7 @@ Tauri braucht WebKitGTK und GTK: `libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-de
 Die Planung nutzt `lastwerk-cli` als Bibliothek (Kontext aus der Datenbank, Erzeugung, Schemaprüfung, Leitplanken, ICS), die App rechnet und prüft also genau wie `lastwerk plan` und `lastwerk validate`. Dateidialoge für ICS, Plan-JSON, Backup, Wiederherstellung und "FIT-Dateien hinzufügen" öffnet der Rust-Befehl, die Oberfläche bekommt nie einen Pfad und hat kein Dateisystem-Plugin. Texte aus Plänen und Erklärungen zeigt die Oberfläche als Text, nie als HTML. Im Browser mit der Attrappe protokolliert `MockBackend.calls` die Exporte (im Browser als `window.__lastwerkMockCalls`).
 
 ## Neue Befehle oder Ansichten
+
+Eine neue Seite wird ein Reiter im Verlauf oder in den Einstellungen (`HISTORY_TABS` oder `SETTINGS_TABS` in `ui/src/lib/state.ts`, Texte `ui.history.tab.*` oder `ui.settings.tab.*`), kein neuer Punkt in der Seitenleiste (SPEC 5.5, T42). Verweise zwischen Seiten laufen über `openHistory`, `openSettings` und `openActivity`.
 
 Ein neuer Befehl steht an vier Stellen: Funktion in `src-tauri/src/lib.rs` samt `COMMAND_NAMES` und `generate_handler!`, Befehlsliste in `src-tauri/build.rs`, Berechtigung `allow-<befehl>` in `src-tauri/capabilities/default.json`, Methode im `Backend` mit Umsetzung in `tauri.ts` und `mock.ts`. Ein Test prüft, dass die drei Rust-Stellen übereinstimmen. Texte kommen nur aus `catalog/locales/de.json` und `en.json` (`sh scripts/check-i18n.sh`).
