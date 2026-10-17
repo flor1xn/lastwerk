@@ -1,7 +1,8 @@
 {
   "de": {
     "1.1.1": [
-      "Der Coach ist jetzt aus jeder Ansicht erreichbar: Knopf \"Coach\" in der Seitenleiste oder Strg+K öffnet ein Seitenfenster neben dem Inhalt. Der Coach weiß, welche Seite du ansiehst, und zeigt das in der Zeile \"Ich sehe\". Das Gespräch bleibt beim Schließen und beim Wechsel der Seite erhalten."
+      "Der Coach ist jetzt aus jeder Ansicht erreichbar: Knopf \"Coach\" in der Seitenleiste oder Strg+K öffnet ein Seitenfenster neben dem Inhalt. Der Coach weiß, welche Seite du ansiehst, und zeigt das in der Zeile \"Ich sehe\". Das Gespräch bleibt beim Schließen und beim Wechsel der Seite erhalten.",
+      "Heute beginnt mit einer Entscheidung: was heute ansteht und warum, mit Gründen, Regeln und Alternativen zum Ansehen. Darunter bis zu drei Erkenntnisse, die du mit einem Klick mit dem Coach besprichst, und eine Wochen-Story mit erledigt gegen geplant und dem Ausblick auf die nächsten sieben Tage. Effizienz und Leistungskurve stehen jetzt im Verlauf unter Leistung, der Belastungskalender unter Fortschritt."
     ],
     "1.1.0": [
       "Schwellenwerte kommen jetzt aus Garmin: FTP, Laktatschwelle, maximale Herzfrequenz und Ruhepuls mit dem Datum aus Garmin, dazu Geschlecht und Geburtsjahr. Frühere Aktivitäten bekommen damit eine Last, ohne dass du etwas einträgst. Eigene Werte gehen vor, die Einstellungen zeigen je Wert Herkunft und Datum.",
@@ -41,7 +42,8 @@
   },
   "en": {
     "1.1.1": [
-      "The coach is now available from every view: the \"Coach\" button in the sidebar or Ctrl+K opens a side panel next to the content. The coach knows which page you are looking at and shows it in the \"I see\" line. The conversation is kept when you close the panel or switch pages."
+      "The coach is now available from every view: the \"Coach\" button in the sidebar or Ctrl+K opens a side panel next to the content. The coach knows which page you are looking at and shows it in the \"I see\" line. The conversation is kept when you close the panel or switch pages.",
+      "Today starts with a decision: what is up today and why, with reasons, rules and alternatives to look at. Below are up to three insights you can discuss with the coach in one click, and a week story with done versus planned and a look at the next seven days. Efficiency and the power curve now live in History under Performance, the load calendar under Progress."
     ],
     "1.1.0": [
       "Thresholds now come from Garmin: FTP, lactate threshold, maximum heart rate and resting heart rate with Garmin's date, plus sex and year of birth. Earlier activities get a load without you entering anything. Your own values take precedence; the settings show the source and date of each value.",
