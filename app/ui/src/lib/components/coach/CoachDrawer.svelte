@@ -69,11 +69,25 @@
     }
   }
 
+  // Esc schließt auch, wenn der Fokus nirgends steht (etwa nachdem ein Knopf im Fenster
+  // verschwunden ist). Steht er im Inhalt daneben, gehört Esc dem Inhalt: Das Fenster ist nicht
+  // modal.
+  function onWindowKeydown(e: KeyboardEvent) {
+    if (!$coachOpen || e.key !== 'Escape' || e.defaultPrevented) return;
+    const active = document.activeElement;
+    if (active === null || active === document.body) {
+      e.preventDefault();
+      closeCoach();
+    }
+  }
+
   const contextKey = $derived(`ui.coach.context.view.${$coachFocus.view}`);
   const topicKey = $derived(
     $coachFocus.topic ? `ui.coach.context.topic.${$coachFocus.topic.split('.')[0]}` : null,
   );
 </script>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 {#if $coachOpen}
   <!-- Nur unter 1100 px sichtbar (CSS): Klick daneben schließt wie Esc. -->
