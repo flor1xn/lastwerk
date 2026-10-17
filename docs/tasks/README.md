@@ -53,7 +53,7 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T41](T41-einrichtung-neu.md) | Einrichtung neu, in drei Schritten zum fertigen Plan | nach 1.0 | erledigt | T39, T40 | ja, **Live manuell** | app, catalog, docs |
 | [T42](T42-navigation-verlauf.md) | Navigation radikal aufräumen, Verlauf und Einstellungen in Reitern | nach 1.0 | erledigt | T41 | ja | app/ui, catalog, docs |
 | [T43](T43-coach-seitenfenster.md) | Coach als globales Seitenfenster mit Ansichtskontext | nach 1.0 | in Prüfung | T42 | ja, Live manuell | crates/coach, app, catalog, docs |
-| [T44](T44-tagesentscheidung.md) | Tagesentscheidung, Coach-Erkenntnisse und Wochen-Story auf Heute | nach 1.0 | in Arbeit | T41 (Teil A), T43 (Teil B) | ja | crates/core, app, catalog, docs |
+| [T44](T44-tagesentscheidung.md) | Tagesentscheidung, Coach-Erkenntnisse und Wochen-Story auf Heute | nach 1.0 | erledigt | T41 (Teil A), T43 (Teil B) | ja | crates/core, app, catalog, docs |
 | [T45](T45-coach-strom.md) | Coach-Antworten als Strom | nach 1.0 | offen | T43 | ja, Live manuell | crates/coach, app |
 
 ## Reihenfolge
