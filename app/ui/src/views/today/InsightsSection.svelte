@@ -9,11 +9,19 @@
   // `metrics::insights` (Faustregel). Jede Zeile öffnet den Coach mit Thema und vorbereiteter
   // Frage; gesendet wird nur, was der Nutzer selbst abschickt.
   let { dash }: { dash: Dashboard } = $props();
+
+  // Ohne Last und ohne Erholungswerte wäre "nichts fällt auf" eine Aussage über Daten, die es
+  // nicht gibt; dann sagt der Abschnitt, dass sie fehlen.
+  const noData = $derived(dash.form === null && dash.readiness.state === 'readiness.no_data');
 </script>
 
 <Section
   label={$t('ui.insight.title')}
-  statement={dash.insights.length === 0 ? $t('ui.insight.empty') : undefined}
+  statement={dash.insights.length > 0
+    ? undefined
+    : noData
+      ? $t('ui.insight.no_data')
+      : $t('ui.insight.empty')}
   testid="today-insights"
 >
   {#if dash.insights.length > 0}

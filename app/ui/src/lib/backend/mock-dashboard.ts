@@ -16,7 +16,9 @@
 // (rich: wie geplant mit härterer Alternative, low: leichter, sparse: Bereitschaft fehlt,
 // extreme: leichter ohne passende Vorlage, gaps: locker bleiben), ohne Plan `no_plan`.
 // `?decision=<zustand>` erzwingt einen Zustand auch ohne Plan (Sichtprüfung), dazu
-// `lighten_empty` für "leichter" ohne Empfehlung.
+// `lighten_empty` für "leichter" ohne Empfehlung und `worst` für den ungünstigsten Fall der
+// Sichtprüfung (break-ui): Vorlage, die der Katalog nicht mehr kennt (der Name erscheint als
+// langer Schlüssel ohne Umbruchstelle), zwei Gründe, zwei Regeln, fehlender Plankontext.
 
 import { addDays, daysBetween, mondayOf } from '../dates';
 import type {
@@ -59,6 +61,7 @@ export const DECISION_OVERRIDES = [
   'lighten_empty',
   'keep_easy',
   'as_planned',
+  'worst',
 ] as const;
 export type DecisionOverride = (typeof DECISION_OVERRIDES)[number];
 
@@ -435,6 +438,16 @@ function fixedDecision(state: DecisionOverride, missing: DashDecision['missing']
         alternatives: [variant('planned', 'swim.threshold.sets', 75, true, 88)],
         reasons: ['decision.reason.readiness_low', 'decision.reason.form_overloaded'],
         rules: ['R10', 'R12'],
+      };
+    case 'worst':
+      return {
+        ...base,
+        state: 'decision.lighten',
+        main: variant('lighter', 'bike.endurance.steady_winter_block_extended', 75, false, 52),
+        alternatives: [variant('planned', 'bike.threshold.2x20', 75, true, 94)],
+        reasons: ['decision.reason.readiness_low', 'decision.reason.form_overloaded'],
+        rules: ['R10', 'R12'],
+        missing: ['plan_context'],
       };
     case 'keep_easy':
       return {

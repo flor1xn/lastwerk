@@ -221,6 +221,12 @@
     overflow-wrap: anywhere;
   }
 
+  .reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .missing {
     color: var(--muted);
     font-size: var(--fs-small);
