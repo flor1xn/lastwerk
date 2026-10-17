@@ -16,7 +16,8 @@
       "today": "Heute",
       "plan": "Plan",
       "history": "Verlauf",
-      "settings": "Einstellungen"
+      "settings": "Einstellungen",
+      "coach": "Coach"
     },
     "history": {
       "tabs_label": "Bereiche des Verlaufs",
@@ -553,7 +554,8 @@
       "projection": {
         "title": "Fitness, Ermüdung, Form der Planwochen",
         "hint": "Vorausberechnung aus den geplanten Tageslasten, Start am Vortag mit Fitness {ctl} und Ermüdung {atl}."
-      }
+      },
+      "talk_to_coach": "Mit dem Coach über den Plan sprechen"
     },
     "export": {
       "title": "Export und Sicherung",
@@ -929,6 +931,41 @@
         "title": "Bevor es losgeht",
         "text": "Deine Nachrichten und dein Plan mit gerundeten Kennzahlen gehen an das Modell {model} auf diesem Rechner. Nichts verlässt ihn, und nichts ändert sich, bevor du einen Vorschlag übernimmst. Was genau gesendet wird, siehst du jederzeit unter „Was sieht der Coach?“.",
         "accept": "Verstanden, Gespräch starten"
+      },
+      "drawer": {
+        "close": "Coach schließen",
+        "close_hint": "Schließen (Esc)",
+        "shortcut": "Coach öffnen oder schließen (Strg+K, am Mac Cmd+K)",
+        "kbd": "Strg K"
+      },
+      "context": {
+        "label": "Ich sehe: {where}",
+        "view": {
+          "today": "Heute",
+          "plan": "Plan",
+          "history_calendar": "Verlauf · Kalender",
+          "history_activities": "Verlauf · Aktivitäten",
+          "history_activity": "Verlauf · Aktivität",
+          "history_progress": "Verlauf · Fortschritt",
+          "history_performance": "Verlauf · Leistung",
+          "history_body": "Verlauf · Körper · {body}",
+          "settings": "Einstellungen"
+        },
+        "body": {
+          "recovery": "Erholung",
+          "health": "Gesundheit"
+        },
+        "topic": {
+          "ramp": "Thema Fitnessanstieg",
+          "readiness": "Thema Bereitschaft",
+          "form": "Thema Form",
+          "adherence": "Thema Planerfüllung",
+          "distribution": "Thema Intensitätsverteilung",
+          "decoupling": "Thema Entkopplung",
+          "efficiency": "Thema Effizienz",
+          "power_curve": "Thema Leistungskurve",
+          "decision": "Thema Tagesentscheidung"
+        }
       }
     },
     "migration": {

@@ -183,9 +183,9 @@ describe('Aufbau der Planansicht', () => {
     ]) {
       expect(within(fine).getByTestId(id)).toBeTruthy();
     }
-    // Planer und Gespräch stehen außerhalb.
+    // Der Planer steht außerhalb; das Gespräch liegt seit T43 im Seitenfenster des Coachs.
     expect(fine.contains(screen.getByTestId('planner'))).toBe(false);
-    expect(fine.contains(screen.getByTestId('coach'))).toBe(false);
+    expect(screen.queryByTestId('coach')).toBeNull();
   });
 
   it('zeigt Texte auch auf Englisch', async () => {

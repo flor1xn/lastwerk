@@ -16,7 +16,8 @@
       "today": "Today",
       "plan": "Plan",
       "history": "History",
-      "settings": "Settings"
+      "settings": "Settings",
+      "coach": "Coach"
     },
     "history": {
       "tabs_label": "History sections",
@@ -553,7 +554,8 @@
       "projection": {
         "title": "Fitness, fatigue, form of the plan weeks",
         "hint": "Forecast from the planned daily loads, starting the day before with fitness {ctl} and fatigue {atl}."
-      }
+      },
+      "talk_to_coach": "Talk to the coach about the plan"
     },
     "export": {
       "title": "Export and backup",
@@ -929,6 +931,41 @@
         "title": "Before you start",
         "text": "Your messages and your plan with rounded figures go to the model {model} on this computer. Nothing leaves it, and nothing changes until you apply a proposal. You can see exactly what is sent at any time under “What does the coach see?”.",
         "accept": "Understood, start the conversation"
+      },
+      "drawer": {
+        "close": "Close coach",
+        "close_hint": "Close (Esc)",
+        "shortcut": "Open or close the coach (Ctrl+K, Cmd+K on Mac)",
+        "kbd": "Ctrl K"
+      },
+      "context": {
+        "label": "I see: {where}",
+        "view": {
+          "today": "Today",
+          "plan": "Plan",
+          "history_calendar": "History · Calendar",
+          "history_activities": "History · Activities",
+          "history_activity": "History · Activity",
+          "history_progress": "History · Progress",
+          "history_performance": "History · Performance",
+          "history_body": "History · Body · {body}",
+          "settings": "Settings"
+        },
+        "body": {
+          "recovery": "Recovery",
+          "health": "Health"
+        },
+        "topic": {
+          "ramp": "Topic fitness ramp",
+          "readiness": "Topic readiness",
+          "form": "Topic form",
+          "adherence": "Topic plan adherence",
+          "distribution": "Topic intensity distribution",
+          "decoupling": "Topic decoupling",
+          "efficiency": "Topic efficiency",
+          "power_curve": "Topic power curve",
+          "decision": "Topic daily decision"
+        }
       }
     },
     "migration": {

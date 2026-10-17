@@ -35,6 +35,7 @@ import {
   type PlanListItem,
   type PlanStatus,
   type PlanningInputs,
+  type ChatFocus,
   type PromptPreview,
   type QuickPlanInput,
   type RestoreResult,
@@ -205,12 +206,12 @@ export class TauriBackend implements Backend {
     return call('coach_set_model', { model });
   }
 
-  coachPreview(message: string): Promise<PromptPreview> {
-    return call('coach_preview', { message });
+  coachPreview(message: string, focus: ChatFocus | null): Promise<PromptPreview> {
+    return call('coach_preview', { message, focus });
   }
 
-  coachChat(message: string): Promise<CoachReply> {
-    return call('coach_chat', { message });
+  coachChat(message: string, focus: ChatFocus | null): Promise<CoachReply> {
+    return call('coach_chat', { message, focus });
   }
 
   coachApply(proposalId: string): Promise<PlanDetail> {

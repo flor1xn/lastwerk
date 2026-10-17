@@ -38,10 +38,10 @@ describe('Text ist nie HTML (SPEC 9.5)', () => {
     expect(pkg).not.toMatch(/marked|markdown|remark|dompurify|sanitize/i);
 
     // Die Komponenten des Gesprächs setzen Antwort und Erklärung als Textknoten.
-    const panel = readFileSync(join(root, 'views/plan/CoachPanel.svelte'), 'utf8');
+    const panel = readFileSync(join(root, 'lib/components/coach/CoachChat.svelte'), 'utf8');
     expect(panel).toContain('{m.text}');
     expect(panel).toContain('{m.content}');
-    const card = readFileSync(join(root, 'views/plan/ProposalCard.svelte'), 'utf8');
+    const card = readFileSync(join(root, 'lib/components/coach/ProposalCard.svelte'), 'utf8');
     expect(card).toContain('{proposal.explanation}');
   });
 });

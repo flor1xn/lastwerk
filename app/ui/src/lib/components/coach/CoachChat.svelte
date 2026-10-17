@@ -1,55 +1,36 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { getBackend } from '../../lib/backend';
+  import { getBackend } from '../../backend';
+  import type { CoachStatus, PlanListItem, PromptPreview } from '../../backend/types';
+  import ErrorNote from '../ErrorNote.svelte';
+  import { COUNTER_FROM, MAX_MESSAGE_CHARS, ruleLabel } from '../../coach';
+  import { coachSession, type CoachMsg } from '../../coach-session.svelte';
+  import { errorKey } from '../../errors';
+  import { locale, t } from '../../i18n';
+  import { Loader } from '../../loader.svelte';
   import {
-    BackendError,
-    type CoachStatus,
-    type PlanDetail,
-    type PromptPreview,
-    type ProposalPreview,
-  } from '../../lib/backend/types';
-  import ErrorNote from '../../lib/components/ErrorNote.svelte';
-  import { COUNTER_FROM, MAX_MESSAGE_CHARS, ruleLabel, type ProposalState } from '../../lib/coach';
-  import { errorKey } from '../../lib/errors';
-  import { locale, t } from '../../lib/i18n';
-  import { Loader } from '../../lib/loader.svelte';
-  import { coachReleased, openSettings } from '../../lib/state';
+    bumpData,
+    coachFocus,
+    coachReleased,
+    dataVersion,
+    openSettings,
+    selectedPlanId,
+  } from '../../state';
   import ProposalCard from './ProposalCard.svelte';
 
-  // Gespräch mit dem lokalen Coach (T26, SPEC 9.7). Das Modell macht nur Vorschläge, die der
-  // Rust-Teil geprüft hat; übernommen wird erst auf "Übernehmen". Antworten sind Anzeigetext
-  // und erscheinen nur als Text, nie als HTML oder Markdown (SPEC 9.5). Verlauf und Vorschläge
-  // leben im Speicher der App, nicht in der Datenbank.
-  interface Props {
-    /** Es gibt einen Plan, über den man sprechen kann. */
-    hasPlan: boolean;
-    /** Ein Vorschlag wurde übernommen: der neue Plan ist aktiv. */
-    onapplied: (detail: PlanDetail) => void;
-  }
+  // Gespräch mit dem lokalen Coach (T26, SPEC 9.7), seit T43 im Seitenfenster aus jeder Ansicht.
+  // Das Modell macht nur Vorschläge, die der Rust-Teil geprüft hat; übernommen wird erst auf
+  // "Übernehmen". Antworten sind Anzeigetext und erscheinen nur als Text, nie als HTML oder
+  // Markdown (SPEC 9.5). Verlauf und Entwurf stehen in `coach-session.svelte.ts` und überstehen
+  // das Schließen des Fensters; mit jeder Nachricht geht der Fokus der Ansicht mit (nur Codes).
 
-  let { hasPlan, onapplied }: Props = $props();
-
-  interface Msg {
-    id: number;
-    role: 'user' | 'coach';
-    text: string;
-    rejected: string[];
-    proposal: ProposalPreview | null;
-    pstate: ProposalState;
-    perror: string | null;
-  }
-
+  const session = coachSession;
   const status = new Loader<CoachStatus>();
+  const plans = new Loader<PlanListItem[]>();
   let rechecking = $state(false);
-  let messages = $state<Msg[]>([]);
-  let draft = $state('');
-  let sending = $state(false);
-  let chatError = $state<string | null>(null);
+  let modelError = $state<string | null>(null);
   let listEl = $state<HTMLElement | null>(null);
   let inputEl = $state<HTMLTextAreaElement | null>(null);
-  let nextId = 1;
-  // Zählt Anfragen; eine abgebrochene Anfrage verliert ihre Nummer und wird ignoriert.
-  let token = 0;
 
   // Vorschau des Eingangs (F24).
   let seen = $state(false);
@@ -61,6 +42,16 @@
   $effect(() => {
     void status.run(() => getBackend().coachStatus());
   });
+
+  // Das Gespräch braucht einen aktiven Plan oder einen Entwurf, wie der Rust-Teil ihn wählt.
+  // Neu gelesen, wenn sich Daten ändern oder ein anderer Plan gewählt ist (etwa ein eben
+  // erzeugter).
+  $effect(() => {
+    void $dataVersion;
+    void $selectedPlanId;
+    void plans.run(() => getBackend().listPlans());
+  });
+  const hasPlan = $derived((plans.data ?? []).some((p) => p.status !== 'archived'));
 
   /** Zur Einrichtung in den Einstellungen (T29): Ollama einrichten, Modell wählen. */
   function openSetup() {
@@ -77,18 +68,19 @@
   }
 
   async function chooseModel(model: string) {
-    chatError = null;
+    modelError = null;
     try {
       status.data = await getBackend().coachSetModel(model);
     } catch (e) {
-      chatError = errorKey(e);
+      modelError = errorKey(e);
     }
   }
 
-  const count = $derived([...draft].length);
+  const count = $derived([...session.draft].length);
   const canSend = $derived(
-    hasPlan && !sending && draft.trim() !== '' && count <= MAX_MESSAGE_CHARS,
+    hasPlan && !session.sending && session.draft.trim() !== '' && count <= MAX_MESSAGE_CHARS,
   );
+  const chatError = $derived(modelError ?? session.error);
 
   function scrollDown() {
     void tick().then(() => {
@@ -97,112 +89,25 @@
   }
 
   $effect(() => {
-    void messages.length;
-    void sending;
+    void session.messages.length;
+    void session.sending;
+    void listEl;
     scrollDown();
   });
 
   async function send() {
-    const text = draft.trim();
     if (!canSend) return;
-    chatError = null;
-    const mine = ++token;
-    const user: Msg = {
-      id: nextId++,
-      role: 'user',
-      text,
-      rejected: [],
-      proposal: null,
-      pstate: 'open',
-      perror: null,
-    };
-    messages.push(user);
-    draft = '';
-    sending = true;
-    try {
-      const reply = await getBackend().coachChat(text);
-      if (mine !== token) return;
-      messages.push({
-        id: nextId++,
-        role: 'coach',
-        text: reply.reply,
-        rejected: reply.rejected_codes,
-        proposal: reply.proposal,
-        pstate: 'open',
-        perror: null,
-      });
-    } catch (e) {
-      if (mine !== token) return;
-      // Das Modell hat nicht geantwortet: Die Nachricht war nicht Teil des Gesprächs. Sie
-      // kommt zurück ins Eingabefeld, damit man sie nicht neu tippen muss.
-      messages = messages.filter((m) => m.id !== user.id);
-      draft = text;
-      if (!(e instanceof BackendError && e.code === 'coach_cancelled')) {
-        chatError = errorKey(e);
-      }
-      if (
-        e instanceof BackendError &&
-        ['coach_unavailable', 'coach_unreachable'].includes(e.code)
-      ) {
-        void recheck();
-      }
-    } finally {
-      if (mine === token) sending = false;
-    }
+    modelError = null;
+    const result = await session.send($coachFocus);
+    if (result === 'unavailable') void recheck();
   }
 
-  async function cancel() {
-    // Sofort freigeben; der Rust-Teil stellt weitere Aufrufe ein und verwirft die Antwort.
-    token++;
-    sending = false;
-    const last = messages[messages.length - 1];
-    if (last && last.role === 'user') {
-      messages = messages.slice(0, -1);
-      draft = last.text;
-    }
-    try {
-      await getBackend().coachCancel();
-    } catch {
-      // Es läuft ohnehin nichts mehr, das die Oberfläche abwarten müsste.
-    }
-  }
-
-  async function reset() {
-    token++;
-    sending = false;
-    chatError = null;
-    messages = [];
-    try {
-      await getBackend().coachReset();
-    } catch (e) {
-      chatError = errorKey(e);
-    }
-  }
-
-  async function accept(m: Msg) {
-    if (!m.proposal) return;
-    m.pstate = 'applying';
-    m.perror = null;
-    try {
-      const detail = await getBackend().coachApply(m.proposal.id);
-      m.pstate = 'applied';
-      // Alle übrigen offenen Vorschläge beziehen sich auf den alten Plan.
-      for (const other of messages) {
-        if (other !== m && other.pstate === 'open') other.pstate = 'stale';
-      }
-      onapplied(detail);
-    } catch (e) {
-      if (e instanceof BackendError && e.code === 'proposal_stale') {
-        m.pstate = 'stale';
-      } else {
-        m.pstate = 'open';
-        m.perror = errorKey(e);
-      }
-    }
-  }
-
-  function dismiss(m: Msg) {
-    m.pstate = 'dismissed';
+  async function accept(m: CoachMsg) {
+    const detail = await session.accept(m);
+    if (!detail) return;
+    // Der neue Plan ist aktiv: Die Planansicht zeigt ihn, alle Ansichten laden neu.
+    selectedPlanId.set(detail.plan.plan_id);
+    bumpData();
   }
 
   function onkeydown(e: KeyboardEvent) {
@@ -213,7 +118,7 @@
   }
 
   function suggest(text: string) {
-    draft = text;
+    session.draft = text;
     inputEl?.focus();
   }
 
@@ -221,7 +126,7 @@
     const mine = ++seenToken;
     seenLoading = true;
     try {
-      const data = await getBackend().coachPreview(draft);
+      const data = await getBackend().coachPreview(session.draft, $coachFocus);
       if (mine === seenToken) {
         seenData = data;
         seenError = null;
@@ -236,11 +141,12 @@
     }
   }
 
-  // Solange die Vorschau offen ist, folgt sie dem Eingabefeld und dem Verlauf.
+  // Solange die Vorschau offen ist, folgt sie Eingabefeld, Verlauf und Fokus.
   $effect(() => {
     if (!seen) return;
-    void draft;
-    void messages.length;
+    void session.draft;
+    void session.messages.length;
+    void $coachFocus;
     const timer = setTimeout(() => void loadSeen(), 250);
     return () => clearTimeout(timer);
   });
@@ -249,10 +155,9 @@
   const st = $derived(status.data);
 </script>
 
-<section class="panel coach-panel" data-testid="coach">
-  <header class="head">
-    <h3>{$t('ui.coach.title')}</h3>
-    {#if st?.available}
+<div class="coach-chat" data-testid="coach">
+  {#if st?.available && (st.models.length > 1 || st.model || session.messages.length > 0)}
+    <div class="head">
       <div class="tools">
         {#if st.models.length > 1}
           <label class="model">
@@ -272,14 +177,19 @@
             >{st.model}</span
           >
         {/if}
-        {#if messages.length > 0}
-          <button class="quiet" type="button" onclick={reset} data-testid="coach-reset">
+        {#if session.messages.length > 0}
+          <button
+            class="quiet"
+            type="button"
+            onclick={() => void session.reset()}
+            data-testid="coach-reset"
+          >
             {$t('ui.coach.reset')}
           </button>
         {/if}
       </div>
-    {/if}
-  </header>
+    </div>
+  {/if}
   <p class="statement">{$t('ui.coach.statement')}</p>
 
   {#if status.error}
@@ -322,7 +232,7 @@
         bind:this={listEl}
         data-testid="coach-list"
       >
-        {#if messages.length === 0 && !sending}
+        {#if session.messages.length === 0 && !session.sending}
           <div class="empty" data-testid="coach-empty">
             <p class="empty-title">{$t('ui.coach.empty_title')}</p>
             <p class="muted small">{$t('ui.coach.empty_hint')}</p>
@@ -341,7 +251,7 @@
             </div>
           </div>
         {/if}
-        {#each messages as m (m.id)}
+        {#each session.messages as m (m.id)}
           <div class="row {m.role}" data-testid="coach-message" data-role={m.role}>
             <span class="sr">{m.role === 'user' ? $t('ui.coach.you') : $t('ui.coach.coach')}:</span>
             <!-- Text des Nutzers und des Modells: als Text, nie als HTML (SPEC 9.5). -->
@@ -359,18 +269,23 @@
                 state={m.pstate}
                 error={m.perror}
                 onaccept={() => void accept(m)}
-                ondismiss={() => dismiss(m)}
+                ondismiss={() => session.dismiss(m)}
               />
             {/if}
           </div>
         {/each}
-        {#if sending}
+        {#if session.sending}
           <div class="row coach" data-testid="coach-thinking" aria-busy="true">
             <p class="bubble thinking">
               <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
               {$t('ui.coach.thinking')}
             </p>
-            <button class="quiet" type="button" onclick={cancel} data-testid="coach-cancel">
+            <button
+              class="quiet"
+              type="button"
+              onclick={() => void session.cancel()}
+              data-testid="coach-cancel"
+            >
               {$t('ui.coach.cancel')}
             </button>
           </div>
@@ -391,7 +306,7 @@
           rows="2"
           maxlength={MAX_MESSAGE_CHARS}
           placeholder={$t('ui.coach.placeholder')}
-          bind:value={draft}
+          bind:value={session.draft}
           bind:this={inputEl}
           {onkeydown}
           disabled={!hasPlan}
@@ -463,28 +378,24 @@
       </section>
     {/if}
   {/if}
-</section>
+</div>
 
 <style>
-  .coach-panel {
+  .coach-chat {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     min-width: 0;
     min-height: 0;
-    overflow-y: auto;
-    padding: var(--space-4) var(--space-4) var(--space-3);
   }
 
   .head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: var(--space-2);
-  }
-
-  .head h3 {
-    margin: 0;
+    margin-bottom: var(--space-1);
   }
 
   .tools {
@@ -804,15 +715,6 @@
 
   .seen-row {
     margin-top: var(--space-1);
-  }
-
-  /* Schmal steht das Gespräch unter dem Plan und wächst nicht mit dem Fenster mit. */
-  @container (max-width: 880px) {
-    .list {
-      flex: none;
-      min-height: 12rem;
-      max-height: 30rem;
-    }
   }
 
   /* Vorschau des Eingangs. */
