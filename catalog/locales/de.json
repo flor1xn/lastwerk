@@ -1415,7 +1415,8 @@
         "power_curve": {
           "rising": "Meine Bestleistungen steigen. Sollte ich meine Schwellen prüfen?"
         }
-      }
+      },
+      "no_data": "Für Erkenntnisse fehlen noch Last und Erholungswerte."
     },
     "week_story": {
       "title": "Diese Woche",

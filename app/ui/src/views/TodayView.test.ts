@@ -127,6 +127,40 @@ describe('Tagesentscheidung', () => {
     expect(card.textContent).not.toMatch(/NaN|undefined|null/);
   });
 
+  it('zeigt eine zweite Einheit des Tages unter der Empfehlung', async () => {
+    await activatePlan();
+    const id = (await backend.listPlans())[0].id;
+    const detail = await backend.getPlan(id);
+    // Zwei Einheiten heute: die Empfehlung der Attrappe (Grundlagenfahrt, 90 Minuten) am
+    // Vormittag und Kraft am Nachmittag, wie es der Planer an einem Tag erlaubt.
+    const day = detail.plan.weeks.flatMap((w) => w.days).find((d) => d.date === '2026-10-14');
+    expect(day).toBeTruthy();
+    day!.sessions = [
+      {
+        slot: 'am',
+        sport: 'cycling',
+        template_id: 'bike.endurance.steady',
+        duration_min: 90,
+        planned_load: 62,
+        hard: false,
+      },
+      {
+        slot: 'pm',
+        sport: 'strength',
+        template_id: 'strength.general.a',
+        duration_min: 45,
+        planned_load: 20,
+        hard: false,
+      },
+    ];
+    vi.spyOn(backend, 'getPlan').mockResolvedValue(detail);
+    render(TodayView);
+    const card = await screen.findByTestId('today-decision');
+    expect(card.textContent).toContain('Weitere Einheiten heute');
+    expect(card.textContent).toContain('45 Minuten');
+    expect(card.querySelectorAll('.more li')).toHaveLength(1);
+  });
+
   it('sparse: nennt fehlende Eingänge und bietet nichts Härteres an', async () => {
     backend.dashboardVariant = 'sparse';
     await activatePlan();
@@ -184,12 +218,12 @@ describe('Coach-Erkenntnisse', () => {
     expect(coachSession.messages).toHaveLength(0);
   });
 
-  it('sagt ohne Erkenntnis, dass nichts auffällt', async () => {
+  it('sagt ohne Daten, dass sie fehlen, statt "nichts fällt auf"', async () => {
     backend.dashboardVariant = 'empty';
     render(TodayView);
     const section = await screen.findByTestId('today-insights');
     expect(screen.queryAllByTestId('insight')).toHaveLength(0);
-    expect(section.textContent).toContain('nichts auf');
+    expect(section.textContent).toContain('fehlen noch Last und Erholungswerte');
   });
 });
 

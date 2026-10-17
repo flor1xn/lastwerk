@@ -1415,7 +1415,8 @@
         "power_curve": {
           "rising": "My best efforts are rising. Should I check my thresholds?"
         }
-      }
+      },
+      "no_data": "Insights need load and recovery values first."
     },
     "week_story": {
       "title": "This week",

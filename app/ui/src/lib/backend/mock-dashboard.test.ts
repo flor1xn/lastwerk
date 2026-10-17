@@ -141,7 +141,9 @@ describe('Tagesentscheidung und Erkenntnisse der Attrappe (T44)', () => {
     for (const o of DECISION_OVERRIDES) {
       expect(isDecisionOverride(o)).toBe(true);
       const d = await new MockBackend({ today: TODAY, decision: o }).getDashboard(TODAY);
-      expect(d.decision.state).toBe(o === 'lighten_empty' ? 'decision.lighten' : `decision.${o}`);
+      expect(d.decision.state).toBe(
+        o === 'lighten_empty' || o === 'worst' ? 'decision.lighten' : `decision.${o}`,
+      );
     }
     expect(isDecisionOverride('foo')).toBe(false);
   });
