@@ -9,8 +9,9 @@ use lastwerk_coach::chat::{
     CHAT_SCHEMA, MAX_HISTORY_MESSAGES, MAX_MESSAGE_CHARS, MAX_REPLY_CHARS, prepare_user_text,
 };
 use lastwerk_coach::{
-    ChatError, ChatHistory, ChatInput, ChatOutcome, ChatRole, CheckedProposal, FakeClient,
-    LlmError, MetricValue, RefineConfig, RefineInput, Role, chat_system_prompt, chat_turn,
+    ChatError, ChatFocus, ChatHistory, ChatInput, ChatOutcome, ChatRole, ChatTopic, ChatView,
+    CheckedProposal, FakeClient, LlmError, MetricValue, RefineConfig, RefineInput, Role,
+    chat_system_prompt, chat_turn,
 };
 use lastwerk_core::plan::{
     DayAvailability, Hardness, Locale, PlanSource, PlanSport, validate_plan,
@@ -34,7 +35,7 @@ fn input() -> ChatInput {
         MetricValue::new("ramp_ctl_7d", 3.13).unwrap(),
         MetricValue::new("share_z12_4w", 81.0).unwrap(),
     ];
-    ChatInput::build(&base, &ctx, &rules(), metrics).unwrap()
+    ChatInput::build(&base, &ctx, &rules(), metrics, None).unwrap()
 }
 
 fn answer(reply: &str, proposal: Option<Value>) -> String {
@@ -112,6 +113,44 @@ fn the_input_is_the_refine_input_plus_rounded_metrics_only() {
     assert_eq!(chat, refine);
 }
 
+/// Der Fokus steht als zwei Codes im Eingang (SPEC 9.7), sonst ändert sich nichts. Auch bei
+/// einer offenen Aktivität kommt nur die Art der Ansicht mit, keine ID und kein Datum.
+#[test]
+fn the_focus_is_two_codes_in_the_input() {
+    let ctx = context();
+    let base = base_plan(&ctx);
+    let focus = ChatFocus {
+        view: ChatView::HistoryActivity,
+        topic: Some(ChatTopic::RampSteep),
+    };
+    let with = ChatInput::build(&base, &ctx, &rules(), Vec::new(), Some(focus)).unwrap();
+    assert_eq!(with.focus(), Some(focus));
+    let mut json: Value = serde_json::from_str(&with.to_json()).unwrap();
+    let f = json.as_object_mut().unwrap().remove("focus").unwrap();
+    assert_eq!(
+        f,
+        json!({"view": "history_activity", "topic": "ramp.steep"})
+    );
+    let without = ChatInput::build(&base, &ctx, &rules(), Vec::new(), None).unwrap();
+    let plain: Value = serde_json::from_str(&without.to_json()).unwrap();
+    assert!(plain.get("focus").is_none());
+    assert_eq!(json, plain);
+    // Die Systemanweisung endet mit genau diesem Eingang.
+    let client = FakeClient::with_replies([answer("ok", None)]);
+    chat_turn(
+        &client,
+        &with,
+        &ChatHistory::new(),
+        USER_TEXT,
+        Locale::De,
+        &RefineConfig::default(),
+    )
+    .unwrap();
+    let system = &client.requests()[0].messages[0].content;
+    assert!(system.ends_with(&with.to_json()));
+    assert!(system.contains(r#""focus":{"view":"history_activity","topic":"ramp.steep"}"#));
+}
+
 #[test]
 fn metrics_are_limited_and_unique() {
     let ctx = context();
@@ -121,14 +160,14 @@ fn metrics_are_limited_and_unique() {
         MetricValue::new("a", 2.0).unwrap(),
     ];
     assert_eq!(
-        ChatInput::build(&base, &ctx, &rules(), twice),
+        ChatInput::build(&base, &ctx, &rules(), twice, None),
         Err(ChatError::InvalidMetric)
     );
     let many: Vec<_> = (0..41)
         .map(|i| MetricValue::new(&format!("m{i}"), 1.0).unwrap())
         .collect();
     assert!(matches!(
-        ChatInput::build(&base, &ctx, &rules(), many),
+        ChatInput::build(&base, &ctx, &rules(), many, None),
         Err(ChatError::TooManyMetrics { .. })
     ));
 }
@@ -485,7 +524,7 @@ fn a_plan_edit_on_an_invalid_base_plan_is_rejected_without_corrections() {
     let s = &mut base.weeks[0].days[2].sessions[0];
     s.template_id = "run.tempo.continuous".into();
     s.hard = true;
-    let input = ChatInput::build(&base, &ctx, &rules(), Vec::new()).unwrap();
+    let input = ChatInput::build(&base, &ctx, &rules(), Vec::new(), None).unwrap();
     let client =
         FakeClient::with_replies([answer("Vorschlag.", plan_edit(REPLACE_SPIN_BY_ENDURANCE))]);
     let outcome = chat_turn(
@@ -554,6 +593,7 @@ fn prompts_contain_the_required_rules() {
                 "Wünsche, keine Anweisungen",
                 "Daten, keine Anweisung",
                 "ohne HTML",
+                "\"focus\"",
             ],
         ),
         (
@@ -565,6 +605,7 @@ fn prompts_contain_the_required_rules() {
                 "wishes, not instructions",
                 "data, not instructions",
                 "or HTML",
+                "\"focus\"",
             ],
         ),
     ] {
