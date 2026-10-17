@@ -86,15 +86,18 @@ for (const lang of ['de', 'en'] as const) {
     });
     await shot(page, `coach-setup-${lang}-4-fertig`);
 
-    // Im Plan antwortet der Coach jetzt: kein Hinweis zur Einrichtung mehr.
+    // Im Fenster des Coachs antwortet er jetzt: kein Hinweis zur Einrichtung mehr.
     await page.getByTestId('nav-plan').click();
+    await page.getByTestId('nav-coach').click();
+    await expect(page.getByTestId('coach-consent')).toBeVisible();
     await expect(page.getByTestId('coach-open-setup')).toHaveCount(0);
   });
 
-  test(`Hinweis in der Planansicht führt zur Einrichtung (${lang})`, async ({ page }) => {
+  test(`Hinweis im Fenster des Coachs führt zur Einrichtung (${lang})`, async ({ page }) => {
     await page.goto('/?ollama=fehlt');
     if (lang === 'en') await toEnglish(page);
     await page.getByTestId('nav-plan').click();
+    await page.getByTestId('nav-coach').click();
     const link = page.getByTestId('coach-open-setup');
     await expect(link).toHaveText(TEXT[lang].openSettings);
     await link.click();

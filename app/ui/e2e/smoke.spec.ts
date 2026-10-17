@@ -95,8 +95,11 @@ for (const lang of ['de', 'en'] as const) {
     if (lang === 'en') await toEnglish(page);
     await expect(page.locator('html')).toHaveAttribute('lang', lang);
 
-    // Navigation (T42): genau drei Hauptpunkte und Einstellungen, in der Sprache.
-    await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(4);
+    // Navigation (T42): genau drei Hauptpunkte und Einstellungen, in der Sprache; dazu der
+    // Knopf für das Seitenfenster des Coachs (T43), geschlossen.
+    await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(5);
+    await expect(page.getByTestId('nav-coach')).toHaveText(/^Coach/);
+    await expect(page.getByTestId('nav-coach')).toHaveAttribute('aria-expanded', 'false');
     for (const [view, label] of Object.entries(text.nav)) {
       await expect(page.getByTestId(`nav-${view}`)).toHaveText(label);
     }
@@ -435,14 +438,20 @@ for (const lang of ['de', 'en'] as const) {
     await expect(page.getByTestId('planner')).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Plan');
 
-    // Drei Fragen, eine Primäraktion, Gespräch noch ohne Plan gesperrt.
+    // Drei Fragen, eine Primäraktion. Das Gespräch liegt im Seitenfenster (T43) und ist ohne
+    // Plan gesperrt.
     await expect(page.getByTestId('planner-submit')).toHaveText(t.submit);
     await expect(page.getByTestId('planner').locator('button.primary')).toHaveCount(1);
+    await expect(page.getByTestId('coach-drawer')).toBeHidden();
+    await page.getByTestId('nav-coach').click();
+    await expect(page.getByTestId('nav-coach')).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByTestId('coach-consent')).toBeVisible();
     await expect(page.getByTestId('coach-input')).toHaveCount(0);
     await shot(page, `08-planer-leer-${lang}`);
     await page.getByTestId('coach-consent-accept').click();
     await expect(page.getByTestId('coach-input')).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('coach-drawer')).toBeHidden();
 
     // Antworten: 8 Stunden, Mo bis Fr.
     await page.getByTestId('planner-hours').fill('8');
@@ -454,14 +463,28 @@ for (const lang of ['de', 'en'] as const) {
     await expect(page.getByTestId('plan-display')).toHaveAttribute('data-status', 'active');
     await expect(page.getByTestId('plan-status')).toHaveText(t.activeLabel);
 
+    // Der Coach öffnet sich von Heute aus, mit der Ansicht in der Kontextzeile.
+    await page.getByTestId('nav-today').click();
+    await page.getByTestId('nav-coach').click();
+    await expect(page.getByTestId('coach-context')).toHaveText(
+      lang === 'de' ? 'Ich sehe: Heute' : 'I see: Today',
+    );
+
     // Gespräch: Antwort als Text, Vorschlag mit Vorher und Nachher, Übernehmen.
     await expect(page.getByTestId('coach-input')).toBeEnabled();
+    await expect(page.getByTestId('coach-input')).toBeFocused();
     await page.getByTestId('coach-input').fill('Hallo <b>Coach</b>');
     await page.getByTestId('coach-send').click();
     await expect(page.getByTestId('coach-thinking')).toContainText(t.thinking);
     await expect(page.getByTestId('coach-message')).toHaveCount(2);
     await expect(page.getByTestId('coach-text').first()).toHaveText('Hallo <b>Coach</b>');
     await expect(page.locator('[data-testid="coach-list"] b')).toHaveCount(0);
+
+    // Das Gespräch übersteht Schließen und Wechsel der Ansicht.
+    await page.getByTestId('coach-close').click();
+    await page.getByTestId('nav-plan').click();
+    await page.getByTestId('plan-talk-coach').click();
+    await expect(page.getByTestId('coach-message')).toHaveCount(2);
 
     await page.getByTestId('coach-input').fill('Weniger');
     await page.getByTestId('coach-send').click();
@@ -471,6 +494,7 @@ for (const lang of ['de', 'en'] as const) {
     await page.getByTestId('coach-seen').click();
     await expect(page.getByTestId('coach-preview-message').first()).toBeVisible();
     await expect(page.getByTestId('coach-preview')).toContainText('127.0.0.1');
+    await expect(page.getByTestId('coach-preview')).toContainText('"focus":{"view":"plan"}');
     await shot(page, `09-coach-vorschlag-${lang}`);
     await page.getByTestId('coach-seen').click();
     await card.getByTestId('proposal-accept').click();
@@ -497,14 +521,39 @@ for (const lang of ['de', 'en'] as const) {
     await page.goto('/?coach=off');
     if (lang === 'en') await toEnglish(page);
     await page.getByTestId('nav-plan').click();
+    await page.getByTestId('nav-coach').click();
     await expect(page.getByTestId('coach-setup')).toContainText(
       lang === 'de' ? 'Der Coach braucht ein lokales Modell' : 'The coach needs a local model',
     );
     await expect(page.getByTestId('coach-setup')).toContainText('ollama pull');
     await expect(page.getByTestId('coach-input')).toHaveCount(0);
     await shot(page, `11-coach-ohne-modell-${lang}`);
+    await page.getByTestId('coach-close').click();
     await page.getByTestId('planner-submit').click();
     await expect(page.getByTestId('plan-display')).toHaveAttribute('data-status', 'active');
+  });
+}
+
+for (const lang of ['de', 'en'] as const) {
+  test(`Strg+K öffnet den Coach im Verlauf mit Kontextzeile (${lang})`, async ({ page }) => {
+    await page.goto('/');
+    if (lang === 'en') await toEnglish(page);
+    await openHistoryTab(page, 'performance');
+    await page.keyboard.press('Control+k');
+    const drawer = page.getByTestId('coach-drawer');
+    await expect(drawer).toBeVisible();
+    await expect(page.getByTestId('coach-context')).toHaveText(
+      lang === 'de' ? 'Ich sehe: Verlauf · Leistung' : 'I see: History · Performance',
+    );
+    // Nicht modal: Der Reiter wechselt bei offenem Fenster, die Zeile folgt.
+    await page.getByTestId('tab-history-progress').click();
+    await expect(page.getByTestId('coach-context')).toHaveText(
+      lang === 'de' ? 'Ich sehe: Verlauf · Fortschritt' : 'I see: History · Progress',
+    );
+    await shot(page, `12-coach-verlauf-${lang}`);
+    await page.keyboard.press('Control+k');
+    await expect(drawer).toBeHidden();
+    await expect(page.getByTestId('nav-coach')).toHaveAttribute('aria-expanded', 'false');
   });
 }
 
