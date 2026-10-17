@@ -11,11 +11,18 @@
 // - empty: nichts importiert, keine Erholungswerte
 // - extreme: sehr große Werte, tägliche Last in jedem Kalendertag, steile Rampe
 // - gaps: Daten, aber ohne Erholungswerte und ohne Zeit in Zonen
+//
+// Tagesentscheidung (T44): Mit aktivem Plan, der heute gilt, je Variante eine feste Lage
+// (rich: wie geplant mit härterer Alternative, low: leichter, sparse: Bereitschaft fehlt,
+// extreme: leichter ohne passende Vorlage, gaps: locker bleiben), ohne Plan `no_plan`.
+// `?decision=<zustand>` erzwingt einen Zustand auch ohne Plan (Sichtprüfung), dazu
+// `lighten_empty` für "leichter" ohne Empfehlung.
 
 import { addDays, daysBetween, mondayOf } from '../dates';
 import type {
   AdherenceCode,
   DashAdherence,
+  DashDecision,
   DashEfficiency,
   DashPowerDuration,
   DashRamp,
@@ -25,7 +32,9 @@ import type {
   Dashboard,
   DistributionCode,
   EfficiencyCode,
+  DashVariant,
   FormCode,
+  InsightCode,
   PlanDetail,
   PmcPoint,
   PmcSettings,
@@ -39,6 +48,22 @@ export type DashboardVariant = (typeof DASHBOARD_VARIANTS)[number];
 
 export function isDashboardVariant(v: unknown): v is DashboardVariant {
   return typeof v === 'string' && (DASHBOARD_VARIANTS as readonly string[]).includes(v);
+}
+
+/** Erzwungene Tagesentscheidung der Attrappe (`?decision=`). */
+export const DECISION_OVERRIDES = [
+  'no_plan',
+  'rest',
+  'already_adjusted',
+  'lighten',
+  'lighten_empty',
+  'keep_easy',
+  'as_planned',
+] as const;
+export type DecisionOverride = (typeof DECISION_OVERRIDES)[number];
+
+export function isDecisionOverride(v: unknown): v is DecisionOverride {
+  return typeof v === 'string' && (DECISION_OVERRIDES as readonly string[]).includes(v);
 }
 
 /** Was die Erzeugung von der übrigen Attrappe braucht (vermeidet einen Import im Kreis). */
@@ -353,13 +378,173 @@ function readinessBlock(
   };
 }
 
+// --- Tagesentscheidung und Erkenntnisse (T44) ---------------------------------------------
+
+function variant(
+  kind: DashVariant['kind'],
+  template_id: string,
+  duration_min: number,
+  hard: boolean,
+  planned_load: number,
+): DashVariant {
+  const sport = template_id.startsWith('run.')
+    ? 'running'
+    : template_id.startsWith('swim.')
+      ? 'swimming'
+      : template_id.startsWith('strength.')
+        ? 'strength'
+        : 'cycling';
+  return { kind, sport, template_id, duration_min, hard, planned_load };
+}
+
+/** Feste Lagen je Zustand, Vorlagen aus `catalog/templates.json`, Lasten frei erfunden. */
+function fixedDecision(state: DecisionOverride, missing: DashDecision['missing']): DashDecision {
+  const base = { reasons: [], rules: [], missing } as Omit<
+    DashDecision,
+    'state' | 'main' | 'alternatives'
+  >;
+  switch (state) {
+    case 'no_plan':
+      return { ...base, state: 'decision.no_plan', main: null, alternatives: [], missing: [] };
+    case 'rest':
+      return { ...base, state: 'decision.rest', main: null, alternatives: [], rules: ['R05'] };
+    case 'already_adjusted':
+      return {
+        ...base,
+        state: 'decision.already_adjusted',
+        main: variant('planned', 'bike.recovery.spin', 60, false, 30),
+        alternatives: [],
+        reasons: ['decision.reason.recovery_swap'],
+        rules: ['R12'],
+      };
+    case 'lighten':
+      return {
+        ...base,
+        state: 'decision.lighten',
+        main: variant('lighter', 'bike.endurance.steady', 75, false, 52),
+        alternatives: [variant('planned', 'bike.threshold.2x20', 75, true, 94)],
+        reasons: ['decision.reason.readiness_low'],
+        rules: ['R12'],
+      };
+    case 'lighten_empty':
+      // Schwimmen über 60 Minuten: Keine lockere Schwimmvorlage hat ein passendes Fenster.
+      return {
+        ...base,
+        state: 'decision.lighten',
+        main: null,
+        alternatives: [variant('planned', 'swim.threshold.sets', 75, true, 88)],
+        reasons: ['decision.reason.readiness_low', 'decision.reason.form_overloaded'],
+        rules: ['R10', 'R12'],
+      };
+    case 'keep_easy':
+      return {
+        ...base,
+        state: 'decision.keep_easy',
+        main: variant('planned', 'bike.endurance.steady', 90, false, 62),
+        alternatives: [variant('shorter', 'bike.endurance.steady', 45, false, 31)],
+        reasons: ['decision.reason.form_overloaded'],
+        rules: ['R10'],
+      };
+    case 'as_planned':
+      return {
+        ...base,
+        state: 'decision.as_planned',
+        main: variant('planned', 'bike.endurance.steady', 90, false, 62),
+        alternatives:
+          missing.length === 0 ? [variant('harder', 'bike.threshold.2x20', 90, true, 112)] : [],
+        reasons: missing.length === 0 ? ['decision.reason.form_fresh'] : [],
+      };
+  }
+}
+
+function coversToday(plan: PlanDetail | null, today: string): boolean {
+  return (
+    plan?.plan.weeks.some((w) => w.week_start <= today && today <= addDays(w.week_start, 6)) ??
+    false
+  );
+}
+
+/** Tagesentscheidung der Attrappe, siehe Kopf der Datei. */
+export function decisionBlock(
+  today: string,
+  variant: DashboardVariant,
+  plan: PlanDetail | null,
+  override: DecisionOverride | null,
+): DashDecision {
+  if (override !== null) return fixedDecision(override, []);
+  if (!coversToday(plan, today)) return fixedDecision('no_plan', []);
+  switch (variant) {
+    case 'rich':
+      return fixedDecision('as_planned', []);
+    case 'low':
+      return fixedDecision('lighten', []);
+    case 'sparse':
+      return fixedDecision('as_planned', ['readiness']);
+    case 'empty':
+      return fixedDecision('as_planned', ['readiness', 'form']);
+    case 'extreme':
+      return fixedDecision('lighten_empty', []);
+    case 'gaps':
+      return fixedDecision('keep_easy', ['readiness']);
+  }
+}
+
+/** Reihenfolge wie `PRIORITY` in `metrics::insights` (Faustregel), höchstens drei. */
+const INSIGHT_ORDER: readonly InsightCode[] = [
+  'form.overloaded',
+  'readiness.low',
+  'ramp.steep',
+  'distribution.intensity_heavy',
+  'adherence.under',
+  'adherence.over',
+  'efficiency.rising',
+  'power_curve.rising',
+  'ramp.building',
+];
+
+export function rankInsights(codes: readonly string[]): { code: InsightCode }[] {
+  return INSIGHT_ORDER.filter((c) => codes.includes(c))
+    .slice(0, 3)
+    .map((code) => ({ code }));
+}
+
+function powerSummary(durations: DashPowerDuration[]): string {
+  const known = durations.filter((d) => d.trend !== 'power_curve.no_data');
+  const rising = known.filter((d) => d.trend === 'power_curve.rising').length;
+  const falling = known.filter((d) => d.trend === 'power_curve.falling').length;
+  if (known.length === 0) return 'power_curve.no_data';
+  return rising > falling
+    ? 'power_curve.rising'
+    : falling > rising
+      ? 'power_curve.falling'
+      : 'power_curve.flat';
+}
+
+function withInsights(
+  d: Omit<Dashboard, 'insights' | 'decision'>,
+  decision: DashDecision,
+): Dashboard {
+  const codes = [
+    d.ramp.state,
+    d.distribution.state,
+    d.adherence.state,
+    d.efficiency.trend,
+    powerSummary(d.power_curve.durations),
+    d.readiness.state,
+    ...(d.form ? [d.form.state] : []),
+  ];
+  return { ...d, decision, insights: rankInsights(codes) };
+}
+
 /** Das Dashboard der Attrappe für den Tag `today`. `plan` ist der aktive Plan oder null. */
 export function buildDashboard(
   today: string,
   variant: DashboardVariant,
   plan: PlanDetail | null,
   deps: DashboardDeps,
+  override: DecisionOverride | null = null,
 ): Dashboard {
+  const decision = decisionBlock(today, variant, plan, override);
   const rnd = deps.mulberry32(daysBetween('2020-01-01', today) * 31 + 7);
   const emptyRamp: DashRamp = {
     current: null,
@@ -368,49 +553,52 @@ export function buildDashboard(
     series: [],
   };
   if (variant === 'empty') {
-    return {
-      today,
-      form: null,
-      pmc: [],
-      pmc_first_load_date: null,
-      projection: [],
-      plan: plan ? planInfo(plan) : null,
-      ramp: emptyRamp,
-      distribution: {
-        window_easy_percent: null,
-        window_total_s: 0,
-        min_easy_percent: R8_MIN_EASY,
-        state: 'distribution.no_data',
-        weeks: Array.from({ length: 8 }, (_, i) => ({
-          week_start: addDays(mondayOf(today), -49 + i * 7),
-          easy_percent: null,
-          total_s: 0,
-        })),
-      },
-      adherence: {
-        ratio_percent: null,
-        state: 'adherence.no_data',
-        weeks: adherenceBlock(today, plan, new Map()).weeks,
-      },
-      efficiency: {
-        current: null,
-        change_percent: null,
-        trend: 'efficiency.no_data',
-        sessions: 0,
-        series: [],
-      },
-      power_curve: {
-        durations: [5, 60, 300, 1200, 3600].map((duration_s) => ({
-          duration_s,
-          current_w: null,
-          previous_w: null,
+    return withInsights(
+      {
+        today,
+        form: null,
+        pmc: [],
+        pmc_first_load_date: null,
+        projection: [],
+        plan: plan ? planInfo(plan) : null,
+        ramp: emptyRamp,
+        distribution: {
+          window_easy_percent: null,
+          window_total_s: 0,
+          min_easy_percent: R8_MIN_EASY,
+          state: 'distribution.no_data',
+          weeks: Array.from({ length: 8 }, (_, i) => ({
+            week_start: addDays(mondayOf(today), -49 + i * 7),
+            easy_percent: null,
+            total_s: 0,
+          })),
+        },
+        adherence: {
+          ratio_percent: null,
+          state: 'adherence.no_data',
+          weeks: adherenceBlock(today, plan, new Map()).weeks,
+        },
+        efficiency: {
+          current: null,
           change_percent: null,
-          trend: 'power_curve.no_data' as const,
-        })),
+          trend: 'efficiency.no_data',
+          sessions: 0,
+          series: [],
+        },
+        power_curve: {
+          durations: [5, 60, 300, 1200, 3600].map((duration_s) => ({
+            duration_s,
+            current_w: null,
+            previous_w: null,
+            change_percent: null,
+            trend: 'power_curve.no_data' as const,
+          })),
+        },
+        readiness: readinessBlock(today, rnd, 'none', plan),
+        load_days: [],
       },
-      readiness: readinessBlock(today, rnd, 'none', plan),
-      load_days: [],
-    };
+      decision,
+    );
   }
 
   const sparse = variant === 'sparse';
@@ -455,57 +643,60 @@ export function buildDashboard(
       ? [null, null, null, null, null]
       : [3.1, 1.2, 2.6, 4.4, -0.8];
 
-  return {
-    today,
-    form: last
-      ? {
-          tsb: r1(last.tsb),
-          ctl: r1(last.ctl),
-          atl: r1(last.atl),
-          state: formCode(last.tsb),
-        }
-      : null,
-    pmc,
-    pmc_first_load_date: first ?? null,
-    projection: plan ? projection : [],
-    plan: plan ? planInfo(plan) : null,
-    ramp: rampBlock(upToToday, today),
-    distribution:
-      variant === 'gaps' || sparse
-        ? {
-            window_easy_percent: null,
-            window_total_s: 0,
-            min_easy_percent: R8_MIN_EASY,
-            state: 'distribution.no_data',
-            weeks: Array.from({ length: 8 }, (_, i) => ({
-              week_start: addDays(mondayOf(today), -49 + i * 7),
-              easy_percent: null,
-              total_s: 0,
-            })),
-          }
-        : distributionBlock(today, rnd, variant),
-    adherence: adherenceBlock(today, plan, done),
-    efficiency: sparse
-      ? {
-          current: null,
-          change_percent: null,
-          trend: 'efficiency.no_data',
-          sessions: 1,
-          series: [],
-        }
-      : efficiencyBlock(today, rnd, extreme ? 6 : 1),
-    power_curve: { durations: powerBlock(extreme ? 4 : 1, changes) },
-    readiness: readinessBlock(
+  return withInsights(
+    {
       today,
-      rnd,
-      variant === 'low' ? 'low' : variant === 'gaps' ? 'none' : sparse ? 'short' : 'normal',
-      plan,
-    ),
-    load_days: [...daily.entries()]
-      .filter(([d]) => d >= addDays(today, -364))
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, load]) => ({ date, load })),
-  };
+      form: last
+        ? {
+            tsb: r1(last.tsb),
+            ctl: r1(last.ctl),
+            atl: r1(last.atl),
+            state: formCode(last.tsb),
+          }
+        : null,
+      pmc,
+      pmc_first_load_date: first ?? null,
+      projection: plan ? projection : [],
+      plan: plan ? planInfo(plan) : null,
+      ramp: rampBlock(upToToday, today),
+      distribution:
+        variant === 'gaps' || sparse
+          ? {
+              window_easy_percent: null,
+              window_total_s: 0,
+              min_easy_percent: R8_MIN_EASY,
+              state: 'distribution.no_data',
+              weeks: Array.from({ length: 8 }, (_, i) => ({
+                week_start: addDays(mondayOf(today), -49 + i * 7),
+                easy_percent: null,
+                total_s: 0,
+              })),
+            }
+          : distributionBlock(today, rnd, variant),
+      adherence: adherenceBlock(today, plan, done),
+      efficiency: sparse
+        ? {
+            current: null,
+            change_percent: null,
+            trend: 'efficiency.no_data',
+            sessions: 1,
+            series: [],
+          }
+        : efficiencyBlock(today, rnd, extreme ? 6 : 1),
+      power_curve: { durations: powerBlock(extreme ? 4 : 1, changes) },
+      readiness: readinessBlock(
+        today,
+        rnd,
+        variant === 'low' ? 'low' : variant === 'gaps' ? 'none' : sparse ? 'short' : 'normal',
+        plan,
+      ),
+      load_days: [...daily.entries()]
+        .filter(([d]) => d >= addDays(today, -364))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, load]) => ({ date, load })),
+    },
+    decision,
+  );
 }
 
 function planInfo(plan: PlanDetail) {

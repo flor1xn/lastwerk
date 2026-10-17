@@ -11,7 +11,7 @@
 import { addDays, daysBetween, fromIso, isIsoDate, localIso, mondayOf, toIso } from '../dates';
 import { MockCoach } from './mock-coach';
 import { MockCoachSetup, type MockSetupOptions, type OllamaVariant } from './mock-coach-setup';
-import { buildDashboard, type DashboardVariant } from './mock-dashboard';
+import { buildDashboard, type DashboardVariant, type DecisionOverride } from './mock-dashboard';
 import { buildPerformance } from './mock-performance';
 import { buildProgress } from './mock-progress';
 import { buildRecovery } from './mock-recovery';
@@ -103,6 +103,8 @@ export interface MockOptions {
   onboarded?: boolean;
   /** Variante des Dashboards (siehe mock-dashboard.ts). Standard `rich`. */
   dashboard?: DashboardVariant;
+  /** Erzwungene Tagesentscheidung (T44, `?decision=`). Standard keine. */
+  decision?: DecisionOverride;
   /** Mit Garmin verbunden? Standard nein (T23). */
   garminConnected?: boolean;
   /** Vorschlag der drei Fragen aus der Historie (T41). Standard keiner. Mit
@@ -252,6 +254,8 @@ export class MockBackend implements Backend {
   readonly calls: MockCall[] = [];
   /** Welche erfundenen Dashboard-Daten `getDashboard` liefert. Tests setzen sie um. */
   dashboardVariant: DashboardVariant;
+  /** Erzwungene Tagesentscheidung, Tests setzen sie um. */
+  decisionOverride: DecisionOverride | null;
 
   /** Vorschlag aus der Historie (T41). */
   private history: { value: HistoryDefaults | null; afterSync: boolean };
@@ -261,6 +265,7 @@ export class MockBackend implements Backend {
     this.today = options.today ?? localIso();
     this.importStepMs = options.importStepMs ?? 0;
     this.dashboardVariant = options.dashboard ?? 'rich';
+    this.decisionOverride = options.decision ?? null;
     this.activities = buildActivities(this.today);
     this.thresholds = [];
     const year = Number(this.today.slice(0, 4));
@@ -775,11 +780,13 @@ export class MockBackend implements Backend {
     if (!isIsoDate(today)) throw err('invalid_date');
     const active = this.planning.list().find((p) => p.status === 'active');
     const plan = active ? this.planning.get(active.id) : null;
-    return buildDashboard(today, this.dashboardVariant, plan, {
-      mulberry32,
-      computePmc,
-      pmc: this.settings.pmc,
-    });
+    return buildDashboard(
+      today,
+      this.dashboardVariant,
+      plan,
+      { mulberry32, computePmc, pmc: this.settings.pmc },
+      this.decisionOverride,
+    );
   }
 
   // --- Schwellenwerte und Athlet ------------------------------------------------------

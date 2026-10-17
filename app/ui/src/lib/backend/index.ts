@@ -4,7 +4,7 @@
 
 import { MockBackend } from './mock';
 import { isOllamaVariant } from './mock-coach-setup';
-import { isDashboardVariant } from './mock-dashboard';
+import { isDashboardVariant, isDecisionOverride } from './mock-dashboard';
 import { TauriBackend } from './tauri';
 import type { Backend } from './types';
 
@@ -18,6 +18,9 @@ export function createBackend(): Backend {
   const fresh = new URLSearchParams(window.location.search).has('erststart');
   // `?dashboard=empty|low|sparse|extreme|gaps` wählt erfundene Dashboard-Daten für die Sichtprüfung.
   const variant = new URLSearchParams(window.location.search).get('dashboard');
+  // `?decision=lighten|lighten_empty|keep_easy|as_planned|already_adjusted|rest|no_plan` erzwingt
+  // eine Tagesentscheidung (T44), auch ohne aktiven Plan.
+  const decision = new URLSearchParams(window.location.search).get('decision');
   // `?coach=off` ist ein Rechner ohne lokales Modell (Hinweis zur Einrichtung statt Gespräch).
   const coachOff = new URLSearchParams(window.location.search).get('coach') === 'off';
   // `?ollama=fehlt|laeuft|laedt` wählt den Zustand von Ollama in der Einrichtung (T29): nicht
@@ -43,6 +46,7 @@ export function createBackend(): Backend {
     history: fresh ? { sport: 'running', hours: 7.5, days: [1, 3, 5, 6], weeks: 12 } : null,
     historyAfterSync: fresh,
     dashboard: isDashboardVariant(variant) ? variant : undefined,
+    decision: isDecisionOverride(decision) ? decision : undefined,
     coach: !coachOff,
     cacheOutdated: cacheOld,
     runningPlan,
