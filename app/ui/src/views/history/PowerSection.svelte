@@ -16,7 +16,7 @@
 <Section
   label={$t('ui.dash.power.title')}
   statement={powerCurveStatement(durations, $t)}
-  testid="today-power"
+  testid="dash-power"
 >
   {#if hasValues || any}
     <PowerCurveBars {durations} testid="power-bars" />

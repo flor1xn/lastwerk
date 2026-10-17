@@ -578,21 +578,11 @@
       "counts": "{thresholds} Schwellenwerte, {goals} Ziele, {availability} Verfügbarkeiten, {plans} Pläne, {settings} Einstellungen, {recovery_days} Erholungstage"
     },
     "today": {
-      "eyebrow": "Empfehlung für heute",
       "minutes": "{n} Minuten",
       "hard": "Harte Einheit",
       "easy": "Keine harte Einheit",
-      "rest_title": "Heute frei",
-      "rest_hint": "Für heute ist keine Einheit geplant.",
-      "no_plan_title": "Noch kein aktiver Plan",
-      "no_plan_hint": "Drei Fragen im Planer genügen, dann steht hier die Einheit für heute.",
       "open_plan": "Zum Plan",
-      "form_title": "Form",
-      "week_title": "Diese Woche",
-      "week_planned": "geplant",
-      "load_unit": "Last",
       "all_sessions": "Weitere Einheiten heute",
-      "not_covered": "Der aktive Plan deckt den heutigen Tag nicht ab",
       "starts_title": "Dein Plan beginnt am {date}",
       "starts_hint": "Bis dahin trainierst du frei oder ruhst. Im Planer siehst du schon die erste Woche."
     },
@@ -625,7 +615,9 @@
         "plan_hard": "heute steht eine harte Einheit im Plan",
         "plan_easy": "heute steht eine lockere Einheit im Plan",
         "plan_rest": "heute ist im Plan frei",
-        "and": "und"
+        "and": "und",
+        "plan_lighten": "für heute rät Lastwerk zu einer leichteren Einheit als geplant",
+        "plan_keep_easy": "heute bleibt es bei einer lockeren Einheit"
       },
       "statement": {
         "ramp": {
@@ -712,14 +704,7 @@
         "week_empty": "Woche ab {date}: keine Zeit in Zonen"
       },
       "adherence": {
-        "title": "Planerfüllung",
-        "label": "bis gestern",
-        "no_plan": "Ohne aktiven Plan gibt es nichts zu vergleichen.",
-        "chart_label": "Erledigte gegen geplante Last je Planwoche",
-        "done": "erledigte Last",
-        "planned": "geplante Last der Woche",
-        "so_far": "bis gestern geplant",
-        "week_title": "Woche ab {date}: {done} erledigt, {planned} bis gestern geplant, {total} insgesamt"
+        "no_plan": "Ohne aktiven Plan gibt es nichts zu vergleichen."
       },
       "efficiency": {
         "title": "Effizienz",
@@ -1354,6 +1339,99 @@
         "low_load": "Niedrige Belastung",
         "medium_load": "Mittlere Belastung",
         "high_load": "Hohe Belastung"
+      }
+    },
+    "decision": {
+      "eyebrow": "Entscheidung für heute",
+      "state": {
+        "no_plan": "Noch kein aktiver Plan",
+        "rest": "Heute frei",
+        "already_adjusted": "Schon angepasst: heute locker",
+        "lighten": "Heute leichter als geplant",
+        "keep_easy": "Heute locker bleiben",
+        "as_planned": "Heute wie geplant"
+      },
+      "hint": {
+        "no_plan": "Drei Fragen im Planer genügen, dann steht hier, was heute ansteht und warum.",
+        "rest": "Für heute ist keine Einheit geplant. Der Ruhetag gehört zum Plan.",
+        "lighten_empty": "Im Katalog passt keine lockere Vorlage dieser Sportart zur geplanten Dauer. Besprich mit dem Coach, was du stattdessen machst."
+      },
+      "reason": {
+        "readiness_low": "HRV oder Schlafdauer liegen deutlich unter deinem Schnitt der letzten sieben Tage.",
+        "form_overloaded": "Deine Form ist überlastet: Die Ermüdung liegt weit über der Fitness.",
+        "form_fresh": "Deine Form ist frisch und deine Erholungswerte liegen im Rahmen, deshalb ginge heute auch mehr.",
+        "recovery_swap": "Der Planer hat die harte Einheit wegen deiner Erholungswerte schon durch eine lockere ersetzt."
+      },
+      "missing": {
+        "readiness": "Ohne aktuelle Erholungswerte bleibt die Bereitschaft offen.",
+        "form": "Ohne berechnete Last gibt es noch keinen Formzustand.",
+        "plan_context": "Der Plan ließ sich nicht prüfen, deshalb gibt es keine härtere Variante."
+      },
+      "kind": {
+        "planned": "Wie geplant",
+        "lighter": "Leichter",
+        "shorter": "Kürzer",
+        "harder": "Härter"
+      },
+      "alternatives": "Alternativen",
+      "alt_hint": "Alternativen ändern den Plan nicht. Übernehmen kannst du sie über den Coach.",
+      "rules": "Regeln dieser Entscheidung",
+      "discuss": "Mit Coach besprechen",
+      "ask": {
+        "no_plan": "Wie komme ich zu einem Plan, der zu mir passt?",
+        "rest": "Warum ist heute ein Ruhetag?",
+        "already_adjusted": "Warum wurde meine harte Einheit heute durch eine lockere ersetzt?",
+        "lighten": "Warum soll ich heute leichter trainieren als geplant?",
+        "keep_easy": "Warum soll ich heute locker bleiben?",
+        "as_planned": "Passt die geplante Einheit heute zu mir?"
+      }
+    },
+    "insight": {
+      "title": "Coach-Erkenntnisse",
+      "empty": "Gerade fällt in deinen Zahlen nichts auf, was eine Anpassung nahelegt.",
+      "discuss": "Besprechen",
+      "discuss_label": "Mit dem Coach besprechen: {text}",
+      "ask": {
+        "form": {
+          "overloaded": "Meine Form ist überlastet. Wie plane ich die nächsten Tage?"
+        },
+        "readiness": {
+          "low": "Meine Erholungswerte liegen unter meinem Schnitt. Was heißt das für heute?"
+        },
+        "ramp": {
+          "steep": "Meine Fitness steigt schneller als die Grenze im Plan. Soll ich etwas ändern?",
+          "building": "Meine Fitness wächst im Rahmen. Wie halte ich das?"
+        },
+        "distribution": {
+          "intensity_heavy": "Ich trainiere oft intensiv. Wie bekomme ich mehr lockere Zeit hinein?"
+        },
+        "adherence": {
+          "under": "Ich liege unter dem Plan. Wie gehe ich mit den verpassten Einheiten um?",
+          "over": "Ich liege über dem Plan. Ist das ein Problem?"
+        },
+        "efficiency": {
+          "rising": "Meine Leistung je Herzschlag steigt. Was bedeutet das für mein Training?"
+        },
+        "power_curve": {
+          "rising": "Meine Bestleistungen steigen. Sollte ich meine Schwellen prüfen?"
+        }
+      }
+    },
+    "week_story": {
+      "title": "Diese Woche",
+      "statement": {
+        "plan": "Bis gestern {done} von {planned} geplanten Einheiten erledigt, bisher {load} von {planned_load} geplanter Last der Woche.",
+        "no_plan": "Diese Woche {n} Einheiten mit {load} Last. Ohne aktiven Plan gibt es keinen Vergleich.",
+        "empty": "Diese Woche noch keine Einheit."
+      },
+      "missed": "Verpasste Tage: {n}.",
+      "outlook": {
+        "days": "Die nächsten sieben Tage im Plan: harte Tage {hard}, Ruhetage {rest}.",
+        "next_hard": "Der nächste harte Tag ist {day}.",
+        "none": "Der aktive Plan reicht nicht in die nächsten sieben Tage."
+      },
+      "mark": {
+        "hard": "hart"
       }
     }
   },

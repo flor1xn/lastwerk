@@ -14,7 +14,7 @@
 <Section
   label={$t('ui.dash.calendar.title')}
   statement={calendarStatement(dash.load_days, $t, $locale)}
-  testid="today-calendar"
+  testid="dash-calendar"
 >
   {#if any}
     <LoadHeatmap days={dash.load_days} today={dash.today} testid="calendar" />

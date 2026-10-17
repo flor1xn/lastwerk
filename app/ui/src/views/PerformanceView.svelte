@@ -1,6 +1,11 @@
 <script lang="ts">
   import { getBackend } from '../lib/backend';
-  import { PERF_RANGES, type Performance, type PerfRange } from '../lib/backend/types';
+  import {
+    PERF_RANGES,
+    type Dashboard,
+    type Performance,
+    type PerfRange,
+  } from '../lib/backend/types';
   import { readChartColors } from '../lib/charts';
   import { curveData, curveOptions, ftpData, ftpOptions } from '../lib/charts-performance';
   import { signedPercent } from '../lib/dashboard';
@@ -24,6 +29,8 @@
     thresholdView,
   } from '../lib/performance';
   import { dataVersion, openActivity, openSettings, resolvedTheme } from '../lib/state';
+  import EfficiencySection from './history/EfficiencySection.svelte';
+  import PowerSection from './history/PowerSection.svelte';
 
   // Leistung (T33): Leistungskurve je Zeitraum gegen den gleich langen Zeitraum davor. Weitere
   // Abschnitte (Schwellen T36, Laufbestzeiten T37) folgen auf derselben Seite.
@@ -35,6 +42,14 @@
     void $dataVersion;
     const r = range;
     void loader.run(() => getBackend().getPerformance(today, r));
+  });
+
+  // Effizienz und Leistungskurve der letzten 90 Tage (seit T44 hier statt auf "Heute"). Sie
+  // kommen aus dem Dashboard und hängen nicht am Zeitraum der Seite.
+  const dashLoader = new Loader<Dashboard>();
+  $effect(() => {
+    void $dataVersion;
+    void dashLoader.run(() => getBackend().getDashboard(today));
   });
 
   const data = $derived(loader.data);
@@ -135,6 +150,13 @@
 
 <div class="page performance" data-testid="performance">
   <p class="page-lead" data-testid="lead">{$t('ui.lead.performance')}</p>
+
+  {#if dashLoader.data}
+    <div class="dash-grid">
+      <EfficiencySection dash={dashLoader.data} />
+      <PowerSection dash={dashLoader.data} />
+    </div>
+  {/if}
 
   <div class="controls">
     <Segmented
@@ -368,8 +390,23 @@
 </div>
 
 <style>
+  /* Wie das Raster auf "Heute": zwei Spalten ab 760 px Seitenbreite. */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: var(--space-7);
+    margin-bottom: var(--space-5);
+  }
+
+  @container (min-width: 760px) {
+    .dash-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   .performance {
     max-width: var(--page-max-wide);
+    container-type: inline-size;
   }
 
   .controls {

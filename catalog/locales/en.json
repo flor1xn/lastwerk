@@ -578,21 +578,11 @@
       "counts": "{thresholds} thresholds, {goals} goals, {availability} availability entries, {plans} plans, {settings} settings, {recovery_days} recovery days"
     },
     "today": {
-      "eyebrow": "Recommendation for today",
       "minutes": "{n} minutes",
       "hard": "Hard session",
       "easy": "Not a hard session",
-      "rest_title": "Rest day",
-      "rest_hint": "No session is planned for today.",
-      "no_plan_title": "No active plan yet",
-      "no_plan_hint": "Three questions in the planner are enough, then today's session shows up here.",
       "open_plan": "Go to plan",
-      "form_title": "Form",
-      "week_title": "This week",
-      "week_planned": "planned",
-      "load_unit": "Load",
       "all_sessions": "More sessions today",
-      "not_covered": "The active plan does not cover today",
       "starts_title": "Your plan starts on {date}",
       "starts_hint": "Until then, train freely or rest. The planner already shows the first week."
     },
@@ -625,7 +615,9 @@
         "plan_hard": "today's plan has a hard session",
         "plan_easy": "today's plan has an easy session",
         "plan_rest": "today is a rest day in the plan",
-        "and": "and"
+        "and": "and",
+        "plan_lighten": "Lastwerk suggests an easier session than planned for today",
+        "plan_keep_easy": "today stays an easy session"
       },
       "statement": {
         "ramp": {
@@ -712,14 +704,7 @@
         "week_empty": "Week from {date}: no time in zones"
       },
       "adherence": {
-        "title": "Plan adherence",
-        "label": "up to yesterday",
-        "no_plan": "Without an active plan there is nothing to compare.",
-        "chart_label": "Done against planned load per plan week",
-        "done": "load done",
-        "planned": "planned load of the week",
-        "so_far": "planned up to yesterday",
-        "week_title": "Week from {date}: {done} done, {planned} planned up to yesterday, {total} in total"
+        "no_plan": "Without an active plan there is nothing to compare."
       },
       "efficiency": {
         "title": "Efficiency",
@@ -1354,6 +1339,99 @@
         "low_load": "Low load",
         "medium_load": "Medium load",
         "high_load": "High load"
+      }
+    },
+    "decision": {
+      "eyebrow": "Decision for today",
+      "state": {
+        "no_plan": "No active plan yet",
+        "rest": "Rest day",
+        "already_adjusted": "Already adjusted: easy today",
+        "lighten": "Easier than planned today",
+        "keep_easy": "Keep it easy today",
+        "as_planned": "As planned today"
+      },
+      "hint": {
+        "no_plan": "Three questions in the planner are enough, then this shows what is up today and why.",
+        "rest": "No session is planned for today. The rest day is part of the plan.",
+        "lighten_empty": "No easy template of this sport in the catalog fits the planned duration. Talk to the coach about what to do instead."
+      },
+      "reason": {
+        "readiness_low": "HRV or sleep duration are clearly below your average of the last seven days.",
+        "form_overloaded": "Your form is overloaded: fatigue is far above fitness.",
+        "form_fresh": "Your form is fresh and your recovery values are within range, so today you could do more.",
+        "recovery_swap": "The planner already replaced the hard session with an easy one because of your recovery values."
+      },
+      "missing": {
+        "readiness": "Without current recovery values, readiness stays open.",
+        "form": "Without computed load there is no form state yet.",
+        "plan_context": "The plan could not be checked, so there is no harder option."
+      },
+      "kind": {
+        "planned": "As planned",
+        "lighter": "Easier",
+        "shorter": "Shorter",
+        "harder": "Harder"
+      },
+      "alternatives": "Alternatives",
+      "alt_hint": "Alternatives do not change the plan. You can adopt one through the coach.",
+      "rules": "Rules behind this decision",
+      "discuss": "Discuss with coach",
+      "ask": {
+        "no_plan": "How do I get a plan that fits me?",
+        "rest": "Why is today a rest day?",
+        "already_adjusted": "Why was my hard session replaced with an easy one today?",
+        "lighten": "Why should I train easier than planned today?",
+        "keep_easy": "Why should I keep it easy today?",
+        "as_planned": "Does the planned session fit me today?"
+      }
+    },
+    "insight": {
+      "title": "Coach insights",
+      "empty": "Right now nothing in your numbers suggests a change.",
+      "discuss": "Discuss",
+      "discuss_label": "Discuss with the coach: {text}",
+      "ask": {
+        "form": {
+          "overloaded": "My form is overloaded. How should I plan the next days?"
+        },
+        "readiness": {
+          "low": "My recovery values are below my average. What does that mean for today?"
+        },
+        "ramp": {
+          "steep": "My fitness is rising faster than the plan's limit. Should I change something?",
+          "building": "My fitness is growing within the limit. How do I keep that up?"
+        },
+        "distribution": {
+          "intensity_heavy": "I often train hard. How do I get more easy time in?"
+        },
+        "adherence": {
+          "under": "I am behind the plan. How should I deal with the missed sessions?",
+          "over": "I am ahead of the plan. Is that a problem?"
+        },
+        "efficiency": {
+          "rising": "My power per heartbeat is rising. What does that mean for my training?"
+        },
+        "power_curve": {
+          "rising": "My best efforts are rising. Should I check my thresholds?"
+        }
+      }
+    },
+    "week_story": {
+      "title": "This week",
+      "statement": {
+        "plan": "Up to yesterday {done} of {planned} planned sessions done, so far {load} of {planned_load} planned load this week.",
+        "no_plan": "This week {n} sessions with {load} load. Without an active plan there is nothing to compare.",
+        "empty": "No session yet this week."
+      },
+      "missed": "Missed days: {n}.",
+      "outlook": {
+        "days": "Next seven days in the plan: hard days {hard}, rest days {rest}.",
+        "next_hard": "The next hard day is {day}.",
+        "none": "The active plan does not reach into the next seven days."
+      },
+      "mark": {
+        "hard": "hard"
       }
     }
   },

@@ -67,7 +67,11 @@ export function dayState(
   return covered ? 'rest' : 'empty';
 }
 
-function plannedOn(plan: Plan | null, date: string): { sessions: PlanSession[]; covered: boolean } {
+/** Geplante Einheiten eines Tages ohne Ruhetage und ob der Tag zu einer Planwoche gehört. */
+export function plannedOn(
+  plan: Plan | null,
+  date: string,
+): { sessions: PlanSession[]; covered: boolean } {
   if (!plan) return { sessions: [], covered: false };
   for (const w of plan.weeks) {
     for (const d of w.days) {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getBackend } from '../lib/backend';
-  import type { Progress, Sport } from '../lib/backend/types';
+  import type { Dashboard, Progress, Sport } from '../lib/backend/types';
   import { readChartColors } from '../lib/charts';
   import { cumulativeData, cumulativeOptions } from '../lib/charts-progress';
   import { directionOf, signedPercent } from '../lib/dashboard';
@@ -28,6 +28,7 @@
     type ProgressMetric,
   } from '../lib/progress';
   import { dataVersion, resolvedTheme } from '../lib/state';
+  import CalendarSection from './history/CalendarSection.svelte';
 
   // Fortschritt (T32): dieses Jahr gegen das Vorjahr bis zum selben Tag, Wochenumfang über
   // 52 Wochen, Monate über 24 Monate. Die Oberfläche summiert nur (lib/progress.ts).
@@ -40,6 +41,13 @@
   $effect(() => {
     void $dataVersion;
     void loader.run(() => getBackend().getProgress(today));
+  });
+
+  // Belastungskalender der letzten 365 Tage (seit T44 hier statt auf "Heute").
+  const dashLoader = new Loader<Dashboard>();
+  $effect(() => {
+    void $dataVersion;
+    void dashLoader.run(() => getBackend().getDashboard(today));
   });
 
   const data = $derived(loader.data);
@@ -252,6 +260,10 @@
         </div>
       {/if}
     </Section>
+
+    {#if dashLoader.data}
+      <CalendarSection dash={dashLoader.data} />
+    {/if}
   </div>
 {/if}
 

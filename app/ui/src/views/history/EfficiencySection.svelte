@@ -37,7 +37,7 @@
 <Section
   label={$t('ui.dash.efficiency.title')}
   statement={efficiencyStatement(e, $t, $locale)}
-  testid="today-efficiency"
+  testid="dash-efficiency"
 >
   {#if e.current !== null}
     <Metric
