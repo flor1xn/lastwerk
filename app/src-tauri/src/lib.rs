@@ -40,7 +40,7 @@ use crate::dto::{
     Progress, RecoveryPage, RestoreResult, Settings, SettingsPatch, ThresholdInput, ThresholdList,
     ThresholdSet, UpdateInfo, WeekOverview,
 };
-use crate::dto::{GarminStatus, GarminSyncSummary};
+use crate::dto::{ChatFocusDto, GarminStatus, GarminSyncSummary};
 use crate::error::{AppError, Result};
 use lastwerk_garmin::{Endpoints, GarminClient, KeyringStore, TokenStore};
 
@@ -545,10 +545,11 @@ async fn coach_preview(
     state: State<'_, AppState>,
     coach_state: State<'_, CoachState>,
     message: String,
+    focus: Option<ChatFocusDto>,
 ) -> Result<coach::PromptPreview> {
     let coach_state = coach_state.inner().clone();
     with_store(&state, move |store| {
-        coach::preview(store, &coach_state, &message, local_today())
+        coach::preview(store, &coach_state, &message, focus.as_ref(), local_today())
     })
     .await
 }
@@ -560,6 +561,7 @@ async fn coach_chat(
     state: State<'_, AppState>,
     coach_state: State<'_, CoachState>,
     message: String,
+    focus: Option<ChatFocusDto>,
 ) -> Result<coach::CoachReply> {
     let coach_state = coach_state.inner().clone();
     let guard = coach_state
@@ -572,6 +574,7 @@ async fn coach_chat(
             store,
             &coach_state,
             &message,
+            focus.as_ref(),
             local_today(),
             Utc::now(),
             &|| uuid::Uuid::new_v4().to_string(),
