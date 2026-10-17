@@ -1,5 +1,8 @@
 {
   "de": {
+    "1.1.1": [
+      "Der Coach ist jetzt aus jeder Ansicht erreichbar: Knopf \"Coach\" in der Seitenleiste oder Strg+K öffnet ein Seitenfenster neben dem Inhalt. Der Coach weiß, welche Seite du ansiehst, und zeigt das in der Zeile \"Ich sehe\". Das Gespräch bleibt beim Schließen und beim Wechsel der Seite erhalten."
+    ],
     "1.1.0": [
       "Schwellenwerte kommen jetzt aus Garmin: FTP, Laktatschwelle, maximale Herzfrequenz und Ruhepuls mit dem Datum aus Garmin, dazu Geschlecht und Geburtsjahr. Frühere Aktivitäten bekommen damit eine Last, ohne dass du etwas einträgst. Eigene Werte gehen vor, die Einstellungen zeigen je Wert Herkunft und Datum.",
       "Auch der Verlauf von FTP und Laktatschwelle und das Schwellentempo kommen aus Garmin. Läufe bekommen damit ohne Eingabe eine Last, und ältere Aktivitäten rechnen mit dem Wert, der damals galt.",
@@ -37,6 +40,9 @@
     ]
   },
   "en": {
+    "1.1.1": [
+      "The coach is now available from every view: the \"Coach\" button in the sidebar or Ctrl+K opens a side panel next to the content. The coach knows which page you are looking at and shows it in the \"I see\" line. The conversation is kept when you close the panel or switch pages."
+    ],
     "1.1.0": [
       "Thresholds now come from Garmin: FTP, lactate threshold, maximum heart rate and resting heart rate with Garmin's date, plus sex and year of birth. Earlier activities get a load without you entering anything. Your own values take precedence; the settings show the source and date of each value.",
       "FTP and lactate threshold history and the threshold pace also come from Garmin. Runs get a load without any input, and older activities use the value that applied back then.",
