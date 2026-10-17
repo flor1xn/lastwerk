@@ -7,6 +7,12 @@ import {
   POWER_CURVE_CODES,
   RAMP_CODES,
   READINESS_CODES,
+  DECISION_CODES,
+  DECISION_REASONS,
+  DECISION_MISSING,
+  INSIGHT_CODES,
+  VARIANT_KINDS,
+  type DashDecision,
   type DashPowerDuration,
   type DashReadiness,
 } from './backend/types';
@@ -20,8 +26,11 @@ import {
   efficiencyStatement,
   formName,
   heatThresholds,
+  insightStatement,
   joinParts,
+  lastPart,
   leadSentence,
+  planTodayOf,
   levelOf,
   powerCurveStatement,
   powerCurveSummary,
@@ -32,7 +41,6 @@ import {
   sparkPath,
   splitPmc,
   statementKey,
-  visibleWeeks,
   formatPowerDuration,
 } from './dashboard';
 import { catalogs, hasKey, translate } from './i18n';
@@ -93,7 +101,7 @@ describe('Aussagen aus Zustandscodes', () => {
       /(krank|gesund|diagnos|verletz|übertrain|erschöpf|medizin|illness|injur|overtrain|disease|health)/i;
     for (const lang of ['de', 'en'] as const) {
       for (const [key, text] of Object.entries(catalogs[lang])) {
-        if (!key.startsWith('ui.dash.')) continue;
+        if (!/^ui\.(dash|decision|insight|week_story)\./.test(key)) continue;
         expect(text, `${lang}:${key}`).not.toMatch(banned);
       }
     }
@@ -325,20 +333,71 @@ describe('Belastungskalender', () => {
   });
 });
 
-describe('sichtbare Planwochen', () => {
-  const plain = Array.from({ length: 12 }, (_, i) => ({
-    week_start: `w${String(i).padStart(2, '0')}`,
-  }));
-
-  it('zeigt kurze Pläne ganz', () => {
-    expect(visibleWeeks(plain.slice(0, 5), 'w02', 8)).toHaveLength(5);
+describe('Tagesentscheidung und Erkenntnisse (T44)', () => {
+  it('hat Texte für jeden Code in beiden Sprachen', () => {
+    for (const lang of ['de', 'en'] as const) {
+      for (const c of DECISION_CODES) {
+        expect(hasKey(lang, `ui.decision.state.${lastPart(c)}`), c).toBe(true);
+        expect(hasKey(lang, `ui.decision.ask.${lastPart(c)}`), c).toBe(true);
+      }
+      for (const c of ['no_plan', 'rest', 'lighten_empty']) {
+        expect(hasKey(lang, `ui.decision.hint.${c}`), c).toBe(true);
+      }
+      for (const r of DECISION_REASONS) {
+        expect(hasKey(lang, `ui.decision.reason.${lastPart(r)}`), r).toBe(true);
+      }
+      for (const m of DECISION_MISSING) expect(hasKey(lang, `ui.decision.missing.${m}`)).toBe(true);
+      for (const k of VARIANT_KINDS) expect(hasKey(lang, `ui.decision.kind.${k}`)).toBe(true);
+      for (const c of INSIGHT_CODES) expect(hasKey(lang, `ui.insight.ask.${c}`), c).toBe(true);
+    }
   });
 
-  it('hält die laufende Woche im Fenster', () => {
-    const shown = visibleWeeks(plain, 'w06', 8);
-    expect(shown).toHaveLength(8);
-    expect(shown.map((w) => w.week_start)).toContain('w06');
-    expect(visibleWeeks(plain, 'w00', 8)[0].week_start).toBe('w00');
-    expect(visibleWeeks(plain, 'w99', 8).at(-1)?.week_start).toBe('w11');
+  it('liest den Plan von heute aus der Entscheidung', () => {
+    const d = (state: DashDecision['state'], hard: boolean | null): DashDecision => ({
+      state,
+      main:
+        hard === null
+          ? null
+          : {
+              kind: 'planned',
+              sport: 'cycling',
+              template_id: 'bike.endurance.steady',
+              duration_min: 60,
+              hard,
+              planned_load: 40,
+            },
+      alternatives: [],
+      reasons: [],
+      rules: [],
+      missing: [],
+    });
+    expect(planTodayOf(d('decision.no_plan', null))).toBe('none');
+    expect(planTodayOf(d('decision.rest', null))).toBe('rest');
+    expect(planTodayOf(d('decision.lighten', null))).toBe('lighten');
+    expect(planTodayOf(d('decision.keep_easy', false))).toBe('keep_easy');
+    expect(planTodayOf(d('decision.already_adjusted', false))).toBe('easy');
+    expect(planTodayOf(d('decision.as_planned', true))).toBe('hard');
+    expect(planTodayOf(d('decision.as_planned', false))).toBe('easy');
+    for (const p of ['lighten', 'keep_easy'] as const) {
+      expect(hasKey('de', `ui.dash.lead.plan_${p}`)).toBe(true);
+      expect(hasKey('en', `ui.dash.lead.plan_${p}`)).toBe(true);
+    }
+  });
+
+  it('nimmt für Erkenntnisse die Aussage des Abschnitts', async () => {
+    const { MockBackend } = await import('./backend/mock');
+    const dash = await new MockBackend({ today: '2026-10-14', dashboard: 'extreme' }).getDashboard(
+      '2026-10-14',
+    );
+    for (const lang of ['de', 'en'] as const) {
+      for (const code of INSIGHT_CODES) {
+        const text = insightStatement(code, dash, tr(lang), lang);
+        expect(text.length, code).toBeGreaterThan(10);
+        expect(text, code).not.toMatch(/ui\.|\{|NaN/);
+      }
+    }
+    expect(insightStatement('form.overloaded', dash, tr('de'), 'de')).toBe(
+      translate('de', 'ui.form.overloaded_hint'),
+    );
   });
 });

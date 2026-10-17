@@ -3,14 +3,21 @@
   import { formatDayMonth, formatNumber, formatWeekday } from '../format';
   import { locale, t } from '../i18n';
 
-  let { days }: { days: DayLoad[] } = $props();
+  interface Props {
+    days: DayLoad[];
+    /** Niedrigere Balken für eine Tagesleiste (Wochen-Story auf "Heute", T44). */
+    compact?: boolean;
+    /** Kurzer Zustand je Tag unter dem Datum, zum Beispiel "verpasst". */
+    marks?: Record<string, { text: string; tone?: 'muted' | 'warn' | 'accent' }>;
+  }
+  let { days, compact = false, marks = {} }: Props = $props();
 
   const total = (d: DayLoad) => d.by_sport.reduce((s, x) => s + x.load, 0);
   // Gemeinsame Skala für alle Tage. Ohne Last bleibt sie 1, damit nichts durch 0 teilt.
   const max = $derived(Math.max(1, ...days.map(total)));
 </script>
 
-<div class="bars" role="group" aria-label={$t('ui.week.bars_label')}>
+<div class="bars" class:compact role="group" aria-label={$t('ui.week.bars_label')}>
   {#each days as day (day.date)}
     {@const sum = total(day)}
     <div class="day" data-testid="day" data-date={day.date}>
@@ -27,6 +34,11 @@
       </div>
       <div class="label">{formatWeekday(day.date, $locale)}</div>
       <div class="date muted">{formatDayMonth(day.date, $locale)}</div>
+      {#if marks[day.date]}
+        <div class="mark {marks[day.date].tone ?? 'muted'}" data-testid="day-mark">
+          {marks[day.date].text}
+        </div>
+      {/if}
       {#if day.not_computable > 0}
         <div class="na" data-testid="day-not-computable">
           {day.not_computable}× {$t('common.not_computable')}
@@ -78,6 +90,30 @@
     flex-direction: column-reverse;
     gap: 2px;
     border-bottom: 1px solid var(--border);
+  }
+
+  .compact .column {
+    height: 72px;
+  }
+
+  .mark {
+    margin-top: 2px;
+    font-size: var(--fs-label);
+    line-height: var(--lh-tight);
+    overflow-wrap: anywhere;
+  }
+
+  .mark.muted {
+    color: var(--muted);
+  }
+
+  .mark.warn {
+    color: var(--warn);
+  }
+
+  .mark.accent {
+    color: var(--accent);
+    font-weight: var(--fw-semibold);
   }
 
   .segment {

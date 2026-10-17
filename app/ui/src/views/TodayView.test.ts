@@ -1,9 +1,11 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setBackend } from '../lib/backend';
 import { MockBackend } from '../lib/backend/mock';
+import { coachSession } from '../lib/coach-session.svelte';
 import { setLocale } from '../lib/i18n';
-import { view } from '../lib/state';
+import { closeCoach, coachFocus, coachOpen, view } from '../lib/state';
 import TodayView from './TodayView.svelte';
 
 // Kein Canvas in jsdom.
@@ -24,6 +26,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  closeCoach();
+  coachSession.clearForTests();
   setBackend(null);
   setLocale('de');
   vi.useRealTimers();
@@ -32,29 +36,13 @@ afterEach(() => {
 describe('TodayView', () => {
   it('sagt ohne aktiven Plan, was fehlt, und führt zum Plan', async () => {
     render(TodayView);
-    expect((await screen.findByTestId('today-title')).textContent).toBe('Noch kein aktiver Plan');
+    const card = await screen.findByTestId('today-decision');
+    expect(card.dataset.state).toBe('no_plan');
+    expect(screen.getByTestId('today-title').textContent).toBe('Noch kein aktiver Plan');
     await fireEvent.click(screen.getByRole('button', { name: 'Zum Plan' }));
     let current = '';
     view.subscribe((v) => (current = v))();
     expect(current).toBe('plan');
-  });
-
-  it('zeigt mit aktivem Plan die Einheit von heute oder einen freien Tag, nie den Hinweis auf fehlenden Plan', async () => {
-    const detail = await backend.generatePlan({
-      week_start: '2026-10-12',
-      goal_date: null,
-      goal_sport: null,
-      weeks: 2,
-      locale: 'de',
-      sports: ['cycling'],
-      strength_per_week: 0,
-    });
-    await backend.setPlanStatus(detail.plan.plan_id, 'active');
-    render(TodayView);
-    const title = (await screen.findByTestId('today-title')).textContent ?? '';
-    expect(title).not.toBe('Noch kein aktiver Plan');
-    expect(title).not.toBe('Der aktive Plan deckt den heutigen Tag nicht ab');
-    expect(title.length).toBeGreaterThan(0);
   });
 
   it('zeigt den Formzustand als Text', async () => {
@@ -77,42 +65,189 @@ async function activatePlan() {
   await backend.setPlanStatus(detail.plan.plan_id, 'active');
 }
 
+describe('Tagesentscheidung', () => {
+  it('rich: wie geplant mit härterer Alternative, genau eine Primäraktion', async () => {
+    await activatePlan();
+    render(TodayView);
+    const card = await screen.findByTestId('today-decision');
+    expect(card.dataset.state).toBe('as_planned');
+    expect(screen.getByTestId('decision-state').textContent).toBe('Heute wie geplant');
+    expect(screen.getByTestId('today-title').textContent).toBe('Grundlagenfahrt');
+    expect(screen.getByTestId('decision-meta').textContent).toContain('90 Minuten');
+    expect(card.querySelectorAll('.primary')).toHaveLength(1);
+    expect(card.querySelector('.primary')?.textContent?.trim()).toBe('Mit Coach besprechen');
+    // Die einzige Karte der Seite.
+    expect(document.querySelectorAll('.card')).toHaveLength(1);
+    expect(screen.getByTestId('decision-alt-harder').textContent?.trim()).toBe('Härter');
+  });
+
+  it('Alternativen zeigen nur Einzelheiten und ändern den Plan nicht', async () => {
+    await activatePlan();
+    const before = JSON.stringify(await backend.getPlan((await backend.listPlans())[0].id));
+    render(TodayView);
+    const alt = await screen.findByTestId('decision-alt-harder');
+    expect(alt.getAttribute('aria-expanded')).toBe('false');
+    expect(alt.classList.contains('primary')).toBe(false);
+    await fireEvent.click(alt);
+    expect(alt.getAttribute('aria-expanded')).toBe('true');
+    const detail = screen.getByTestId('decision-alt-detail');
+    expect(detail.textContent).toContain('Schwelle 2 mal 20');
+    expect(detail.textContent).toContain('ändern den Plan nicht');
+    await fireEvent.click(alt);
+    expect(screen.queryByTestId('decision-alt-detail')).toBeNull();
+    const after = JSON.stringify(await backend.getPlan((await backend.listPlans())[0].id));
+    expect(after).toBe(before);
+    expect(get(coachOpen)).toBe(false);
+  });
+
+  it('low: leichter mit Grund, Regel R12 und "wie geplant" als Alternative', async () => {
+    backend.dashboardVariant = 'low';
+    await activatePlan();
+    render(TodayView);
+    const card = await screen.findByTestId('today-decision');
+    expect(card.dataset.state).toBe('lighten');
+    expect(screen.getByTestId('decision-state').textContent).toBe('Heute leichter als geplant');
+    expect(screen.getByTestId('decision-reasons').textContent).toContain('HRV oder Schlafdauer');
+    expect(screen.getByTestId('decision-rules').textContent).toContain('R12');
+    expect(screen.getByTestId('decision-rules').textContent).toContain('Erholungsdaten');
+    expect(screen.getByTestId('decision-alt-planned')).toBeTruthy();
+    expect(screen.getByTestId('lead').textContent).toContain('leichteren Einheit als geplant');
+  });
+
+  it('leichter ohne passende Vorlage: keine Empfehlung, Hinweis und geplante Einheit', async () => {
+    backend.decisionOverride = 'lighten_empty';
+    render(TodayView);
+    const card = await screen.findByTestId('today-decision');
+    expect(card.dataset.state).toBe('lighten');
+    expect(screen.queryByTestId('decision-meta')).toBeNull();
+    expect(screen.getByTestId('today-title').textContent).toBe('Heute leichter als geplant');
+    expect(screen.getByTestId('decision-hint').textContent).toContain('keine lockere Vorlage');
+    expect(screen.getByTestId('decision-alt-planned')).toBeTruthy();
+    expect(card.querySelectorAll('.primary')).toHaveLength(1);
+    expect(card.textContent).not.toMatch(/NaN|undefined|null/);
+  });
+
+  it('sparse: nennt fehlende Eingänge und bietet nichts Härteres an', async () => {
+    backend.dashboardVariant = 'sparse';
+    await activatePlan();
+    render(TodayView);
+    await screen.findByTestId('today-decision');
+    expect(screen.getByTestId('decision-missing').textContent).toContain('Erholungswerte');
+    expect(screen.queryByTestId('decision-alternatives')).toBeNull();
+  });
+
+  it('empty ohne Plan: no_plan, ein Ruhetag sagt das', async () => {
+    backend.dashboardVariant = 'empty';
+    render(TodayView);
+    expect((await screen.findByTestId('today-decision')).dataset.state).toBe('no_plan');
+    cleanup();
+    backend.decisionOverride = 'rest';
+    render(TodayView);
+    expect((await screen.findByTestId('today-title')).textContent).toBe('Heute frei');
+    expect(screen.getByTestId('decision-rules').textContent).toContain('R05');
+  });
+
+  it('die Primäraktion öffnet den Coach mit Thema und Frage, ohne zu senden', async () => {
+    backend.dashboardVariant = 'low';
+    await activatePlan();
+    render(TodayView);
+    await fireEvent.click(await screen.findByTestId('decision-discuss'));
+    expect(get(coachOpen)).toBe(true);
+    expect(get(coachFocus).topic).toBe('decision.lighten');
+    expect(coachSession.draft).toBe('Warum soll ich heute leichter trainieren als geplant?');
+    expect(coachSession.messages).toHaveLength(0);
+  });
+});
+
+describe('Coach-Erkenntnisse', () => {
+  it('zeigt höchstens drei Zeilen mit den Aussagen der Abschnitte', async () => {
+    backend.dashboardVariant = 'extreme';
+    render(TodayView);
+    const section = await screen.findByTestId('today-insights');
+    const rows = screen.getAllByTestId('insight');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeLessThanOrEqual(3);
+    expect(section.textContent).not.toMatch(/NaN|undefined|ui\.dash/);
+  });
+
+  it('ein Knopf öffnet den Coach mit Thema und Prefill und sendet nicht', async () => {
+    backend.dashboardVariant = 'low';
+    render(TodayView);
+    await screen.findByTestId('today-insights');
+    const row = screen.getAllByTestId('insight').find((r) => r.dataset.code === 'readiness.low');
+    expect(row).toBeTruthy();
+    expect(row?.textContent).toContain('deutlich unter deinem Schnitt');
+    await fireEvent.click(row!.querySelector('button')!);
+    expect(get(coachOpen)).toBe(true);
+    expect(get(coachFocus).topic).toBe('readiness.low');
+    expect(coachSession.draft).toContain('Erholungswerte liegen unter meinem Schnitt');
+    expect(coachSession.messages).toHaveLength(0);
+  });
+
+  it('sagt ohne Erkenntnis, dass nichts auffällt', async () => {
+    backend.dashboardVariant = 'empty';
+    render(TodayView);
+    const section = await screen.findByTestId('today-insights');
+    expect(screen.queryAllByTestId('insight')).toHaveLength(0);
+    expect(section.textContent).toContain('nichts auf');
+  });
+});
+
 describe('Dashboard auf der Startseite', () => {
-  it('zeigt alle Abschnitte mit einer Aussage und den Kennzahlen', async () => {
+  it('zeigt die Abschnitte in der neuen Reihenfolge, jeder mit Aussage', async () => {
+    await activatePlan();
     render(TodayView);
     await screen.findByTestId('today-form');
-    for (const id of [
+    const ids = [
+      'today-decision',
+      'today-insights',
       'today-readiness',
       'today-form',
+      'today-week-story',
       'today-ramp',
       'today-distribution',
-      'today-week',
-      'today-adherence',
-      'today-efficiency',
-      'today-power',
-      'today-calendar',
-    ]) {
-      const section = screen.getByTestId(id);
+    ];
+    const nodes = ids.map((id) => screen.getByTestId(id));
+    for (let i = 1; i < nodes.length; i++) {
       expect(
-        section.querySelector('.section-label')?.textContent?.trim().length,
-        id,
-      ).toBeGreaterThan(0);
+        nodes[i - 1].compareDocumentPosition(nodes[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ids[i],
+      ).toBeTruthy();
+    }
+    for (const id of ids.slice(2)) {
+      const section = screen.getByTestId(id);
       expect(
         section.querySelector('.section-statement')?.textContent?.trim().length,
         id,
       ).toBeGreaterThan(0);
     }
+    // Nach Verlauf umgezogen.
+    for (const id of [
+      'today-adherence',
+      'today-efficiency',
+      'today-power',
+      'today-calendar',
+      'today-week',
+    ]) {
+      expect(screen.queryByTestId(id), id).toBeNull();
+      expect(screen.queryByTestId(id.replace('today-', 'dash-')), id).toBeNull();
+    }
     expect(screen.getByTestId('vital-hrv')).toBeTruthy();
-    expect(screen.getByTestId('vital-resting_hr')).toBeTruthy();
-    expect(screen.getByTestId('vital-sleep')).toBeTruthy();
     expect(screen.getAllByTestId('share-week')).toHaveLength(8);
-    expect(screen.getAllByTestId('power-row')).toHaveLength(5);
-    // Jede Zelle des Kalenders trägt den Wert im title.
-    const cells = document.querySelectorAll('[data-testid="calendar"] rect.cell');
-    expect(cells.length).toBe(365);
-    expect(cells[cells.length - 1].querySelector('title')?.textContent).toMatch(/\d/);
-    // Body Battery kommt mit T22: ohne Wert keine Spalte.
     expect(screen.queryByTestId('vital-body-battery')).toBeNull();
+  });
+
+  it('erzählt die Woche mit Ausblick auf die nächsten sieben Tage', async () => {
+    await activatePlan();
+    render(TodayView);
+    const story = await screen.findByTestId('today-week-story');
+    expect(story.querySelector('.section-statement')?.textContent).toMatch(
+      /^Bis gestern \d+ von \d+ geplanten Einheiten erledigt/,
+    );
+    expect(screen.getByTestId('week-story-outlook').textContent).toMatch(
+      /Die nächsten sieben Tage im Plan: harte Tage \d+, Ruhetage \d+\./,
+    );
+    expect(story.querySelectorAll('[data-testid="day"]')).toHaveLength(7);
   });
 
   it('verbindet Form, Bereitschaft und Plan in einem Satz', async () => {
@@ -121,6 +256,7 @@ describe('Dashboard auf der Startseite', () => {
     const lead = (await screen.findByTestId('lead')).textContent ?? '';
     expect(lead).toMatch(/^Deine Form ist /);
     expect(lead).toContain('Erholungswerte');
+    expect(lead).toContain('lockere Einheit');
     expect(lead.endsWith('.')).toBe(true);
   });
 
@@ -145,21 +281,10 @@ describe('Dashboard auf der Startseite', () => {
     expect(screen.getByTestId('today-form').textContent).toContain('Noch keine Last berechnet');
     expect(screen.getByTestId('today-ramp').textContent).toContain('fehlt noch');
     expect(screen.getByTestId('today-distribution').textContent).toContain('Zeit in Zonen');
-    expect(screen.getByTestId('today-adherence').textContent).toContain('aktiven Plan');
-    expect(screen.getByTestId('today-efficiency').textContent).toContain('fehlen');
-    expect(screen.getByTestId('today-power').textContent).toContain('fehlen');
-    expect(screen.getByTestId('today-calendar').textContent).toContain(
-      'Noch keine berechnete Last',
+    expect(screen.getByTestId('today-week-story').textContent).toContain(
+      'Ohne aktiven Plan gibt es keinen Vergleich',
     );
-    // Keine erfundenen Kennzahlen: weder Metriken noch Diagramme in leeren Abschnitten.
-    for (const id of [
-      'ramp-metric',
-      'distribution-metric',
-      'efficiency-metric',
-      'form-value',
-      'vital-hrv',
-      'calendar',
-    ]) {
+    for (const id of ['ramp-metric', 'distribution-metric', 'form-value', 'vital-hrv']) {
       expect(screen.queryByTestId(id), id).toBeNull();
     }
     expect(screen.getByTestId('lead').textContent).toBe(
@@ -189,12 +314,13 @@ describe('Dashboard auf der Startseite', () => {
   });
 
   it('bleibt bei großen Werten und wenigen Daten lesbar', async () => {
+    await activatePlan();
     for (const variant of ['extreme', 'sparse', 'gaps'] as const) {
       backend.dashboardVariant = variant;
       const { unmount } = render(TodayView);
       await screen.findByTestId('today-form');
       expect(screen.getByTestId('today').textContent, variant).not.toMatch(
-        /NaN|undefined|Infinity/,
+        /NaN|undefined|Infinity|ui\.(decision|insight|week_story)\./,
       );
       unmount();
     }
@@ -202,12 +328,17 @@ describe('Dashboard auf der Startseite', () => {
 
   it('folgt der Sprache', async () => {
     setLocale('en');
+    await activatePlan();
     render(TodayView);
     await screen.findByTestId('today-form');
     expect(screen.getByTestId('today-readiness').querySelector('.section-label')?.textContent).toBe(
       'Readiness',
     );
     expect(screen.getByTestId('lead').textContent).toMatch(/^Your form is /);
+    expect(screen.getByTestId('decision-discuss').textContent?.trim()).toBe('Discuss with coach');
+    expect(screen.getByTestId('today-insights').querySelector('.section-label')?.textContent).toBe(
+      'Coach insights',
+    );
     expect(screen.getByTestId('form-state').textContent).toMatch(
       /Fresh|Balanced|Loaded|Overloaded/,
     );

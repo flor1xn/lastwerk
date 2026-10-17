@@ -8,12 +8,15 @@
 import type {
   AdherenceCode,
   DashAdherence,
+  DashDecision,
+  Dashboard,
   DashDistribution,
   DashEfficiency,
   DashPowerDuration,
   DashRamp,
   DashReadiness,
   FormCode,
+  InsightCode,
   Locale,
   PmcPoint,
   PowerCurveCode,
@@ -143,7 +146,28 @@ export function calendarStatement(
 
 // --- Kopfzeile: Form, Bereitschaft und Plan in einem Satz ----------------------------------
 
-export type PlanToday = 'none' | 'rest' | 'easy' | 'hard';
+export type PlanToday = 'none' | 'rest' | 'easy' | 'hard' | 'lighten' | 'keep_easy';
+
+/**
+ * Der Plan von heute für die Ein-Satz-Aussage, gelesen aus der Tagesentscheidung (T44): Rät sie
+ * zu leichter oder locker, sagt der Kopf das, sonst nennt er die geplante Einheit.
+ */
+export function planTodayOf(decision: DashDecision): PlanToday {
+  switch (decision.state) {
+    case 'decision.no_plan':
+      return 'none';
+    case 'decision.rest':
+      return 'rest';
+    case 'decision.lighten':
+      return 'lighten';
+    case 'decision.keep_easy':
+      return 'keep_easy';
+    case 'decision.already_adjusted':
+      return 'easy';
+    case 'decision.as_planned':
+      return decision.main?.hard ? 'hard' : 'easy';
+  }
+}
 
 /** Fügt Satzteile mit Komma und "und" vor dem letzten Teil zusammen. */
 export function joinParts(parts: string[], and: string): string {
@@ -169,6 +193,43 @@ export function leadSentence(
   if (plan !== 'none') parts.push(tr(`ui.dash.lead.plan_${plan}`));
   const sentence = joinParts(parts, tr('ui.dash.lead.and'));
   return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`;
+}
+
+// --- Coach-Erkenntnisse (T44) ---------------------------------------------------------------
+
+/**
+ * Text einer Erkenntnis: dieselbe Aussage, die der Abschnitt der Kennzahl trägt
+ * (`ui.dash.statement.<code>`, bei der Form der Hinweis des Formzustands).
+ */
+export function insightStatement(
+  code: InsightCode,
+  dash: Dashboard,
+  tr: Translate,
+  locale: Locale,
+): string {
+  switch (code) {
+    case 'form.overloaded':
+      return tr('ui.form.overloaded_hint');
+    case 'readiness.low':
+      return readinessStatement(dash.readiness, tr, locale);
+    case 'ramp.steep':
+    case 'ramp.building':
+      return rampStatement(dash.ramp, tr, locale);
+    case 'distribution.intensity_heavy':
+      return distributionStatement(dash.distribution, tr, locale);
+    case 'adherence.under':
+    case 'adherence.over':
+      return adherenceStatement(dash.adherence, true, tr, locale);
+    case 'efficiency.rising':
+      return efficiencyStatement(dash.efficiency, tr, locale);
+    case 'power_curve.rising':
+      return tr(statementKey(code));
+  }
+}
+
+/** `decision.lighten` wird `lighten`, `decision.reason.form_fresh` wird `form_fresh`. */
+export function lastPart(code: string): string {
+  return code.slice(code.lastIndexOf('.') + 1);
 }
 
 // --- Diagrammdaten ------------------------------------------------------------------------
@@ -376,24 +437,7 @@ export function calendarStats(loadDays: { date: string; load: number }[]): Calen
   return { trainingDays, total, bestWeek: Math.max(0, ...weeks.values()) };
 }
 
-// --- Planerfüllung und Leistungskurve -------------------------------------------------------
-
-/**
- * Höchstens `max` Wochen des Plans, die laufende Woche möglichst in der Mitte: Der Blick gilt
- * dem, was zuletzt war, und der nächsten Woche. Reihenfolge bleibt aufsteigend.
- */
-export function visibleWeeks<T extends { week_start: string }>(
-  weeks: T[],
-  today: string,
-  max = 8,
-): T[] {
-  if (weeks.length <= max) return weeks;
-  const after = weeks.findIndex((w) => w.week_start > today);
-  // Index der laufenden Woche; liegen alle Wochen in der Zukunft, der erste.
-  const current = Math.max(0, after === -1 ? weeks.length - 1 : after - 1);
-  const start = Math.max(0, Math.min(current - Math.floor(max / 2) + 1, weeks.length - max));
-  return weeks.slice(start, start + max);
-}
+// --- Leistungskurve -----------------------------------------------------------------------
 
 /** Dauer der Bestleistung: 5 s, 1 min, 20 min, 1 h. */
 export function formatPowerDuration(seconds: number): string {

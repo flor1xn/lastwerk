@@ -84,6 +84,20 @@ describe('Reiter (T42)', () => {
     expect(screen.queryByTestId('pmc-values')).toBeNull();
   });
 
+  it('zeigt Effizienz und Leistungskurve oben in Leistung, den Belastungskalender in Fortschritt (T44)', async () => {
+    historyTab.set('performance');
+    render(HistoryView);
+    const eff = await screen.findByTestId('dash-efficiency');
+    const power = screen.getByTestId('dash-power');
+    const curve = await screen.findByTestId('perf-power');
+    expect(eff.compareDocumentPosition(curve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(power.querySelector('.section-statement')?.textContent?.length).toBeGreaterThan(0);
+    await fireEvent.click(tab('progress'));
+    const cal = await screen.findByTestId('dash-calendar');
+    expect(cal.querySelectorAll('[data-testid="calendar"] rect.cell')).toHaveLength(365);
+    expect(screen.queryByTestId('dash-efficiency')).toBeNull();
+  });
+
   it('schaltet im Körper zwischen Erholung und Gesundheit', async () => {
     historyTab.set('body');
     render(HistoryView);
