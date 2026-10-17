@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { ProposalPreview } from '../../lib/backend/types';
-  import { compareCell, type ProposalState } from '../../lib/coach';
-  import { formatDate, formatDayMonth, formatNumber } from '../../lib/format';
-  import { locale, t } from '../../lib/i18n';
-  import { templateName, WEEKDAYS } from '../../lib/plan';
+  import type { ProposalPreview } from '../../backend/types';
+  import { compareCell, type ProposalState } from '../../coach';
+  import { formatDate, formatDayMonth, formatNumber } from '../../format';
+  import { locale, t } from '../../i18n';
+  import { templateName, WEEKDAYS } from '../../plan';
 
   // Vorschlag des Coachs (SPEC 9.7, 4): zeigt Änderungen und Vorher und Nachher, ändert aber
   // nichts, bis der Nutzer "Übernehmen" wählt. Alle Texte des Modells erscheinen als Text.

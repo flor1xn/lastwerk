@@ -5,8 +5,8 @@ import { MockBackend, type MockOptions } from '../../lib/backend/mock';
 import { resetCoachSetupState } from '../../lib/coach-setup';
 import { setLocale } from '../../lib/i18n';
 import { get } from 'svelte/store';
-import { settingsTab, view } from '../../lib/state';
-import PlanView from '../PlanView.svelte';
+import { closeCoach, openCoach, settingsTab, view } from '../../lib/state';
+import CoachDrawer from '../../lib/components/coach/CoachDrawer.svelte';
 import SettingsView from '../SettingsView.svelte';
 import CoachSetup from './CoachSetup.svelte';
 
@@ -21,6 +21,7 @@ afterEach(() => {
   setLocale('de');
   view.set('today');
   settingsTab.set('data');
+  closeCoach();
   resetCoachSetupState();
 });
 
@@ -202,10 +203,11 @@ describe('Einrichtung des Coachs, Einstellungen und Plan', () => {
     await screen.findByTestId('coach-setup-ready');
   });
 
-  it('der Hinweis ohne Modell in der Planansicht führt zum Reiter Coach', async () => {
+  it('der Hinweis ohne Modell im Fenster des Coachs führt zum Reiter Coach', async () => {
     mock({ ollama: 'missing' });
     view.set('plan');
-    render(PlanView);
+    render(CoachDrawer);
+    openCoach();
     const link = await screen.findByTestId('coach-open-setup');
     expect(link.textContent).toContain('Zur Einrichtung in den Einstellungen');
     await fireEvent.click(link);

@@ -186,3 +186,21 @@ describe('Coach der Attrappe', () => {
     expect(p.provider.base_url).toMatch(/^http:\/\/127\.0\.0\.1/);
   });
 });
+
+describe('Fokus in der Attrappe (T43)', () => {
+  it('zeigt den Fokus als Codes in der Vorschau, protokolliert ihn und lehnt Fremdes ab', async () => {
+    const b = new MockBackend({ today: TODAY });
+    await b.quickPlan(quick());
+    const shown = await b.coachPreview('x', { view: 'history_activity', topic: 'ramp.steep' });
+    expect(shown.messages[0].content).toContain(
+      '"focus":{"view":"history_activity","topic":"ramp.steep"}',
+    );
+    expect((await b.coachPreview('x', null)).messages[0].content).not.toContain('"focus"');
+    await b.coachChat('Hallo', { view: 'plan', topic: null });
+    expect(b.coachFocusLog()).toEqual([{ view: 'plan', topic: null }]);
+    const bad = { view: 'detail', topic: null } as unknown as Parameters<typeof b.coachChat>[1];
+    expect(await code(b.coachChat('Hallo', bad))).toBe('invalid_value');
+    expect(await code(b.coachPreview('x', bad))).toBe('invalid_value');
+    expect(b.coachFocusLog()).toHaveLength(1);
+  });
+});

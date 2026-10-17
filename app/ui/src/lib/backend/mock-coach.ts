@@ -11,7 +11,10 @@ import { daysBetween, mondayOf } from '../dates';
 import type { MockPlanning } from './mock-plans';
 import {
   BackendError,
+  CHAT_TOPICS,
+  CHAT_VIEWS,
   type AvailabilityDay,
+  type ChatFocus,
   type ChangeLine,
   type CoachReply,
   type CoachStatus,
@@ -109,11 +112,21 @@ function sumLoad(week: PlanWeek): number {
   );
 }
 
+/** Wie `parse_focus` im Rust-Teil: unbekannte Codes sind `invalid_value`. */
+function checkFocus(focus: ChatFocus | null): void {
+  if (!focus) return;
+  const viewOk = (CHAT_VIEWS as readonly string[]).includes(focus.view);
+  const topicOk = focus.topic === null || (CHAT_TOPICS as readonly string[]).includes(focus.topic);
+  if (!viewOk || !topicOk) throw err('invalid_value');
+}
+
 export class MockCoach {
   private model: string | null = null;
   /** Modelle, die der Server hat. Die Einrichtung der Attrappe (T29) ändert sie. */
   private models = [...MODELS];
   private history: { role: 'user' | 'assistant'; text: string }[] = [];
+  /** Fokus jedes Gesprächsschritts, für Tests (T43). */
+  private focuses: (ChatFocus | null)[] = [];
   private pending = new Map<string, Pending>();
   private busy = false;
   private epoch = 0;
@@ -183,8 +196,13 @@ export class MockCoach {
     this.epoch++;
   }
 
+  focusLog(): (ChatFocus | null)[] {
+    return [...this.focuses];
+  }
+
   /** Der Text, der bei der nächsten Nachricht zum Modell ginge (erfundene Fassung). */
-  preview(message: string): PromptPreview {
+  preview(message: string, focus: ChatFocus | null = null): PromptPreview {
+    checkFocus(focus);
     const base = this.planning.basePlan();
     if (!base) throw err('no_plan');
     const text = message.trim();
@@ -210,6 +228,10 @@ export class MockCoach {
         { code: 'tsb_now', value: -6.8 },
         { code: 'ramp_ctl_7d', value: 2.1 },
       ],
+      // Wie im Rust-Teil: nur zwei Codes, ohne Thema fehlt "topic", ohne Fokus das Feld.
+      ...(focus
+        ? { focus: { view: focus.view, ...(focus.topic ? { topic: focus.topic } : {}) } }
+        : {}),
     };
     const system =
       this.options.locale() === 'de'
@@ -230,7 +252,8 @@ export class MockCoach {
     };
   }
 
-  async chat(message: string): Promise<CoachReply> {
+  async chat(message: string, focus: ChatFocus | null = null): Promise<CoachReply> {
+    checkFocus(focus);
     if (!this.options.available || this.models.length === 0) throw err('coach_unavailable');
     // Steuerzeichen außer Zeilenumbruch und Tabulator werden Leerzeichen, wie im Rust-Teil.
     const text = [...message]
@@ -242,6 +265,7 @@ export class MockCoach {
     const base = this.planning.basePlan();
     if (!base) throw err('no_plan');
     if (this.busy) throw err('busy');
+    this.focuses.push(focus ? { ...focus } : null);
     this.busy = true;
     const epoch = this.epoch;
     try {

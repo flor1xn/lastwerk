@@ -1,7 +1,8 @@
 // Zustand, den mehrere Ansichten teilen: aktive Ansicht und Reiter, gewählte Aktivität, Thema.
 
-import { get, writable } from 'svelte/store';
-import type { FitMigration, Theme } from './backend/types';
+import { derived, get, writable } from 'svelte/store';
+import type { ChatFocus, ChatTopic, ChatView, FitMigration, Theme } from './backend/types';
+import { coachSession } from './coach-session.svelte';
 
 /**
  * Hauptpunkte der Seitenleiste (T42, E8): nur Heute, Plan und Verlauf. Einstellungen stehen
@@ -107,5 +108,68 @@ export const wizardOpen = writable(false);
  * fragt neu.
  */
 export const coachReleased = writable(false);
+
+/** Das Seitenfenster des Coachs ist offen (T43, E9). Nicht modal, der Inhalt bleibt bedienbar. */
+export const coachOpen = writable(false);
+
+/**
+ * Thema, zu dem das Gespräch geöffnet wurde, mit der Ansicht, in der das geschah. Es gilt nur,
+ * solange der Nutzer in dieser Ansicht bleibt; wer weiterklickt, spricht wieder allgemein über die
+ * neue Ansicht.
+ */
+const coachTopic = writable<{ topic: ChatTopic; view: ChatView } | null>(null);
+
+/** Die Ansicht als Code für den Coach (SPEC 9.7). Nur die Art der Seite, nie die gewählte ID. */
+export function chatViewOf(v: View, history: HistoryTab, activityId: number | null): ChatView {
+  if (v !== 'history') return v;
+  if (history === 'activities') {
+    return activityId === null ? 'history_activities' : 'history_activity';
+  }
+  return `history_${history}`;
+}
+
+const currentChatView = derived(
+  [view, historyTab, selectedActivityId],
+  ([$view, $historyTab, $selectedActivityId]) =>
+    chatViewOf($view, $historyTab, $selectedActivityId),
+);
+
+// Wer die Ansicht wechselt, hat das Thema verlassen; es kommt auch beim Zurückkehren nicht wieder.
+currentChatView.subscribe((v) => {
+  const t = get(coachTopic);
+  if (t && t.view !== v) coachTopic.set(null);
+});
+
+/** Fokus, der mit jeder Nachricht und jeder Vorschau an den Coach geht (T43). */
+export const coachFocus = derived([currentChatView, coachTopic], ([$view, $topic]): ChatFocus => ({
+  view: $view,
+  topic: $topic && $topic.view === $view ? $topic.topic : null,
+}));
+
+export interface OpenCoachOptions {
+  /** Text für das Eingabefeld. Er wird nie gesendet, das tut nur der Nutzer. */
+  prefill?: string;
+  /** Thema als Zustandscode, etwa aus einer Erkenntnis auf "Heute". */
+  topic?: ChatTopic;
+}
+
+/**
+ * Öffnet das Seitenfenster des Coachs. Ein Prefill ersetzt nur den Entwurf im Eingabefeld und
+ * sendet nichts; die Freigabe je Sitzung (`coachReleased`) bleibt das Tor vor jedem Senden.
+ */
+export function openCoach(options: OpenCoachOptions = {}): void {
+  coachTopic.set(options.topic ? { topic: options.topic, view: get(currentChatView) } : null);
+  if (options.prefill !== undefined) coachSession.draft = options.prefill;
+  coachOpen.set(true);
+}
+
+export function closeCoach(): void {
+  coachOpen.set(false);
+}
+
+export function toggleCoach(): void {
+  if (get(coachOpen)) closeCoach();
+  else openCoach();
+}
 /** Ergebnis der Übernahme des früheren FIT-Ordners (T28), bis der Nutzer die Meldung ausblendet. */
 export const fitMigration = writable<FitMigration | null>(null);

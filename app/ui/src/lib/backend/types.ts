@@ -881,6 +881,73 @@ export interface CoachReply {
   rejected_codes: string[];
 }
 
+/**
+ * Ansicht beim Gespräch mit dem Coach (SPEC 9.7, T43). Spiegelt `ChatView` in
+ * `crates/coach/src/chat.rs`; der Rust-Teil lehnt jeden anderen Code ab (`invalid_value`).
+ */
+export const CHAT_VIEWS = [
+  'today',
+  'plan',
+  'history_calendar',
+  'history_activities',
+  'history_activity',
+  'history_progress',
+  'history_performance',
+  'history_body',
+  'settings',
+] as const;
+export type ChatView = (typeof CHAT_VIEWS)[number];
+
+/**
+ * Thema des Gesprächs: genau die Zustandscodes aus `lastwerk_core` (Kennzahlen und
+ * Tagesentscheidung). Spiegelt `ChatTopic` in `crates/coach/src/chat.rs`.
+ */
+export const CHAT_TOPICS = [
+  'ramp.no_data',
+  'ramp.falling',
+  'ramp.steady',
+  'ramp.building',
+  'ramp.steep',
+  'readiness.no_data',
+  'readiness.normal',
+  'readiness.low',
+  'form.fresh',
+  'form.balanced',
+  'form.loaded',
+  'form.overloaded',
+  'adherence.no_data',
+  'adherence.under',
+  'adherence.on_track',
+  'adherence.over',
+  'distribution.no_data',
+  'distribution.easy_dominant',
+  'distribution.intensity_heavy',
+  'decoupling.no_data',
+  'decoupling.coupled',
+  'decoupling.decoupled',
+  'efficiency.no_data',
+  'efficiency.falling',
+  'efficiency.flat',
+  'efficiency.rising',
+  'power_curve.no_data',
+  'power_curve.falling',
+  'power_curve.flat',
+  'power_curve.rising',
+  'decision.no_plan',
+  'decision.rest',
+  'decision.already_adjusted',
+  'decision.lighten',
+  'decision.keep_easy',
+  'decision.as_planned',
+] as const;
+export type ChatTopic = (typeof CHAT_TOPICS)[number];
+
+/** Worauf der Nutzer schaut: nur Codes, keine ID, kein Datum, kein Name (SPEC 9.3). */
+export interface ChatFocus {
+  view: ChatView;
+  topic: ChatTopic | null;
+}
+
 export interface PromptPreview {
   provider: { name: string; base_url: string; model: string | null };
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
@@ -1230,10 +1297,12 @@ export interface Backend {
   coachStatus(): Promise<CoachStatus>;
   /** Merkt das Modell. Leer heißt: das Programm wählt eines. */
   coachSetModel(model: string): Promise<CoachStatus>;
-  /** Der exakte Eingang der nächsten Nachricht (F24). Sendet nichts. */
-  coachPreview(message: string): Promise<PromptPreview>;
-  /** Ein Gesprächsschritt. Höchstens einer gleichzeitig (Fehler `busy`). */
-  coachChat(message: string): Promise<CoachReply>;
+  /** Der exakte Eingang der nächsten Nachricht (F24), mit dem Fokus der Oberfläche. Sendet
+   * nichts. */
+  coachPreview(message: string, focus: ChatFocus | null): Promise<PromptPreview>;
+  /** Ein Gesprächsschritt mit dem Fokus der Oberfläche (T43). Höchstens einer gleichzeitig
+   * (Fehler `busy`). */
+  coachChat(message: string, focus: ChatFocus | null): Promise<CoachReply>;
   /** Übernimmt einen Vorschlag und aktiviert den neuen Plan. */
   coachApply(proposalId: string): Promise<PlanDetail>;
   /** Beginnt das Gespräch von vorn (Verlauf und offene Vorschläge weg). */

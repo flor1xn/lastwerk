@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { getBackend } from './lib/backend';
+  import CoachDrawer from './lib/components/coach/CoachDrawer.svelte';
   import ErrorNote from './lib/components/ErrorNote.svelte';
   import GarminSyncLine from './lib/components/GarminSyncLine.svelte';
   import MigrationNotice from './lib/components/MigrationNotice.svelte';
@@ -9,7 +10,9 @@
   import {
     applyTheme,
     bumpData,
+    coachOpen,
     fitMigration,
+    toggleCoach,
     VIEWS,
     view,
     watchSystemTheme,
@@ -67,6 +70,23 @@
 
   const select = (v: View) => view.set(v);
 
+  // Per Tastenkürzel ohne Bewegung (siehe CoachDrawer), per Knopf mit.
+  let coachInstant = $state(false);
+
+  function clickCoach() {
+    coachInstant = false;
+    toggleCoach();
+  }
+
+  // Strg+K (macOS: Cmd+K) öffnet und schließt den Coach aus jeder Ansicht, nicht im Assistenten.
+  function onWindowKeydown(e: KeyboardEvent) {
+    if (e.key.toLowerCase() !== 'k' || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    if (!ready || startError || !onboarded || $wizardOpen) return;
+    e.preventDefault();
+    coachInstant = true;
+    toggleCoach();
+  }
+
   function finishSetup() {
     onboarded = true;
     wizardOpen.set(false);
@@ -84,6 +104,8 @@
   >
 {/snippet}
 
+<svelte:window onkeydown={onWindowKeydown} />
+
 {#if startError}
   <main class="start"><ErrorNote error={startError} /></main>
 {:else if !ready}
@@ -91,7 +113,7 @@
 {:else if !onboarded || $wizardOpen}
   <Wizard onfinish={finishSetup} />
 {:else}
-  <div class="shell">
+  <div class="shell" class:coach-open={$coachOpen}>
     <aside>
       <div class="brand">
         <svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true">
@@ -111,6 +133,18 @@
         <div class="sync-status">
           <GarminSyncLine testid="sidebar-sync" short />
         </div>
+        <!-- Der Coach ist keine Ansicht, sondern ein Fenster neben jeder Ansicht (T43). -->
+        <button
+          class="coach-toggle"
+          class:active={$coachOpen}
+          aria-expanded={$coachOpen}
+          aria-controls="coach-drawer"
+          aria-keyshortcuts="Control+K Meta+K"
+          title={$t('ui.coach.drawer.shortcut')}
+          data-testid="nav-coach"
+          onclick={clickCoach}
+          >{$t('ui.nav.coach')}<kbd aria-hidden="true">{$t('ui.coach.drawer.kbd')}</kbd></button
+        >
         {@render navButton('settings')}
       </nav>
     </aside>
@@ -127,6 +161,7 @@
         <SettingsView />
       {/if}
     </main>
+    <CoachDrawer instant={coachInstant} />
   </div>
 {/if}
 
@@ -229,6 +264,32 @@
     box-sizing: border-box;
     padding: var(--space-6) var(--space-7) var(--space-7);
     max-width: 1500px;
+  }
+
+  /* Ab 1100 px steht der offene Coach neben dem Inhalt statt darüber (T43). */
+  @media (min-width: 1100px) {
+    .shell.coach-open main {
+      margin-right: min(400px, 100vw);
+    }
+  }
+
+  nav button.coach-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  nav button.coach-toggle.active {
+    background: var(--panel-2);
+    color: var(--text);
+  }
+
+  kbd {
+    font-family: inherit;
+    font-size: var(--fs-small);
+    color: var(--muted);
+    opacity: 0.8;
   }
 
   main.start {

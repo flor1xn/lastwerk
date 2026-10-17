@@ -7,9 +7,8 @@
   import PlanDisplay from '../lib/components/PlanDisplay.svelte';
   import { t, setLocale } from '../lib/i18n';
   import { Loader } from '../lib/loader.svelte';
-  import { applyTheme, bumpData, dataVersion, selectedPlanId } from '../lib/state';
+  import { applyTheme, bumpData, dataVersion, openCoach, selectedPlanId } from '../lib/state';
   import AvailabilityPanel from './plan/AvailabilityPanel.svelte';
-  import CoachPanel from './plan/CoachPanel.svelte';
   import ExportPanel from './plan/ExportPanel.svelte';
   import GeneratePanel from './plan/GeneratePanel.svelte';
   import GoalPanel from './plan/GoalPanel.svelte';
@@ -48,7 +47,7 @@
     void detailLoader.run(() => getBackend().getPlan(id));
   });
 
-  // Ein Plan ist neu (erzeugt, vom Coach übernommen): anzeigen, Liste und Eingaben neu lesen.
+  // Ein Plan ist neu (über die drei Fragen erzeugt): anzeigen, Liste und Eingaben neu lesen.
   // Ziel und Verfügbarkeit können sich dabei geändert haben.
   function created(detail: PlanDetail) {
     detailLoader.data = detail;
@@ -89,9 +88,6 @@
     }
     bumpData();
   }
-
-  // Das Gespräch braucht einen aktiven Plan oder einen Entwurf, wie der Rust-Teil ihn wählt.
-  const hasPlan = $derived((listLoader.data ?? []).some((p) => p.status !== 'archived'));
 </script>
 
 <div class="page plan-page">
@@ -106,6 +102,7 @@
     <ErrorNote error={inputsLoader.error} />
   {/if}
 
+  <!-- Einspaltig (T43): Das Gespräch liegt im Seitenfenster des Coachs, nicht mehr hier. -->
   <div class="layout">
     <div class="main">
       {#if inputsLoader.data}
@@ -121,15 +118,16 @@
       {#if detailLoader.error}
         <ErrorNote error={detailLoader.error} />
       {:else if detailLoader.data}
+        <div class="talk">
+          <button type="button" onclick={() => openCoach()} data-testid="plan-talk-coach">
+            {$t('ui.plan.talk_to_coach')}
+          </button>
+        </div>
         <PlanDisplay detail={detailLoader.data} />
       {:else if !listLoader.loading && $selectedPlanId === null}
         <p class="muted" data-testid="plan-empty">{$t('ui.plan.view.empty')}</p>
       {/if}
     </div>
-
-    <aside class="side" aria-label={$t('ui.coach.title')}>
-      <CoachPanel {hasPlan} onapplied={created} />
-    </aside>
   </div>
 
   <details class="fine" data-testid="fine-tuning">
@@ -164,18 +162,11 @@
 </div>
 
 <style>
-  /* Die Spalten richten sich nach der Breite der Seite, nicht des Fensters (die Seitenleiste
-     nimmt links Platz). Schmaler als 880 px steht das Gespräch unter dem Plan. */
+  /* Die Spalten der Feineinstellungen richten sich nach der Breite der Seite, nicht des
+     Fensters (Seitenleiste links, Coach rechts nehmen Platz). */
   .plan-page {
     max-width: var(--page-max-wide);
     container-type: inline-size;
-  }
-
-  .layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
-    gap: var(--space-5);
-    align-items: start;
   }
 
   .main {
@@ -185,15 +176,9 @@
     min-width: 0;
   }
 
-  /* Das Gespräch bleibt beim Blättern im Bild. Es ist nie höher als das Fenster, sein Verlauf
-     schrumpft und scrollt, damit auch die Eingabe darunter erreichbar bleibt. */
-  .side {
-    position: sticky;
-    top: var(--space-5);
+  .talk {
     display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 2 * var(--space-5));
-    min-width: 0;
+    justify-content: flex-end;
   }
 
   .fine {
@@ -262,17 +247,6 @@
     flex-direction: column;
     gap: var(--space-3);
     min-width: 0;
-  }
-
-  @container (max-width: 880px) {
-    .layout {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .side {
-      position: static;
-      max-height: none;
-    }
   }
 
   @container (max-width: 640px) {

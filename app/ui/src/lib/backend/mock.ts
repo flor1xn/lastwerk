@@ -67,6 +67,7 @@ import {
   type HealthRange,
   type MissingKind,
   type ThresholdOrigin,
+  type ChatFocus,
   type PromptPreview,
   type QuickPlanInput,
   type Recompute,
@@ -929,12 +930,17 @@ export class MockBackend implements Backend {
     return this.coach.setModel(model);
   }
 
-  async coachPreview(message: string): Promise<PromptPreview> {
-    return this.coach.preview(message);
+  async coachPreview(message: string, focus: ChatFocus | null = null): Promise<PromptPreview> {
+    return this.coach.preview(message, focus);
   }
 
-  async coachChat(message: string): Promise<CoachReply> {
-    return this.coach.chat(message);
+  async coachChat(message: string, focus: ChatFocus | null = null): Promise<CoachReply> {
+    return this.coach.chat(message, focus);
+  }
+
+  /** Für Tests: der Fokus jedes Gesprächsschritts in Reihenfolge (T43). */
+  coachFocusLog(): (ChatFocus | null)[] {
+    return this.coach.focusLog();
   }
 
   async coachApply(proposalId: string): Promise<PlanDetail> {

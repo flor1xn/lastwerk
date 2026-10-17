@@ -1,16 +1,26 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setBackend } from '../lib/backend';
-import { MockBackend, type MockOptions } from '../lib/backend/mock';
-import { setLocale } from '../lib/i18n';
-import { coachReleased, selectedPlanId } from '../lib/state';
-import PlanView from './PlanView.svelte';
+import PlanView from '../../../views/PlanView.svelte';
+import { setBackend } from '../../backend';
+import { MockBackend, type MockOptions } from '../../backend/mock';
+import { coachSession } from '../../coach-session.svelte';
+import { setLocale } from '../../i18n';
+import { closeCoach, coachReleased, openCoach, selectedPlanId, view } from '../../state';
+import CoachDrawer from './CoachDrawer.svelte';
+
+// Gespräch mit dem Coach im Seitenfenster (T26, seit T43 aus jeder Ansicht). Die Planansicht
+// steht daneben, damit ein übernommener Vorschlag dort sichtbar wird.
 
 // Kein Canvas in jsdom.
-vi.mock(
-  '../lib/components/UplotChart.svelte',
-  async () => import('../lib/components/UplotChartStub.svelte'),
-);
+vi.mock('../UplotChart.svelte', async () => import('../UplotChartStub.svelte'));
+
+/** Planansicht und offenes Seitenfenster, wie in der App nebeneinander. */
+function renderAll() {
+  view.set('plan');
+  render(PlanView);
+  render(CoachDrawer);
+  openCoach();
+}
 
 let backend: MockBackend;
 
@@ -22,6 +32,8 @@ function setup(options: MockOptions = {}) {
 beforeEach(() => {
   selectedPlanId.set(null);
   coachReleased.set(false);
+  coachSession.clearForTests();
+  closeCoach();
   setup();
 });
 
@@ -33,7 +45,7 @@ afterEach(() => {
 
 /** Plan über die drei Fragen mit den Standardantworten erzeugen. */
 async function withPlan() {
-  render(PlanView);
+  renderAll();
   await screen.findByTestId('planner');
   await fireEvent.click(screen.getByTestId('planner-submit'));
   await screen.findByTestId('plan-display');
@@ -44,7 +56,7 @@ async function withPlan() {
 }
 
 async function withPlanWithoutConsent() {
-  render(PlanView);
+  renderAll();
   await screen.findByTestId('planner');
   await fireEvent.click(screen.getByTestId('planner-submit'));
   await screen.findByTestId('plan-display');
@@ -172,7 +184,7 @@ describe('Gespräch mit dem Coach', () => {
   it('zeigt einen Fehler, behält die Nachricht im Feld und lässt sie nicht im Verlauf', async () => {
     await withPlan();
     vi.spyOn(backend, 'coachChat').mockRejectedValue(
-      new (await import('../lib/backend/types')).BackendError(
+      new (await import('../../backend/types')).BackendError(
         'coach_timeout',
         'ui.error.coach_timeout',
       ),
@@ -263,15 +275,16 @@ describe('Gespräch mit dem Coach', () => {
     await fireEvent.click(screen.getByTestId('coach-consent-accept'));
     expect(screen.queryByTestId('coach-consent')).toBeNull();
     expect(screen.getByTestId('coach-input')).toBeTruthy();
-    // Die Freigabe gilt für die Sitzung: Eine neu aufgebaute Ansicht fragt nicht noch einmal.
+    // Die Freigabe gilt für die Sitzung: Ein neu aufgebautes Fenster fragt nicht noch einmal.
     cleanup();
-    render(PlanView);
+    closeCoach();
+    renderAll();
     await screen.findByTestId('coach-input');
     expect(screen.queryByTestId('coach-consent')).toBeNull();
   });
 
   it('erlaubt ohne Plan kein Senden und sagt, was fehlt', async () => {
-    render(PlanView);
+    renderAll();
     await screen.findByTestId('planner');
     await fireEvent.click(await screen.findByTestId('coach-consent-accept'));
     await screen.findByTestId('coach-input');
@@ -284,7 +297,7 @@ describe('ohne lokales Modell', () => {
   beforeEach(() => setup({ coach: false }));
 
   it('erklärt die Einrichtung, der Planer bleibt voll nutzbar', async () => {
-    render(PlanView);
+    renderAll();
     const setupBox = await screen.findByTestId('coach-setup');
     expect(setupBox.dataset.reason).toBe('no_server');
     expect(setupBox.textContent).toContain('ollama pull');
@@ -298,7 +311,7 @@ describe('ohne lokales Modell', () => {
   });
 
   it('prüft auf Klick erneut', async () => {
-    render(PlanView);
+    renderAll();
     await screen.findByTestId('coach-setup');
     const spy = vi.spyOn(backend, 'coachStatus');
     await fireEvent.click(screen.getByTestId('coach-recheck'));
@@ -309,7 +322,7 @@ describe('ohne lokales Modell', () => {
 
 describe('Modellwahl', () => {
   it('zeigt bei mehreren Modellen eine Auswahl und merkt die Wahl', async () => {
-    render(PlanView);
+    renderAll();
     const select = (await screen.findByTestId('coach-model')) as HTMLSelectElement;
     expect([...select.options].map((o) => o.value)).toEqual(['qwen3:4b', 'llama3.2:3b']);
     await fireEvent.change(select, { target: { value: 'llama3.2:3b' } });
