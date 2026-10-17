@@ -56,4 +56,4 @@ Keine.
 - 2026-10-17: Umgesetzt, alle Befehle der Abnahme und `sh scripts/check-all.sh` bestehen. Status `in Prüfung`, weil das Gespräch mit einem echten Ollama und die Punkte unter "Manuelle Schritte" offen sind.
 - 2026-10-17: Abweichung, in SPEC 9.7 vermerkt: Ein unbekannter Code im Fokus ergibt den vorhandenen Fehlercode `invalid_value`, keinen neuen Code `bad_input`.
 - 2026-10-17: `ChatTopic` umfasst alle Zustandscodes aus `lastwerk_core` (Kennzahlen und `decision.*` der Tagesentscheidung), damit T44 Teil B Themen aus Erkenntnissen und Entscheidung setzen kann. Per Tastenkürzel öffnet und schließt das Fenster ohne Bewegung (Faustregel aus `emil-design-eng`), per Knopf mit 180 ms.
-- 2026-10-17: Changelog-Eintrag unter 1.1.1 (nächste Version nach v1.1.0).
+- 2026-10-17: Changelog-Eintrag unter 1.1.1 (nächste Version nach v1.1.0); vor dem Release auf 1.2.0 gehoben, weil Navigation, Coach-Fenster und Heute zusammen eine größere Neuerung sind.
