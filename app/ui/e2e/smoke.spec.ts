@@ -1,24 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
 import { assertClean, installGuard, isAllowedUrl, type Guard } from './guard';
+import { openHistoryTab, openSettingsTab, toEnglish } from './nav';
 
-// Rauchtest (SPEC 12, M2): vier Ansichten in Deutsch und Englisch, kein Konsolenfehler, keine
+// Rauchtest (SPEC 12, M2): alle Ansichten und Reiter in Deutsch und Englisch, kein Konsolenfehler, keine
 // Anfrage an einen fremden Host. Daten liefert die Attrappe (kein Tauri im Browser).
 
 const TEXT = {
   de: {
     nav: {
       today: 'Heute',
-      calendar: 'Kalender',
-      week: 'Woche',
-      progress: 'Fortschritt',
-      performance: 'Leistung',
-      recovery: 'Erholung',
-      health: 'Gesundheit',
       plan: 'Plan',
-      activities: 'Aktivitäten',
-      detail: 'Detail',
+      history: 'Verlauf',
       settings: 'Einstellungen',
     },
+    historyTabs: ['Kalender', 'Aktivitäten', 'Fortschritt', 'Leistung', 'Körper'],
+    settingsTabs: ['Daten und Garmin', 'Coach', 'Profil und Schwellen', 'App'],
     dash: {
       sections: [
         ['today-readiness', 'Bereitschaft'],
@@ -46,17 +42,12 @@ const TEXT = {
   en: {
     nav: {
       today: 'Today',
-      calendar: 'Calendar',
-      week: 'Week',
-      progress: 'Progress',
-      performance: 'Performance',
-      recovery: 'Recovery',
-      health: 'Health',
       plan: 'Plan',
-      activities: 'Activities',
-      detail: 'Detail',
+      history: 'History',
       settings: 'Settings',
     },
+    historyTabs: ['Calendar', 'Activities', 'Progress', 'Performance', 'Body'],
+    settingsTabs: ['Data and Garmin', 'Coach', 'Profile and thresholds', 'App'],
     dash: {
       sections: [
         ['today-readiness', 'Readiness'],
@@ -101,15 +92,16 @@ for (const lang of ['de', 'en'] as const) {
   test(`öffnet die Ansichten (${lang})`, async ({ page }) => {
     const text = TEXT[lang];
     await page.goto('/');
-    if (lang === 'en') {
-      await page.getByTestId('header-language').selectOption('en');
-    }
+    if (lang === 'en') await toEnglish(page);
     await expect(page.locator('html')).toHaveAttribute('lang', lang);
 
-    // Navigation trägt die Namen der Sprache.
+    // Navigation (T42): genau drei Hauptpunkte und Einstellungen, in der Sprache.
+    await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(4);
     for (const [view, label] of Object.entries(text.nav)) {
       await expect(page.getByTestId(`nav-${view}`)).toHaveText(label);
     }
+    await expect(page.getByTestId('header-language')).toHaveCount(0);
+    await expect(page.getByTestId('header-theme')).toHaveCount(0);
 
     // 0. Heute (Startseite): Aussage zuerst, Form mit Zustand als Text, Woche in Balken.
     await expect(page.getByTestId('today-title')).toBeVisible();
@@ -136,16 +128,15 @@ for (const lang of ['de', 'en'] as const) {
     await expect(page.locator('.u-legend')).toHaveCount(0);
     await shot(page, `00-heute-${lang}`);
 
-    // 1. Wochenübersicht: sieben Tage, Last-Balken, Verlauf als Diagramm.
-    await page.getByTestId('nav-week').click();
-    await expect(page.getByTestId('day')).toHaveCount(7);
-    await expect(page.getByTestId('week-range')).toContainText(lang === 'de' ? ' bis ' : ' to ');
-    await expect(page.getByTestId('pmc-values')).toBeVisible();
-    await expect(page.locator('.uplot canvas').first()).toBeVisible();
-    await shot(page, `01-woche-${lang}`);
-
-    // 0b. Kalender (T35): ganze Wochen, Wochensummen, Blättern ändert den Monat.
-    await page.getByTestId('nav-calendar').click();
+    // 1. Verlauf, Reiter Kalender (T35, T42): ganze Wochen, Wochensummen, Blättern ändert den
+    // Monat. Reiterleiste mit Namen der Sprache, nur der aktive Reiter per Tab-Taste erreichbar.
+    await page.getByTestId('nav-history').click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(text.nav.history);
+    await expect(page.getByTestId('tabs-history').getByRole('tab')).toHaveText([
+      ...text.historyTabs,
+    ]);
+    await expect(page.getByTestId('tab-history-calendar')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[data-testid="tabs-history"] [tabindex="0"]')).toHaveCount(1);
     const days = await page.getByTestId('cal-day').count();
     expect(days % 7).toBe(0);
     expect(days).toBeGreaterThanOrEqual(28);
@@ -155,10 +146,25 @@ for (const lang of ['de', 'en'] as const) {
     await page.getByTestId('cal-prev').click();
     await expect(page.getByTestId('cal-month')).not.toHaveText(before ?? '');
     await page.getByTestId('cal-today').click();
-    await shot(page, `00b-kalender-${lang}`);
+    await shot(page, `01-kalender-${lang}`);
+
+    // 1a. Umschalter Woche: sieben Tage, Last-Balken, kein zweites PMC-Diagramm.
+    await page.locator('[data-testid="calendar-mode"] button[data-value="week"]').click();
+    await expect(page.getByTestId('day')).toHaveCount(7);
+    await expect(page.getByTestId('week-range')).toContainText(lang === 'de' ? ' bis ' : ' to ');
+    await expect(page.getByTestId('pmc-values')).toHaveCount(0);
+    await shot(page, `01a-woche-${lang}`);
+    // Pfeiltaste wechselt den Reiter und nimmt den Fokus mit.
+    await page.getByTestId('tab-history-calendar').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByTestId('tab-history-activities')).toBeFocused();
+    await expect(page.getByTestId('tab-history-activities')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
 
     // 1b. Fortschritt (T32): Jahresvergleich, 52 Wochen, 24 Monate, Umschalter der Größe.
-    await page.getByTestId('nav-progress').click();
+    await page.getByTestId('tab-history-progress').click();
     await expect(page.getByTestId('progress-current')).toBeVisible();
     await expect(page.getByTestId('progress-week')).toHaveCount(52);
     await expect(page.getByTestId('progress-month')).toHaveCount(24);
@@ -168,7 +174,7 @@ for (const lang of ['de', 'en'] as const) {
     await shot(page, `01b-fortschritt-${lang}`);
 
     // 1c. Leistung (T33): Kurve gezeichnet, Tabelle der Eckdauern, Zeitraum umschaltbar.
-    await page.getByTestId('nav-performance').click();
+    await page.getByTestId('tab-history-performance').click();
     await expect(page.getByTestId('perf-curve').locator('.uplot canvas').first()).toBeVisible();
     await expect(page.getByTestId('perf-row')).toHaveCount(12);
     // T37: fünf Strecken von 1 km bis Marathon.
@@ -184,8 +190,8 @@ for (const lang of ['de', 'en'] as const) {
     ).toHaveAttribute('data-value', 'all');
     await shot(page, `01c-leistung-${lang}`);
 
-    // 1d. Erholung (T34): Kennzahlen, Verläufe mit Basis, Tageslast, Zeitraum umschaltbar.
-    await page.getByTestId('nav-recovery').click();
+    // 1d. Körper, Erholung (T34): Kennzahlen, Verläufe mit Basis, Tageslast, Zeitraum.
+    await page.getByTestId('tab-history-body').click();
     await expect(page.getByTestId('rec-summary')).toBeVisible();
     for (const id of ['rec-hrv', 'rec-rhr', 'rec-sleep', 'rec-battery', 'rec-load']) {
       await expect(page.getByTestId(id).locator('.uplot canvas').first()).toBeVisible();
@@ -194,8 +200,8 @@ for (const lang of ['de', 'en'] as const) {
     await expect(page.getByTestId('lead')).toContainText('30');
     await shot(page, `01d-erholung-${lang}`);
 
-    // 1e. Gesundheit (T39): Tages- und Trainingswerte aus Garmin mit Mini-Verlauf.
-    await page.getByTestId('nav-health').click();
+    // 1e. Körper, Gesundheit (T39): Tages- und Trainingswerte aus Garmin mit Mini-Verlauf.
+    await page.locator('[data-testid="body-tab"] button[data-value="health"]').click();
     for (const id of ['health-daily', 'health-training']) {
       await expect(page.getByTestId(id).locator('.section-statement')).not.toBeEmpty();
       await expect(page.getByTestId(id).locator('svg.spark').first()).toBeVisible();
@@ -206,7 +212,7 @@ for (const lang of ['de', 'en'] as const) {
     await shot(page, `01e-gesundheit-${lang}`);
 
     // 2. Aktivitätsliste: Zeilen, Duplikate sichtbar, nicht berechenbare Lasten als Text.
-    await page.getByTestId('nav-activities').click();
+    await page.getByTestId('tab-history-activities').click();
     await expect(page.getByTestId('activity-row').first()).toBeVisible();
     expect(await page.getByTestId('activity-row').count()).toBeGreaterThan(10);
     await expect(page.getByTestId('duplicate-flag').first()).toHaveText(text.duplicate);
@@ -218,7 +224,7 @@ for (const lang of ['de', 'en'] as const) {
     ).toHaveCount(0);
     await shot(page, `02-aktivitaeten-${lang}`);
 
-    // 3. Detail: Kennzahlen, Zonen mit Kennzeichnung, Verlauf als Diagramm.
+    // 3. Detail an Ort und Stelle (T42): Kennzahlen, Zonen mit Kennzeichnung, Verlauf.
     await page
       .getByTestId('activity-row')
       .filter({ has: page.locator('[data-testid="load"][data-status="ok"]') })
@@ -239,23 +245,34 @@ for (const lang of ['de', 'en'] as const) {
     }
     await shot(page, `03-detail-${lang}`);
 
-    // Der Reiter Detail öffnet die gewählte Aktivität weiter.
-    await page.getByTestId('nav-week').click();
-    await page.getByTestId('nav-detail').click();
+    // Der Verlauf merkt sich das offene Detail; "Zurück" führt zur Liste.
+    await page.getByTestId('nav-today').click();
+    await page.getByTestId('nav-history').click();
     await expect(page.getByTestId('detail-title')).toBeVisible();
+    await page.getByTestId('detail-back').click();
+    await expect(page.getByTestId('activity-table')).toBeVisible();
 
-    // 4. Einstellungen: Daten, Schwellenwerte, Athlet, Verlauf, Darstellung.
+    // 4. Einstellungen in vier Reitern: Daten und Garmin, Coach, Profil und Schwellen, App.
     await page.getByTestId('nav-settings').click();
+    await expect(page.getByTestId('tabs-settings').getByRole('tab')).toHaveText([
+      ...text.settingsTabs,
+    ]);
     await expect(page.getByTestId('data-section')).toBeVisible();
+    await expect(page.getByTestId('garmin-section')).toBeVisible();
+    await expect(page.getByTestId('mcp-section')).toBeVisible();
+    await page.getByTestId('tab-settings-coach').click();
+    await expect(page.getByTestId('coach-setup-section')).toBeVisible();
+    await page.getByTestId('tab-settings-profile').click();
     await expect(page.getByTestId('threshold-table')).toBeVisible();
     await expect(page.getByTestId('hr-max-estimate').getByTestId('estimated')).toHaveText(
       text.estimated,
     );
     await expect(page.getByTestId('athlete-section')).toBeVisible();
     await expect(page.getByTestId('pmc-section')).toBeVisible();
-    await expect(page.getByTestId('mcp-section')).toBeVisible();
-    await expect(page.getByTestId('appearance-section')).toBeVisible();
     await shot(page, `04-einstellungen-${lang}`);
+    await page.getByTestId('tab-settings-app').click();
+    await expect(page.getByTestId('appearance-section')).toBeVisible();
+    await expect(page.getByTestId('about-section')).toBeVisible();
   });
 }
 
@@ -284,7 +301,7 @@ for (const lang of ['de', 'en'] as const) {
   test(`Planansicht erzeugt, zeigt und exportiert einen Plan (${lang})`, async ({ page }) => {
     const text = TEXT[lang];
     await page.goto('/');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
+    if (lang === 'en') await toEnglish(page);
     await page.getByTestId('nav-plan').click();
     // Die Panels der Feineinstellungen liegen hinter einer eingeklappten Auswahl (T26).
     await expect(page.getByTestId('planner')).toBeVisible();
@@ -413,7 +430,7 @@ for (const lang of ['de', 'en'] as const) {
             activeLabel: 'Active',
           };
     await page.goto('/');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
+    if (lang === 'en') await toEnglish(page);
     await page.getByTestId('nav-plan').click();
     await expect(page.getByTestId('planner')).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Plan');
@@ -478,7 +495,7 @@ for (const lang of ['de', 'en'] as const) {
     page,
   }) => {
     await page.goto('/?coach=off');
-    if (lang === 'en') await page.getByTestId('header-language').selectOption('en');
+    if (lang === 'en') await toEnglish(page);
     await page.getByTestId('nav-plan').click();
     await expect(page.getByTestId('coach-setup')).toContainText(
       lang === 'de' ? 'Der Coach braucht ein lokales Modell' : 'The coach needs a local model',
@@ -564,22 +581,22 @@ test('eine neue Schwelle macht Läufe berechenbar, geschätzt bleibt gekennzeich
   page,
 }) => {
   await page.goto('/');
-  await page.getByTestId('nav-activities').click();
+  await openHistoryTab(page, 'activities');
   await page.locator('select').filter({ hasText: 'Alle Sportarten' }).selectOption('running');
   const rows = page.getByTestId('activity-row');
   await expect(rows.first()).toBeVisible();
   // Ohne Laufschwelle ist jede Last nicht berechenbar.
   await expect(page.locator('[data-testid="load"][data-status="ok"]')).toHaveCount(0);
 
-  await page.getByTestId('nav-settings').click();
+  await openSettingsTab(page, 'profile');
   await page.getByTestId('threshold-kind').selectOption('run_speed_mps');
   await page.getByTestId('threshold-value').fill('3,3');
   await page.getByTestId('threshold-from').fill('2020-01-01');
-  await page.getByRole('button', { name: 'Speichern' }).first().click();
+  await page.getByTestId('threshold-form').getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByTestId('threshold-result')).toBeVisible();
   await expect(page.getByTestId('threshold-table')).toContainText('3,30 m/s');
 
-  await page.getByTestId('nav-activities').click();
+  await openHistoryTab(page, 'activities');
   await page.locator('select').filter({ hasText: 'Alle Sportarten' }).selectOption('running');
   await expect(rows.first()).toBeVisible();
   await expect(page.locator('[data-testid="load"][data-status="ok"]').first()).toBeVisible();
@@ -589,10 +606,10 @@ test('eine neue Schwelle macht Läufe berechenbar, geschätzt bleibt gekennzeich
 
 test('ungültige Eingabe zeigt einen Fehlertext aus der Sprachdatei', async ({ page }) => {
   await page.goto('/');
-  await page.getByTestId('nav-settings').click();
+  await openSettingsTab(page, 'profile');
   await page.getByTestId('threshold-kind').selectOption('ftp_w');
   await page.getByTestId('threshold-value').fill('9999');
-  await page.getByRole('button', { name: 'Speichern' }).first().click();
+  await page.getByTestId('threshold-form').getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByTestId('threshold-error')).toHaveText('Ungültiger Wert.');
 });
 
@@ -600,7 +617,8 @@ test('Thema wechselt und die Oberfläche bleibt dunkel zuerst', async ({ page })
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  await page.getByTestId('header-theme').click();
+  await openSettingsTab(page, 'app');
+  await page.getByTestId('theme-select').selectOption('light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(light).not.toBe(dark);

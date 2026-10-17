@@ -30,8 +30,6 @@ export const coachSetupOp = writable<SetupOp>({ kind: 'idle' });
 export const coachSetupError = writable<string | null>(null);
 /** Name des zuletzt vollständig geladenen Modells (Meldung "geladen"), bis der Nutzer weitermacht. */
 export const coachSetupPulled = writable<string | null>(null);
-/** Der Nutzer kam vom Hinweis im Plan: Die Einstellungen springen zum Abschnitt "Coach". */
-export const coachSetupFocus = writable(false);
 
 /** Wie oft der Zustand gelesen wird, solange ein Auftrag läuft, den diese Oberfläche nicht selbst
  * gestartet hat (etwa nach dem Neuladen des Fensters), in Millisekunden (Konvention). */
@@ -169,7 +167,6 @@ export function resetCoachSetupState(): void {
   coachSetupOp.set({ kind: 'idle' });
   coachSetupError.set(null);
   coachSetupPulled.set(null);
-  coachSetupFocus.set(false);
 }
 
 // --- Reine Hilfen ---------------------------------------------------------------------

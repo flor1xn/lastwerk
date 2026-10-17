@@ -6,7 +6,7 @@ import { resetCoachSetupState } from '../../lib/coach-setup';
 import { resetGarminState } from '../../lib/garmin';
 import { MockBackend } from '../../lib/backend/mock';
 import { setLocale } from '../../lib/i18n';
-import { view, wizardOpen } from '../../lib/state';
+import { settingsTab, view, wizardOpen } from '../../lib/state';
 
 // Kein Canvas in jsdom.
 vi.mock(
@@ -21,6 +21,7 @@ afterEach(() => {
   setLocale('de');
   wizardOpen.set(false);
   view.set('today');
+  settingsTab.set('data');
   resetGarminState();
   resetCoachSetupState();
 });
@@ -162,6 +163,7 @@ describe('Einrichtung (T41)', () => {
     systemLanguage('en-US');
     const backend = await start({ onboarded: true });
     await fireEvent.click(await screen.findByTestId('nav-settings'));
+    await fireEvent.click(await screen.findByTestId('tab-settings-app'));
     await fireEvent.click(await screen.findByTestId('about-repeat'));
     await screen.findByTestId('wizard');
     expect((await backend.getSettings()).locale).toBe('de');

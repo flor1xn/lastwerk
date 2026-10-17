@@ -14,16 +14,29 @@
     "nav": {
       "label": "Hauptnavigation",
       "today": "Heute",
-      "week": "Woche",
-      "activities": "Aktivitäten",
-      "detail": "Detail",
-      "settings": "Einstellungen",
       "plan": "Plan",
-      "progress": "Fortschritt",
-      "performance": "Leistung",
-      "calendar": "Kalender",
-      "recovery": "Erholung",
-      "health": "Gesundheit"
+      "history": "Verlauf",
+      "settings": "Einstellungen"
+    },
+    "history": {
+      "tabs_label": "Bereiche des Verlaufs",
+      "tab": {
+        "calendar": "Kalender",
+        "activities": "Aktivitäten",
+        "progress": "Fortschritt",
+        "performance": "Leistung",
+        "body": "Körper"
+      },
+      "calendar_mode": "Zeitraum des Kalenders",
+      "mode": {
+        "month": "Monat",
+        "week": "Woche"
+      },
+      "body_label": "Werte des Körpers",
+      "body": {
+        "recovery": "Erholung",
+        "health": "Gesundheit"
+      }
     },
     "sport": {
       "all": "Alle Sportarten",
@@ -155,15 +168,12 @@
       "no_load": "Keine berechenbare Last in dieser Woche.",
       "not_computable": "Aktivitäten ohne berechenbare Last (nicht in der Summe): {n}",
       "pmc_title": "Fitness, Ermüdung, Form",
-      "no_pmc": "Kein Verlauf für diesen Zeitraum (Zukunft oder noch keine Last).",
       "pmc_date": "Datum",
       "ctl": "Fitness (CTL)",
       "atl": "Ermüdung (ATL)",
-      "tsb": "Form (TSB)",
-      "pmc_start_note": "Der Verlauf beginnt am {date} mit den Startwerten. Die ersten Wochen sind nicht belastbar."
+      "tsb": "Form (TSB)"
     },
     "activities": {
-      "title": "Aktivitäten",
       "from": "Von",
       "to": "Bis",
       "sport": "Sportart",
@@ -179,8 +189,6 @@
       "duplicate_hint": "Dieselbe Einheit wie eine andere Aufnahme, zählt nicht in die Last (Duplikatregel)."
     },
     "detail": {
-      "none": "Im Zeitraum gibt es keine Aktivität.",
-      "to_list": "Zur Liste",
       "back": "Zur Liste",
       "metrics": "Kennzahlen",
       "duration": "Dauer",
@@ -252,7 +260,14 @@
       "add_files": "FIT-Dateien hinzufügen",
       "add_files_hint": "Für Dateien von einem Edge-Gerät oder einem USB-Stick, die nicht über Garmin Connect kommen. Lastwerk kopiert sie in den Datenordner und liest sie ein.",
       "add_result": "{selected} gewählt: {copied} neu abgelegt, {present} schon vorhanden, {rejected} nicht übernommen.",
-      "add_rejected": "Nicht übernommen werden Dateien ohne Endung .fit, unlesbare Dateien und solche über 64 MiB."
+      "add_rejected": "Nicht übernommen werden Dateien ohne Endung .fit, unlesbare Dateien und solche über 64 MiB.",
+      "tabs_label": "Bereiche der Einstellungen",
+      "tab": {
+        "data": "Daten und Garmin",
+        "coach": "Coach",
+        "profile": "Profil und Schwellen",
+        "app": "App"
+      }
     },
     "import": {
       "progress": "Datei {done} von {total}",
@@ -378,10 +393,13 @@
       "plan": "Drei Antworten genügen für einen Wochenplan, alles Weitere klärst du im Gespräch mit dem Coach.",
       "activities": "Alle importierten Aktivitäten, Duplikate sind gekennzeichnet.",
       "detail": "Kennzahlen, Zonen und Verlauf dieser Aktivität.",
-      "settings": "Daten, Schwellenwerte, Erscheinungsbild und Version.",
       "progress": "Umfang und Last über Wochen, Monate und Jahre.",
       "performance": "Deine besten Werte je Dauer und wie sie sich entwickeln.",
-      "health": "Tages- und Trainingswerte aus Garmin, je mit jüngstem Wert und Verlauf. Lastwerk rechnet nicht damit."
+      "health": "Tages- und Trainingswerte aus Garmin, je mit jüngstem Wert und Verlauf. Lastwerk rechnet nicht damit.",
+      "settings_data": "Woher deine Daten kommen: FIT-Dateien, Garmin und der lokale MCP-Server.",
+      "settings_coach": "Ein lokales Sprachmodell auf diesem Rechner. Es erklärt und passt an, es rechnet nie.",
+      "settings_profile": "Angaben zu dir, Schwellenwerte und die Zeitkonstanten der Form.",
+      "settings_app": "Sprache, Thema, Updates und Version."
     },
     "about": {
       "title": "Über Lastwerk",

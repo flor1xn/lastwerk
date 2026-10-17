@@ -2,18 +2,14 @@
   import { onMount } from 'svelte';
   import { getBackend } from './lib/backend';
   import ErrorNote from './lib/components/ErrorNote.svelte';
-  import CoachSetupLine from './lib/components/CoachSetupLine.svelte';
   import GarminSyncLine from './lib/components/GarminSyncLine.svelte';
   import MigrationNotice from './lib/components/MigrationNotice.svelte';
   import { syncOnStart } from './lib/garmin';
-  import { setLanguage, setThemeChoice } from './lib/appearance';
-  import type { Locale, Theme } from './lib/backend/types';
-  import { locale, LOCALES, setLocale, t } from './lib/i18n';
+  import { setLocale, t } from './lib/i18n';
   import {
     applyTheme,
     bumpData,
     fitMigration,
-    theme,
     VIEWS,
     view,
     watchSystemTheme,
@@ -21,18 +17,11 @@
     type View,
   } from './lib/state';
   import { windowTitle } from './lib/title';
-  import ActivitiesView from './views/ActivitiesView.svelte';
-  import ActivityDetailView from './views/ActivityDetailView.svelte';
-  import CalendarView from './views/CalendarView.svelte';
-  import PerformanceView from './views/PerformanceView.svelte';
+  import HistoryView from './views/HistoryView.svelte';
   import PlanView from './views/PlanView.svelte';
-  import ProgressView from './views/ProgressView.svelte';
-  import RecoveryView from './views/RecoveryView.svelte';
-  import HealthView from './views/HealthView.svelte';
   import SettingsView from './views/SettingsView.svelte';
   import Wizard from './views/onboarding/Wizard.svelte';
   import TodayView from './views/TodayView.svelte';
-  import WeekView from './views/WeekView.svelte';
 
   let ready = $state(false);
   // Aus den Einstellungen (Datenbank), nicht aus dem Browser: Der Assistent erscheint nur beim
@@ -76,13 +65,6 @@
     document.title = windowTitle($t(`ui.nav.${$view}`));
   });
 
-  const themeOrder: Theme[] = ['dark', 'light', 'system'];
-
-  function cycleTheme() {
-    const next = themeOrder[(themeOrder.indexOf($theme) + 1) % themeOrder.length];
-    void setThemeChoice(next);
-  }
-
   const select = (v: View) => view.set(v);
 
   function finishSetup() {
@@ -92,6 +74,15 @@
     bumpData();
   }
 </script>
+
+{#snippet navButton(v: View)}
+  <button
+    class:active={$view === v}
+    aria-current={$view === v ? 'page' : undefined}
+    data-testid={`nav-${v}`}
+    onclick={() => select(v)}>{$t(`ui.nav.${v}`)}</button
+  >
+{/snippet}
 
 {#if startError}
   <main class="start"><ErrorNote error={startError} /></main>
@@ -110,61 +101,28 @@
         </svg>
         <span>{$t('app.name')}</span>
       </div>
+      <!-- Drei Hauptpunkte (T42, E8), Einstellungen unten. Sprache und Thema stehen nur in den
+           Einstellungen, damit es keine zwei Stellen für dieselbe Wahl gibt. -->
       <nav aria-label={$t('ui.nav.label')}>
         {#each VIEWS as v (v)}
-          <button
-            class:active={$view === v}
-            aria-current={$view === v ? 'page' : undefined}
-            data-testid={`nav-${v}`}
-            onclick={() => select(v)}>{$t(`ui.nav.${v}`)}</button
-          >
+          {@render navButton(v)}
         {/each}
+        <div class="spacer"></div>
+        <div class="sync-status">
+          <GarminSyncLine testid="sidebar-sync" short />
+        </div>
+        {@render navButton('settings')}
       </nav>
-      <div class="spacer"></div>
-      <div class="sync-status">
-        <GarminSyncLine testid="sidebar-sync" short /><CoachSetupLine />
-      </div>
-      <div class="prefs">
-        <label class="lang">
-          <span class="visually-hidden">{$t('ui.appearance.language')}</span>
-          <select
-            value={$locale}
-            onchange={(e) => void setLanguage(e.currentTarget.value as Locale)}
-            data-testid="header-language"
-          >
-            {#each LOCALES as l (l)}
-              <option value={l}>{l.toUpperCase()}</option>
-            {/each}
-          </select>
-        </label>
-        <button onclick={cycleTheme} title={$t('ui.appearance.theme')} data-testid="header-theme">
-          {$t(`ui.theme.${$theme}`)}
-        </button>
-      </div>
     </aside>
 
     <main>
       <MigrationNotice />
       {#if $view === 'today'}
         <TodayView />
-      {:else if $view === 'calendar'}
-        <CalendarView />
-      {:else if $view === 'week'}
-        <WeekView />
-      {:else if $view === 'progress'}
-        <ProgressView />
-      {:else if $view === 'performance'}
-        <PerformanceView />
-      {:else if $view === 'recovery'}
-        <RecoveryView />
-      {:else if $view === 'health'}
-        <HealthView />
       {:else if $view === 'plan'}
         <PlanView />
-      {:else if $view === 'activities'}
-        <ActivitiesView />
-      {:else if $view === 'detail'}
-        <ActivityDetailView />
+      {:else if $view === 'history'}
+        <HistoryView />
       {:else}
         <SettingsView />
       {/if}
@@ -209,6 +167,7 @@
   }
 
   nav {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -256,18 +215,12 @@
   }
 
   .sync-status {
-    padding: 0 12px;
+    padding: 0 12px 8px;
     color: var(--muted);
   }
 
   .sync-status:empty {
     display: none;
-  }
-
-  .prefs {
-    display: flex;
-    gap: 8px;
-    padding: 0 4px;
   }
 
   main {
@@ -280,14 +233,5 @@
 
   main.start {
     padding: 24px;
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 </style>

@@ -27,7 +27,7 @@
   import { formatDate, formatNumber, formatWeekday, MISSING } from '../lib/format';
   import { locale, t } from '../lib/i18n';
   import { Loader } from '../lib/loader.svelte';
-  import { dataVersion, resolvedTheme, view } from '../lib/state';
+  import { dataVersion, openSettings, resolvedTheme } from '../lib/state';
 
   // Erholung (T34): HRV, Ruhepuls, Schlaf und Body Battery über Wochen und Monate, je mit eigener
   // Basislinie und der Untergrenze aus R12, darunter die Tageslast. Beschreibt Trainingsdaten,
@@ -113,10 +113,7 @@
 </script>
 
 <div class="page recovery" data-testid="recovery">
-  <header class="page-head">
-    <h1>{$t('ui.nav.recovery')}</h1>
-    <p class="page-lead" data-testid="lead">{lead}</p>
-  </header>
+  <p class="page-lead" data-testid="lead">{lead}</p>
 
   <div class="controls">
     <Segmented
@@ -135,7 +132,7 @@
   {:else if !anyRecovery}
     <div class="empty">
       <p class="muted">{$t('ui.rec.none')}</p>
-      <button type="button" onclick={() => view.set('settings')}>{$t('ui.rec.to_settings')}</button>
+      <button type="button" onclick={() => openSettings('data')}>{$t('ui.rec.to_settings')}</button>
     </div>
   {:else}
     {#if summaries.length > 0}

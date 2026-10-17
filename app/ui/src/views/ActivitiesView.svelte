@@ -63,8 +63,8 @@
     sortKey === key ? (sortDesc ? 'descending' : 'ascending') : 'none';
 </script>
 
+<p class="page-lead" data-testid="lead">{$t('ui.lead.activities')}</p>
 <div class="head">
-  <h2>{$t('ui.activities.title')}</h2>
   <label>{$t('ui.activities.from')} <input type="date" bind:value={from} /></label>
   <label>{$t('ui.activities.to')} <input type="date" bind:value={to} /></label>
   <label>
@@ -84,7 +84,6 @@
     {$t('ui.activities.count', { n: rows.length })}
   </span>
 </div>
-<p class="page-lead" data-testid="lead">{$t('ui.lead.activities')}</p>
 
 {#if !validRange}
   <p class="error" role="alert">{$t('ui.error.invalid_date')}</p>
@@ -161,7 +160,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px 14px;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-4);
   }
 
   .head label {

@@ -5,7 +5,7 @@ import { setBackend } from '../../lib/backend';
 import { MockBackend } from '../../lib/backend/mock';
 import { resetGarminState } from '../../lib/garmin';
 import { setLocale } from '../../lib/i18n';
-import { view } from '../../lib/state';
+import { settingsTab, view } from '../../lib/state';
 import SettingsView from '../SettingsView.svelte';
 
 vi.mock(
@@ -18,6 +18,7 @@ afterEach(() => {
   setBackend(null);
   setLocale('de');
   view.set('today');
+  settingsTab.set('data');
   resetGarminState();
 });
 
@@ -219,6 +220,8 @@ describe('Einstellungen, Garmin seit T39', () => {
 
   it('zeigt die Herkunft der Schwellen und der Angaben zur Person', async () => {
     const backend = mock();
+    // Athlet und Schwellen stehen im Reiter Profil und Schwellen.
+    settingsTab.set('profile');
     render(SettingsView);
     const table = await screen.findByTestId('threshold-table');
     expect(table.textContent).toContain('Herkunft');
