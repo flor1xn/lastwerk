@@ -23,15 +23,15 @@ use lastwerk_cli::planning::{self, DEFAULT_STRENGTH_PER_WEEK, PlanRequest};
 use lastwerk_coach::chat::prepare_user_text;
 use lastwerk_coach::edit::Edit;
 use lastwerk_coach::{
-    BaseUrl, ChatError, ChatHistory, ChatInput, CheckedProposal, DEFAULT_TIMEOUT_S, LlmClient,
-    LlmError, LlmRequest, LlmResponse, MetricValue, OLLAMA_DEFAULT_URL, PlanningChange, Provider,
-    RefineConfig, Role, chat_messages, chat_turn, ollama_models, pick_model,
+    BaseUrl, ChatError, ChatFocus, ChatHistory, ChatInput, CheckedProposal, DEFAULT_TIMEOUT_S,
+    LlmClient, LlmError, LlmRequest, LlmResponse, MetricValue, OLLAMA_DEFAULT_URL, PlanningChange,
+    Provider, RefineConfig, Role, chat_messages, chat_turn, ollama_models, pick_model,
 };
 use lastwerk_core::plan::{Locale, Plan, PlanSport, PlanWeek, Slot};
 use lastwerk_store::{PlanStatus, Store};
 use serde::Serialize;
 
-use crate::dto::{AvailabilityDay, Dashboard, PlanDetail};
+use crate::dto::{AvailabilityDay, ChatFocusDto, Dashboard, PlanDetail};
 use crate::error::{AppError, Result};
 use crate::service::{KEY_LOCALE, dashboard, plans};
 
@@ -453,6 +453,17 @@ fn chat_error(e: &ChatError, cancelled: bool) -> AppError {
     })
 }
 
+/// Prüft den Fokus der Oberfläche (SPEC 9.7). Nur bekannte Codes kommen durch, alles andere
+/// ist `invalid_value` (vorhandener Code für ungültige Argumente): So kann über den Fokus kein Freitext zum Modell gelangen.
+pub fn parse_focus(focus: Option<&ChatFocusDto>) -> Result<Option<ChatFocus>> {
+    focus
+        .map(|f| {
+            ChatFocus::from_codes(&f.view, f.topic.as_deref())
+                .ok_or_else(|| AppError::new("invalid_value"))
+        })
+        .transpose()
+}
+
 /// Der Plan, auf den sich das Gespräch bezieht: der aktive, sonst der neueste Entwurf.
 fn base_plan(store: &Store) -> Result<Plan> {
     if let Some(plan) = store.active_plan()? {
@@ -481,7 +492,7 @@ struct Prepared {
     locale: Locale,
 }
 
-fn prepare(store: &Store, today: NaiveDate) -> Result<Prepared> {
+fn prepare(store: &Store, today: NaiveDate, focus: Option<ChatFocus>) -> Result<Prepared> {
     let base = base_plan(store)?;
     let (rules, catalog) = planning::load_rules().map_err(|_| AppError::new("internal"))?;
     let mut notes = Vec::new();
@@ -493,7 +504,7 @@ fn prepare(store: &Store, today: NaiveDate) -> Result<Prepared> {
         .map(|d| chat_metrics(&d))
         .unwrap_or_default();
     let input =
-        ChatInput::build(&base, &ctx, &rules, metrics).map_err(|e| chat_error(&e, false))?;
+        ChatInput::build(&base, &ctx, &rules, metrics, focus).map_err(|e| chat_error(&e, false))?;
     Ok(Prepared {
         input,
         base,
@@ -502,14 +513,17 @@ fn prepare(store: &Store, today: NaiveDate) -> Result<Prepared> {
 }
 
 /// Der exakte Eingang der nächsten Nachricht (F24). `message` darf leer sein: Dann zeigt die
-/// Vorschau Anweisung, Eingang und bisherigen Verlauf, die Nachricht fehlt noch.
+/// Vorschau Anweisung, Eingang und bisherigen Verlauf, die Nachricht fehlt noch. `focus` wie
+/// bei [`chat`].
 pub fn preview(
     store: &Store,
     state: &CoachState,
     message: &str,
+    focus: Option<&ChatFocusDto>,
     today: NaiveDate,
 ) -> Result<PromptPreview> {
-    let prepared = prepare(store, today)?;
+    let focus = parse_focus(focus)?;
+    let prepared = prepare(store, today, focus)?;
     let history = state.0.lock().history.clone();
     let text = message.trim();
     let mut messages = if text.is_empty() {
@@ -801,19 +815,24 @@ fn build_proposal(
 }
 
 /// Ein Gesprächsschritt mit einem fertigen Client (SPEC 9.7). `new_id` vergibt die Nummer
-/// eines Vorschlags. Der Verlauf wächst nur, wenn das Modell geantwortet hat.
+/// eines Vorschlags. Der Verlauf wächst nur, wenn das Modell geantwortet hat. `focus` ist die
+/// Ansicht der Oberfläche als Code ([`parse_focus`]); er gilt nur für diesen Schritt und steht
+/// nicht im Verlauf.
+#[allow(clippy::too_many_arguments)]
 pub fn chat(
     store: &Store,
     state: &CoachState,
     client: &dyn LlmClient,
     message: &str,
+    focus: Option<&ChatFocusDto>,
     today: NaiveDate,
     now: DateTime<Utc>,
     new_id: &dyn Fn() -> String,
 ) -> Result<CoachReply> {
     let shared = &state.0;
     let text = prepare_user_text(message).map_err(|e| chat_error(&e, false))?;
-    let prepared = prepare(store, today)?;
+    let focus = parse_focus(focus)?;
+    let prepared = prepare(store, today, focus)?;
     let history = shared.lock().history.clone();
     let epoch = shared.epoch.load(Ordering::SeqCst);
     let guarded = Cancelable {
@@ -875,17 +894,19 @@ pub fn chat_with_provider(
     store: &Store,
     state: &CoachState,
     message: &str,
+    focus: Option<&ChatFocusDto>,
     today: NaiveDate,
     now: DateTime<Utc>,
     new_id: &dyn Fn() -> String,
 ) -> Result<CoachReply> {
-    // Erst die Nachricht prüfen: Eine leere Nachricht braucht keine Abfrage des Servers.
+    // Erst Nachricht und Fokus prüfen: Beides braucht keine Abfrage des Servers.
     prepare_user_text(message).map_err(|e| chat_error(&e, false))?;
+    parse_focus(focus)?;
     let provider = resolve(&read_config(store)?)
         .provider
         .ok_or_else(|| AppError::new("coach_unavailable"))?;
     let client = provider.client();
-    chat(store, state, &*client, message, today, now, new_id)
+    chat(store, state, &*client, message, focus, today, now, new_id)
 }
 
 // --- Übernehmen ----------------------------------------------------------------------

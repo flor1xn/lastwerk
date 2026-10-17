@@ -50,6 +50,16 @@ pub struct ActivityFilter {
     pub sport: Option<Sport>,
 }
 
+/// Worauf der Nutzer beim Gespräch mit dem Coach schaut (SPEC 9.7, T43): Ansicht und optional
+/// ein Thema, beide als Code. Die Codes prüft `service::coach`; ein unbekannter ergibt
+/// `invalid_value`. Kein Feld für eine ID, ein Datum oder einen Namen.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct ChatFocusDto {
+    pub view: String,
+    #[serde(default)]
+    pub topic: Option<String>,
+}
+
 /// Zeit in Zonen eines Schemas.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ZoneSchemeTime {
