@@ -73,7 +73,7 @@ for (const lang of ['de', 'en'] as const) {
 
       await expect(page.getByTestId('nav-today')).toHaveText(TEXT[lang].today);
       await expect(page.getByTestId('wizard')).toHaveCount(0);
-      await expect(page.getByTestId('today-hero')).toBeVisible();
+      await expect(page.getByTestId('today-decision')).toBeVisible();
       await shot(page, `einrichtung-${lang}-heute`);
     });
   });
