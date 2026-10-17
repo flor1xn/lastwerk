@@ -318,6 +318,66 @@ export interface DashReadiness {
   series: DashRecoveryPoint[];
 }
 
+// --- Tagesentscheidung und Erkenntnisse (T44, SPEC 8.7) ----------------------------------
+
+export const DECISION_CODES = [
+  'decision.no_plan',
+  'decision.rest',
+  'decision.already_adjusted',
+  'decision.lighten',
+  'decision.keep_easy',
+  'decision.as_planned',
+] as const;
+export type DecisionCode = (typeof DECISION_CODES)[number];
+
+export const DECISION_REASONS = [
+  'decision.reason.readiness_low',
+  'decision.reason.form_overloaded',
+  'decision.reason.form_fresh',
+  'decision.reason.recovery_swap',
+] as const;
+export type DecisionReasonCode = (typeof DECISION_REASONS)[number];
+
+export const VARIANT_KINDS = ['planned', 'lighter', 'shorter', 'harder'] as const;
+export type VariantKind = (typeof VARIANT_KINDS)[number];
+
+export const DECISION_MISSING = ['readiness', 'form', 'plan_context'] as const;
+export type DecisionMissing = (typeof DECISION_MISSING)[number];
+
+/** Codes, die als Erkenntnis erscheinen können (PRIORITY in `metrics::insights`). */
+export const INSIGHT_CODES = [
+  'form.overloaded',
+  'readiness.low',
+  'ramp.steep',
+  'distribution.intensity_heavy',
+  'adherence.under',
+  'adherence.over',
+  'efficiency.rising',
+  'power_curve.rising',
+  'ramp.building',
+] as const;
+export type InsightCode = (typeof INSIGHT_CODES)[number];
+
+export interface DashVariant {
+  kind: VariantKind;
+  sport: PlanSport;
+  template_id: string;
+  duration_min: number;
+  hard: boolean;
+  planned_load: number;
+}
+
+export interface DashDecision {
+  state: DecisionCode;
+  /** Leer bei `no_plan`, `rest` und bei `lighten` ohne passende lockere Vorlage. */
+  main: DashVariant | null;
+  alternatives: DashVariant[];
+  reasons: DecisionReasonCode[];
+  /** Regelcodes wie `R12`. */
+  rules: string[];
+  missing: DecisionMissing[];
+}
+
 export interface Dashboard {
   today: string;
   form: DashForm | null;
@@ -332,6 +392,9 @@ export interface Dashboard {
   power_curve: { durations: DashPowerDuration[] };
   readiness: DashReadiness;
   load_days: { date: string; load: number }[];
+  decision: DashDecision;
+  /** Höchstens drei, Warnungen vor positiven Trends. */
+  insights: { code: InsightCode }[];
 }
 
 export interface PmcSettings {
