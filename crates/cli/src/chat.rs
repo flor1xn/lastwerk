@@ -259,7 +259,7 @@ pub fn run_chat(
     for note in &notes {
         writeln!(err, "{note}").map_err(|e| io_error(&e))?;
     }
-    let input = ChatInput::build(&plan, &ctx, &rules, Vec::new())
+    let input = ChatInput::build(&plan, &ctx, &rules, Vec::new(), None)
         .map_err(|e| CliError::Internal(format!("Eingang ({})", e.code())))?;
     let history = ChatHistory::new();
     if req.show_input {

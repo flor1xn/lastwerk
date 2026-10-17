@@ -140,7 +140,136 @@ impl MetricValue {
     }
 }
 
-/// Eingang eines Gesprächsschritts: der Kontext aus 9.3 und die Kennzahlen. Hält zusätzlich
+/// Erzeugt ein geschlossenes Enum mit festem Code je Variante, dazu `ALL`, `code()`,
+/// `from_code()` und eine Serialisierung als Code. So gibt es für jeden Code genau eine
+/// Variante, und kein anderer Text kann als Fokus zum Modell gelangen (SPEC 9.3).
+macro_rules! code_enum {
+    ($(#[$meta:meta])* $name:ident { $($(#[$vmeta:meta])* $variant:ident => $code:literal,)+ }) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        pub enum $name {
+            $($(#[$vmeta])* $variant,)+
+        }
+
+        impl $name {
+            /// Alle Varianten in fester Reihenfolge.
+            pub const ALL: &'static [Self] = &[$(Self::$variant,)+];
+
+            /// Stabiler Code, so wie er im Eingang steht.
+            pub const fn code(self) -> &'static str {
+                match self {
+                    $(Self::$variant => $code,)+
+                }
+            }
+
+            /// Variante zu einem Code; `None` für jeden anderen Text.
+            pub fn from_code(code: &str) -> Option<Self> {
+                Self::ALL.iter().copied().find(|v| v.code() == code)
+            }
+        }
+
+        impl Serialize for $name {
+            fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+                s.serialize_str(self.code())
+            }
+        }
+
+        impl<'de> Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+                let code = String::deserialize(d)?;
+                Self::from_code(&code).ok_or_else(|| {
+                    serde::de::Error::custom(format!("unknown {} code", stringify!($name)))
+                })
+            }
+        }
+    };
+}
+
+code_enum! {
+    /// Die Ansicht, die der Nutzer beim Gespräch sieht (SPEC 5.5, 9.7). Nur die Art der Seite,
+    /// nie eine ID, ein Datum oder ein Name: Bei `history_activity` erfährt das Modell nicht,
+    /// welche Aktivität offen ist.
+    ChatView {
+        Today => "today",
+        Plan => "plan",
+        HistoryCalendar => "history_calendar",
+        HistoryActivities => "history_activities",
+        HistoryActivity => "history_activity",
+        HistoryProgress => "history_progress",
+        HistoryPerformance => "history_performance",
+        HistoryBody => "history_body",
+        Settings => "settings",
+    }
+}
+
+code_enum! {
+    /// Thema, zu dem der Nutzer das Gespräch geöffnet hat, etwa aus einer Erkenntnis auf
+    /// "Heute". Jede Variante ist genau ein Zustandscode aus `lastwerk_core` (`metrics::*` und
+    /// `plan::DecisionState`); ein Test prüft die Übereinstimmung in beide Richtungen.
+    ChatTopic {
+        RampNoData => "ramp.no_data",
+        RampFalling => "ramp.falling",
+        RampSteady => "ramp.steady",
+        RampBuilding => "ramp.building",
+        RampSteep => "ramp.steep",
+        ReadinessNoData => "readiness.no_data",
+        ReadinessNormal => "readiness.normal",
+        ReadinessLow => "readiness.low",
+        FormFresh => "form.fresh",
+        FormBalanced => "form.balanced",
+        FormLoaded => "form.loaded",
+        FormOverloaded => "form.overloaded",
+        AdherenceNoData => "adherence.no_data",
+        AdherenceUnder => "adherence.under",
+        AdherenceOnTrack => "adherence.on_track",
+        AdherenceOver => "adherence.over",
+        DistributionNoData => "distribution.no_data",
+        DistributionEasyDominant => "distribution.easy_dominant",
+        DistributionIntensityHeavy => "distribution.intensity_heavy",
+        DecouplingNoData => "decoupling.no_data",
+        DecouplingCoupled => "decoupling.coupled",
+        DecouplingDecoupled => "decoupling.decoupled",
+        EfficiencyNoData => "efficiency.no_data",
+        EfficiencyFalling => "efficiency.falling",
+        EfficiencyFlat => "efficiency.flat",
+        EfficiencyRising => "efficiency.rising",
+        PowerCurveNoData => "power_curve.no_data",
+        PowerCurveFalling => "power_curve.falling",
+        PowerCurveFlat => "power_curve.flat",
+        PowerCurveRising => "power_curve.rising",
+        DecisionNoPlan => "decision.no_plan",
+        DecisionRest => "decision.rest",
+        DecisionAlreadyAdjusted => "decision.already_adjusted",
+        DecisionLighten => "decision.lighten",
+        DecisionKeepEasy => "decision.keep_easy",
+        DecisionAsPlanned => "decision.as_planned",
+    }
+}
+
+/// Worauf der Nutzer gerade schaut (SPEC 9.7): Ansicht und optional ein Thema. Beide sind
+/// geschlossene Codes; der Fokus ist Datum im Eingang, keine Anweisung an das Modell.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChatFocus {
+    pub view: ChatView,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topic: Option<ChatTopic>,
+}
+
+impl ChatFocus {
+    /// Fokus aus zwei Codes, wie sie die Oberfläche schickt. `None` bei einem unbekannten Code.
+    pub fn from_codes(view: &str, topic: Option<&str>) -> Option<Self> {
+        let view = ChatView::from_code(view)?;
+        let topic = match topic {
+            Some(t) => Some(ChatTopic::from_code(t)?),
+            None => None,
+        };
+        Some(Self { view, topic })
+    }
+}
+
+/// Eingang eines Gesprächsschritts: der Kontext aus 9.3, die Kennzahlen und optional der
+/// Fokus der Oberfläche ([`ChatFocus`], nur Codes; ohne Fokus fehlt das Feld). Hält zusätzlich
 /// Basisplan, Kontext und Regeln für die Prüfung der Vorschläge; diese gehen nicht in den
 /// JSON-Text.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -148,6 +277,8 @@ pub struct ChatInput {
     #[serde(flatten)]
     context: RefineInput,
     metrics: Vec<MetricValue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    focus: Option<ChatFocus>,
     #[serde(skip)]
     base: Plan,
     #[serde(skip)]
@@ -157,13 +288,14 @@ pub struct ChatInput {
 }
 
 impl ChatInput {
-    /// Baut den Eingang aus Basisplan, Kontext, Regeln und Kennzahlen. Mehr als
+    /// Baut den Eingang aus Basisplan, Kontext, Regeln, Kennzahlen und Fokus. Mehr als
     /// [`MAX_METRICS`] Kennzahlen oder ein Code, der doppelt vorkommt, sind Fehler.
     pub fn build(
         base: &Plan,
         ctx: &PlanContext,
         rules: &Rules,
         metrics: Vec<MetricValue>,
+        focus: Option<ChatFocus>,
     ) -> Result<Self, ChatError> {
         if metrics.len() > MAX_METRICS {
             return Err(ChatError::TooManyMetrics { max: MAX_METRICS });
@@ -176,6 +308,7 @@ impl ChatInput {
         Ok(Self {
             context: RefineInput::build(base, ctx, rules),
             metrics,
+            focus,
             base: base.clone(),
             ctx: ctx.clone(),
             rules: rules.clone(),
@@ -189,6 +322,11 @@ impl ChatInput {
 
     pub fn metrics(&self) -> &[MetricValue] {
         &self.metrics
+    }
+
+    /// Der Fokus der Oberfläche, falls einer mitkam.
+    pub fn focus(&self) -> Option<ChatFocus> {
+        self.focus
     }
 
     /// Der Plan, auf den sich `plan_edit` bezieht.
@@ -690,6 +828,188 @@ pub fn chat_turn(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Jeder Zustandscode, den `lastwerk_core` heute kennt. Die `match` ohne Platzhalter
+    /// brechen den Bau, sobald dort eine Variante dazukommt; dann muss sie auch nach
+    /// [`ChatTopic`].
+    fn core_state_codes() -> Vec<&'static str> {
+        use lastwerk_core::metrics::TrendState;
+        use lastwerk_core::metrics::adherence::AdherenceState;
+        use lastwerk_core::metrics::distribution::DistributionState;
+        use lastwerk_core::metrics::efficiency::{DecouplingState, ef_trend_code};
+        use lastwerk_core::metrics::form::FormState;
+        use lastwerk_core::metrics::power_curve::power_curve_trend_code;
+        use lastwerk_core::metrics::ramp::RampState;
+        use lastwerk_core::metrics::readiness::ReadinessState;
+        use lastwerk_core::plan::DecisionState;
+
+        fn check<T: Copy>(all: &[T], exhaustive: impl Fn(T)) -> &[T] {
+            all.iter().for_each(|v| exhaustive(*v));
+            all
+        }
+        let mut out = Vec::new();
+        let ramp = [
+            RampState::NoData,
+            RampState::Falling,
+            RampState::Steady,
+            RampState::Building,
+            RampState::Steep,
+        ];
+        for v in check(&ramp, |v| match v {
+            RampState::NoData
+            | RampState::Falling
+            | RampState::Steady
+            | RampState::Building
+            | RampState::Steep => {}
+        }) {
+            out.push(v.code());
+        }
+        let readiness = [
+            ReadinessState::NoData,
+            ReadinessState::Normal,
+            ReadinessState::Low,
+        ];
+        for v in check(&readiness, |v| match v {
+            ReadinessState::NoData | ReadinessState::Normal | ReadinessState::Low => {}
+        }) {
+            out.push(v.code());
+        }
+        let form = [
+            FormState::Fresh,
+            FormState::Balanced,
+            FormState::Loaded,
+            FormState::Overloaded,
+        ];
+        for v in check(&form, |v| match v {
+            FormState::Fresh | FormState::Balanced | FormState::Loaded | FormState::Overloaded => {}
+        }) {
+            out.push(v.code());
+        }
+        let adherence = [
+            AdherenceState::NoData,
+            AdherenceState::Under,
+            AdherenceState::OnTrack,
+            AdherenceState::Over,
+        ];
+        for v in check(&adherence, |v| match v {
+            AdherenceState::NoData
+            | AdherenceState::Under
+            | AdherenceState::OnTrack
+            | AdherenceState::Over => {}
+        }) {
+            out.push(v.code());
+        }
+        let distribution = [
+            DistributionState::NoData,
+            DistributionState::EasyDominant,
+            DistributionState::IntensityHeavy,
+        ];
+        for v in check(&distribution, |v| match v {
+            DistributionState::NoData
+            | DistributionState::EasyDominant
+            | DistributionState::IntensityHeavy => {}
+        }) {
+            out.push(v.code());
+        }
+        let decoupling = [
+            DecouplingState::NoData,
+            DecouplingState::Coupled,
+            DecouplingState::Decoupled,
+        ];
+        for v in check(&decoupling, |v| match v {
+            DecouplingState::NoData | DecouplingState::Coupled | DecouplingState::Decoupled => {}
+        }) {
+            out.push(v.code());
+        }
+        let trend = [
+            TrendState::NoData,
+            TrendState::Falling,
+            TrendState::Flat,
+            TrendState::Rising,
+        ];
+        let trend = check(&trend, |v| match v {
+            TrendState::NoData | TrendState::Falling | TrendState::Flat | TrendState::Rising => {}
+        });
+        out.extend(trend.iter().map(|v| ef_trend_code(*v)));
+        out.extend(trend.iter().map(|v| power_curve_trend_code(*v)));
+        let decision = [
+            DecisionState::NoPlan,
+            DecisionState::Rest,
+            DecisionState::AlreadyAdjusted,
+            DecisionState::Lighten,
+            DecisionState::KeepEasy,
+            DecisionState::AsPlanned,
+        ];
+        for v in check(&decision, |v| match v {
+            DecisionState::NoPlan
+            | DecisionState::Rest
+            | DecisionState::AlreadyAdjusted
+            | DecisionState::Lighten
+            | DecisionState::KeepEasy
+            | DecisionState::AsPlanned => {}
+        }) {
+            out.push(v.code());
+        }
+        out
+    }
+
+    #[test]
+    fn every_topic_is_exactly_one_core_state_code() {
+        let core = core_state_codes();
+        let topics: Vec<&str> = ChatTopic::ALL.iter().map(|t| t.code()).collect();
+        for c in &core {
+            assert!(topics.contains(c), "Code {c} fehlt in ChatTopic");
+        }
+        for t in &topics {
+            assert!(
+                core.contains(t),
+                "ChatTopic {t} ist kein Code aus lastwerk_core"
+            );
+        }
+        assert_eq!(topics.len(), core.len());
+        for (i, t) in topics.iter().enumerate() {
+            assert!(!topics[..i].contains(t), "doppelt: {t}");
+        }
+    }
+
+    #[test]
+    fn focus_codes_round_trip_and_reject_anything_else() {
+        for v in ChatView::ALL {
+            assert_eq!(ChatView::from_code(v.code()), Some(*v));
+        }
+        for t in ChatTopic::ALL {
+            assert_eq!(ChatTopic::from_code(t.code()), Some(*t));
+        }
+        let f = ChatFocus::from_codes("history_activity", Some("ramp.steep")).unwrap();
+        assert_eq!(
+            serde_json::to_value(f).unwrap(),
+            json!({"view": "history_activity", "topic": "ramp.steep"})
+        );
+        let plain = ChatFocus::from_codes("today", None).unwrap();
+        assert_eq!(
+            serde_json::to_value(plain).unwrap(),
+            json!({"view": "today"})
+        );
+        assert_eq!(
+            serde_json::from_value::<ChatFocus>(json!({"view": "plan", "topic": "form.fresh"}))
+                .unwrap(),
+            ChatFocus {
+                view: ChatView::Plan,
+                topic: Some(ChatTopic::FormFresh)
+            }
+        );
+        for (view, topic) in [
+            ("detail", None),
+            ("Today", None),
+            ("", None),
+            ("today", Some("ramp.huge")),
+            ("today", Some("2026-10-17")),
+            ("history_activity", Some("a1b2c3")),
+        ] {
+            assert_eq!(ChatFocus::from_codes(view, topic), None, "{view} {topic:?}");
+        }
+        assert!(serde_json::from_value::<ChatFocus>(json!({"view": "today", "id": "x"})).is_err());
+    }
 
     #[test]
     fn schema_has_the_documented_limits() {

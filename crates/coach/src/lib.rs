@@ -33,8 +33,9 @@ pub use catalog::{
     CatalogError, CatalogModel, embedded_catalog, is_valid_model_name, parse_catalog,
 };
 pub use chat::{
-    ChatError, ChatHistory, ChatInput, ChatMessage, ChatOutcome, ChatRole, CheckedProposal,
-    MetricValue, PlanningChange, chat_messages, chat_system_prompt, chat_turn,
+    ChatError, ChatFocus, ChatHistory, ChatInput, ChatMessage, ChatOutcome, ChatRole, ChatTopic,
+    ChatView, CheckedProposal, MetricValue, PlanningChange, chat_messages, chat_system_prompt,
+    chat_turn,
 };
 pub use client::{
     LlmClient, LlmError, LlmRequest, LlmResponse, Message, OllamaClient, OpenAiCompatibleClient,
