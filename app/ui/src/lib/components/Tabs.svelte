@@ -110,7 +110,6 @@
     color: var(--muted);
     font-size: var(--fs-body);
     font-weight: var(--fw-medium);
-    transition: color 140ms ease-out;
   }
 
   button:hover:not(:disabled) {
@@ -138,11 +137,5 @@
   button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    button {
-      transition: none;
-    }
   }
 </style>

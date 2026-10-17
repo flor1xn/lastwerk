@@ -2,7 +2,7 @@
 
 | Feld | Wert |
 |---|---|
-| Status | offen |
+| Status | erledigt |
 | Meilenstein | nach 1.0 |
 | cloudfähig | ja, Sichtprüfung im Tauri-Fenster manuell |
 | Voraussetzung | T41 |
@@ -61,4 +61,12 @@ Keine.
 
 ## Blocker oder Vermerke
 
-Keine.
+**Vermerk 16. Oktober 2026 (erledigt).** Seitenleiste mit Heute, Plan, Verlauf und unten Einstellungen; Sprachwahl, Themenknopf und `CoachSetupLine` sind entfernt (Komponente gelöscht), `GarminSyncLine` bleibt. Neue Seite `views/HistoryView.svelte` mit den Reitern Kalender (Monat/Woche), Aktivitäten (Liste oder Detail an Ort und Stelle), Fortschritt, Leistung, Körper (Erholung/Gesundheit); neue Komponente `lib/components/Tabs.svelte` (WAI-ARIA-Muster Tabs). Einstellungen in vier Reitern. `state.ts` mit `VIEWS = ['today','plan','history']`, Stores `historyTab`, `calendarMode`, `bodyTab`, `settingsTab`, Helfern `openHistory`, `openSettings`, `openActivity`, `closeActivity`; `coachSetupFocus` entfällt. Veraltete Schlüssel entfernt (`ui.nav.week` und weitere, `ui.lead.settings`, `ui.detail.none`, `ui.detail.to_list`, `ui.week.no_pmc`, `ui.week.pmc_start_note`, `ui.activities.title`). Tests: `state.test.ts`, `HistoryView.test.ts` (Tastatur der Reiter, Umschalter, Detail mit Zurück), angepasste Abschnittstests; Playwright über `nav-history` und Reiter, Sprachwechsel über die Einstellungen (`e2e/nav.ts`). SPEC 5.5 und `app/README.md` nachgezogen.
+
+Abweichungen vom Plan:
+- Keine Eigenschaft `embedded`: Die eingebetteten Seiten werden nur noch im Verlauf gezeigt, deshalb ist ihr Seitenkopf ganz entfallen. Ihr Leitsatz bleibt in der Seite, weil er dort aus den Daten entsteht (Kalender, Fortschritt, Erholung), und steht direkt unter den Reitern.
+- Zusätzlicher Store `calendarMode` für den Umschalter Monat/Woche und Helfer `closeActivity`. Ein Klick auf den aktiven Reiter Aktivitäten führt aus dem Detail zur Liste.
+- Das Detail wählt ohne Auswahl nicht mehr selbst die jüngste Aktivität (es gibt keinen Navigationspunkt Detail mehr).
+- Leitsätze der Einstellungen je Reiter als `ui.lead.settings_<reiter>`, Reiternamen unter `ui.settings.tab.*`.
+- Reiter haben keine Übergänge (häufig gewechselt, SPEC 5.5 Bewegung).
+- Ein Download des Coach-Modells erscheint nicht mehr in der Seitenleiste, nur im Reiter Coach.

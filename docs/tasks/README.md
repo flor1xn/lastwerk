@@ -51,7 +51,7 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T39](T39-garmin-vollabzug.md) | Garmin-Vollabzug und Schwellenwerte aus Garmin | nach 1.0 | erledigt | T22, T23, T28 | ja, **Live manuell** | crates/garmin, store, cli, app, catalog |
 | [T40](T40-garmin-vollabzug-2.md) | Garmin-Vollabzug Teil 2: Verläufe, Trainingsstatus, S3 je Bereich | nach 1.0 | erledigt | T39 | ja, **Live manuell** | crates/garmin, store, cli, app, catalog |
 | [T41](T41-einrichtung-neu.md) | Einrichtung neu, in drei Schritten zum fertigen Plan | nach 1.0 | erledigt | T39, T40 | ja, **Live manuell** | app, catalog, docs |
-| [T42](T42-navigation-verlauf.md) | Navigation radikal aufräumen, Verlauf und Einstellungen in Reitern | nach 1.0 | offen | T41 | ja | app/ui, catalog, docs |
+| [T42](T42-navigation-verlauf.md) | Navigation radikal aufräumen, Verlauf und Einstellungen in Reitern | nach 1.0 | erledigt | T41 | ja | app/ui, catalog, docs |
 | [T43](T43-coach-seitenfenster.md) | Coach als globales Seitenfenster mit Ansichtskontext | nach 1.0 | offen | T42 | ja, Live manuell | crates/coach, app, catalog, docs |
 | [T44](T44-tagesentscheidung.md) | Tagesentscheidung, Coach-Erkenntnisse und Wochen-Story auf Heute | nach 1.0 | offen | T41 (Teil A), T43 (Teil B) | ja | crates/core, app, catalog, docs |
 | [T45](T45-coach-strom.md) | Coach-Antworten als Strom | nach 1.0 | offen | T43 | ja, Live manuell | crates/coach, app |
