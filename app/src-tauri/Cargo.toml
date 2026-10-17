@@ -36,7 +36,10 @@ lastwerk-coach = { path = "../../crates/coach" }
 tauri = { version = "2.12", features = [] }
 tauri-plugin-dialog = "2"
 # Update auf Knopfdruck (T17, SPEC 10.1): prüft die Signatur, Endpunkt fest in tauri.conf.json.
-tauri-plugin-updater = "2"
+# Ohne die Funktion `zip`: Das Update ist der signierte NSIS-Installer selbst (latest.json
+# zeigt auf *-setup.exe), es wird nichts entpackt. So fällt zip 4.6.1 mit RUSTSEC-2026-0367
+# bis 0369 weg (17. Oktober 2026).
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 serde = { version = "1.0", features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 # Plan-ID als UUID v4, wie in der Kommandozeile (`core` erzeugt keinen Zufall).

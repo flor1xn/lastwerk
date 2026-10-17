@@ -94,7 +94,7 @@ Keine neue. Geändert am 16. Oktober 2026, weil der automatische Release an `car
 
 - `zip` 8.6 auf 9.0 (9.0.4, MIT) in `crates/cli`. Einzige Anpassung: `ZipFile::name()` liefert seit 9 ein `Result`; ein ungültig kodierter Name gilt als keine FIT-Datei.
 - `tauri-plugin-updater` 2.13.3 auf 2.14.0 (MIT OR Apache-2.0), nur im Lockfile.
-- `deny.toml`: Ausnahme für das zurückgezogene `zip@4.6.1`, das nur `tauri-plugin-updater` mitbringt (auch 2.14.0 verlangt zip 4). Kein Sicherheitshinweis, nur der Rückzug. Entfernen, sobald das Plugin zip 9 nutzt.
+- `deny.toml`: Ausnahme für das zurückgezogene `zip@4.6.1`, das nur `tauri-plugin-updater` mitbringt (auch 2.14.0 verlangt zip 4). Kein Sicherheitshinweis, nur der Rückzug. Entfernen, sobald das Plugin zip 9 nutzt. Erledigt am 17. Oktober 2026: Das Plugin läuft jetzt ohne seine Funktion `zip` (das Update ist der signierte NSIS-Installer), zip 4.6.1 ist aus dem Lockfile verschwunden und die Ausnahme entfernt; zuvor waren RUSTSEC-2026-0367 bis 0369 dazu erschienen.
 
 ## Blocker oder Vermerke
 
