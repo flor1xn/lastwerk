@@ -204,6 +204,7 @@ Ergänzend prüft CI, dass kein `*.fit` im Git-Index steht (Abschnitt 11).
 | Schwellenwerte | **Seit T39 (Entscheidung E1 vom 16. Oktober 2026): standardmäßig automatisch aus Garmin** mit Herkunft `garmin` und dem Datum aus Garmin, manuelle Werte gehen vor (bei gleichem Datum gewinnt manuell, 8.6). Vorher: manuell mit Gültigkeitsdatum, Schätzung aus FIT nur als Vorschlag. Die Schätzung aus FIT bleibt Vorschlag für Werte, die Garmin nicht liefert | Grund der Wende: Werte galten erst ab dem Eintragstag, frühere Aktivitäten zeigten "Schwellenwert fehlt" |
 | Netzwerk | Keine Telemetrie. Kartenkacheln sind als Option erlaubt | Umsetzung: Standard aus, siehe 10.3 |
 | Geräte | Edge-Radcomputer und Uhr | Zwei Dateiquellen, Duplikate möglich |
+| Erkundung fremder Produkte | Seit 18. Oktober 2026 darf REA (Q39) lokal und vom Nutzer eingerichtet helfen, Verhalten und Dateiformate fremder Programme zu verstehen. Kein Code, keine Texte, keine Konstanten werden übernommen, Ergebnisse sind keine Quelle im Sinne von Anhang A, kein Garmin-Konto und keine Garmin-Dienste | Regeln und Abgleich in [marktabgleich.md](marktabgleich.md) |
 
 ### 2.2 Ziele
 
@@ -302,10 +303,23 @@ Pflegeaufwand: Release-Prozess minimal. Tag setzt CI-Build für drei Plattformen
 |---|---|
 | F30 | Kartenansicht der Strecke mit Kacheln (Standard aus) |
 | F31 | PWA für Handy, setzt erreichbare Adresse voraus |
-| F32 | FIT-Workout-Dateien zum Kopieren auf das Gerät, Pfad je Gerät zu prüfen |
+| F32 | FIT-Workout-Dateien zum Kopieren auf das Gerät, Pfad je Gerät zu prüfen; mit ZWO für Zwift (T50) |
 | F33 | Strava-Import, abhängig von der Klärung der API-Bedingungen |
-| F34 | Neuplanung ab Datum X nach verpassten Einheiten |
+| F34 | Neuplanung ab Datum X nach verpassten Einheiten (T51, nach Entscheidung O15) |
 | F35 | Leistungskurve (beste Leistung je Dauer) als Verlauf |
+| F46 | Session-RPE je Aktivität und nachgetragene Einheiten ohne FIT, Kraft zählt in der Last (T47) |
+| F47 | Monotonie und Strain je Woche, beschreibend ohne Schwellen (T48, Q34) |
+| F48 | Critical Power und W' aus der Leistungskurve, W'-Bilanz je Fahrt (T49, Q35, Q36) |
+| F49 | Saisonplan mit mehreren Wettkämpfen der Priorität A, B, C (T52) |
+| F50 | Steigungsbereinigtes Tempo im Laufen, Höhenmeter und VAM (T53, Q37) |
+| F51 | Lauf- und Raddynamik aus FIT, Arbeit in kJ (T54) |
+| F52 | Schwimmen mit Bahnen, SWOLF und CSS-Test (T55, Q15) |
+| F53 | Ausrüstung mit Kilometerstand (T56) |
+| F54 | Hinweis auf die aerobe Schwelle aus DFA alpha1 (T57, Q38) |
+| F55 | Streckenform ohne Kartenkacheln (T58) |
+| F56 | Aktivitäten vergleichen (T59) |
+
+Herkunft von F46 bis F56: Marktabgleich vom 18. Oktober 2026 ([marktabgleich.md](marktabgleich.md)).
 
 ---
 
@@ -2697,4 +2711,10 @@ Prüfstatus:
 | Q31 | fomalhaut84/pleiades `apps/fitness/docs/specs/378-garmin-fitness-metrics-history.md`, abgerufen am 16. Oktober 2026 | Grenze 366 Tage je Abruf der Schwellenverläufe (länger: HTTP 400) | nur Sekundärquelle, nicht geprüft |
 | Q32 | lctayson/garmin-logger, aufgezeichnete Antwort `data/raw/daily/running_tolerance/2026/09/2026-09-23.json`, abgerufen am 16. Oktober 2026 | Felder der Lauftoleranz bei `aggregation=daily` (Meter, gleitend über 7 Tage) | nur Sekundärquelle (Aufzeichnung Dritter) |
 | Q33 | cyberjunky/ha-garmin `src/ha_garmin/client.py` und python-garminconnect `demo.py` (Blutdruck, Ernährung); mlcousek/JirkasArc `docs/garmin-routes.json` (Schlüssel des Ernährungstagebuchs), abgerufen am 16. Oktober 2026 | Felder von Blutdruck und Ernährung | nur Sekundärquelle: Lesecode und Schlüsselliste, keine aufgezeichnete Antwort |
+| Q34 | Foster C. Monitoring training in athletes with reference to overtraining syndrome. Med Sci Sports Exerc 1998;30(7):1164-1168 | Monotonie (Tagesmittel durch Standardabweichung) und Strain (Last mal Monotonie), T48 | bibliographisch bestätigt (Fachdatenbanken, Suchtreffer 18. Oktober 2026), Volltext nicht gelesen. Titel in einer Literaturliste abweichend ("indices of overtraining syndrome"). Art der Standardabweichung vor Übernahme prüfen |
+| Q35 | Skiba PF, Chidnok W, Vanhatalo A, Jones AM. Modeling the expenditure and reconstitution of work capacity above critical power. Med Sci Sports Exerc 2012;44(8):1526-1532, DOI 10.1249/MSS.0b013e3182517a80 | W'-Bilanz, T49 | bibliographisch bestätigt (PubMed 22382171), Volltext nicht gelesen. Gleichung der Zeitkonstante nur Sekundärquelle |
+| Q36 | Monod H, Scherrer J. The work capacity of a synergic muscular group. Ergonomics 1965;8(3):329-338 | Lineares Arbeit-Zeit-Modell (Grundlage Critical Power), T49 | nicht geprüft: Suche am 18. Oktober 2026 ohne Treffer zum Artikel selbst, Angabe aus Fachkenntnis. Vor Übernahme bestätigen |
+| Q37 | Minetti AE, Moia C, Roi GS, Susta D, Ferretti G. Energy cost of walking and running at extreme uphill and downhill slopes. J Appl Physiol 2002;93(3):1039-1046 | Laufkosten je Steigung, steigungsbereinigtes Tempo, T53 | bibliographisch bestätigt (Repositorien, Suchtreffer 18. Oktober 2026), Zusammenfassung gelesen. Polynom nicht eingesehen, Volltext frei verfügbar |
+| Q38 | Rogers B, Giles D, Draper N, Hoos O, Gronwald T. A new detection method defining the aerobic threshold for endurance exercise and training prescription based on fractal correlation properties of heart rate variability. Front Physiol 2021;11:596567, DOI 10.3389/fphys.2020.596567 | DFA alpha1, aerobe Schwelle, T57 | bibliographisch bestätigt (PubMed Central PMC7845545), Volltext nicht gelesen. Grenzwert 0,75 nur über Sekundärquellen (Übersicht von Gronwald, Runalyze) |
+| Q39 | REA, morluto/rea (github.com/morluto/rea), README und DISCLAIMER, abgerufen am 18. Oktober 2026 | Erkundungswerkzeug für fremde Programme (2.1, marktabgleich.md) | direkt gelesen (README teilweise, DISCLAIMER als Zusammenfassung). MIT. Untersagt laut DISCLAIMER selbst das Kopieren proprietärer Software und die Umgehung von Schutzmaßnahmen |
 Nicht verwendete, aber geprüfte Aussagen: Die Aussage "Wochenanstieg von 10 Prozent schützt vor Verletzungen" ist nicht belegt (Q12, Q13). Die Aussage "ACWR zwischen 0,8 und 1,3 sei sicher" wird nicht übernommen (Q9).

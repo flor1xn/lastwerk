@@ -56,6 +56,19 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T44](T44-tagesentscheidung.md) | Tagesentscheidung, Coach-Erkenntnisse und Wochen-Story auf Heute | nach 1.0 | erledigt | T41 (Teil A), T43 (Teil B) | ja | crates/core, app, catalog, docs |
 | [T45](T45-coach-strom.md) | Coach-Antworten als Strom | nach 1.0 | offen | T43 | ja, Live manuell | crates/coach, app |
 | [T46](T46-ci-haertung.md) | CI straffen und Schlüsselbund ohne zbus | nach 1.0 | erledigt | T38 | ja | .github, scripts, crates/garmin, docs |
+| [T47](T47-rpe-eingabe.md) | Session-RPE eingeben und Kraft nachtragen | nach 1.0 | offen | T42 | ja | crates/store, cli, app, catalog, schema |
+| [T48](T48-monotonie-strain.md) | Monotonie und Strain je Woche | nach 1.0 | offen | T32 | ja | crates/core, app, catalog, docs |
+| [T49](T49-critical-power.md) | Critical Power, W' und W'-Bilanz | nach 1.0 | offen | T33 | ja | crates/core, app, catalog, docs |
+| [T50](T50-workout-dateien.md) | Geplante Einheiten als Workout-Datei (FIT und ZWO) | nach 1.0 | offen | T07, T35 | ja, Gerätetest manuell | crates/fit, testkit, cli, app, catalog, docs |
+| [T51](T51-neuplanung.md) | Neuplanung nach verpassten Einheiten | nach 1.0 | offen, Entscheidung O15 vor Beginn | T35, T44 | ja | crates/core, cli, app, catalog, docs |
+| [T52](T52-saisonplan.md) | Saisonplan mit mehreren Wettkämpfen | nach 1.0 | offen | T51 | ja | crates/core, store, cli, app, catalog, schema, docs |
+| [T53](T53-steigung.md) | Steigungsbereinigtes Tempo und Höhenmeter je Stunde | nach 1.0 | offen | T31, T54 | ja | crates/fit, testkit, core, app, catalog, docs |
+| [T54](T54-dynamik.md) | Lauf- und Raddynamik, Arbeit in kJ | nach 1.0 | offen | T31 | ja | crates/fit, testkit, core, app, catalog |
+| [T55](T55-schwimmen.md) | Schwimmen mit Bahnen, SWOLF und CSS-Test | nach 1.0 | offen | T31, T53 | ja | crates/fit, testkit, core, app, catalog |
+| [T56](T56-ausruestung.md) | Ausrüstung mit Kilometerstand | nach 1.0 | offen | T42 | ja | crates/store, cli, app, catalog, schema |
+| [T57](T57-dfa-alpha1.md) | Hinweis auf die aerobe Schwelle aus HRV (DFA alpha1) | nach 1.0 | offen | T31, T55 | ja | crates/fit, testkit, core, app, catalog, docs |
+| [T58](T58-streckenform.md) | Streckenform ohne Kartenkacheln | nach 1.0 | offen | T31, T53 | ja | crates/fit, testkit, app |
+| [T59](T59-vergleich.md) | Aktivitäten vergleichen | nach 1.0 | offen | T31 | ja | app, catalog |
 
 ## Reihenfolge
 
@@ -98,6 +111,19 @@ T41 ─┬─ T42 ─ T43 ─┬─ T44 (Teil B)
      │             └─ T45
      └─ T44 (Teil A, crates/core) ─┘
 ```
+
+Marktabgleich vom 18. Oktober 2026 (Auswahl und Begründung in [../marktabgleich.md](../marktabgleich.md); die Erkundung mit REA ist je Task optional und nur lokal):
+
+```
+T42 ─┬─ T47 ─ (T48 zählt danach Kraft mit)
+     └─ T56
+T32 ─ T48          T33 ─ T49          T07, T35 ─ T50          T31 ─ T59
+T35, T44 ─ T51 ─ T52                  (T51 erst nach Entscheidung O15)
+T31 ─ T54 ─ T53 ─┬─ T55 ─ T57         (crates/fit: nacheinander, nie parallel)
+                 └─ T58
+```
+
+Vorschlag für die Reihenfolge nach Nutzen: T47 (schließt O29 a, Kraft zählt), T50 (Einheiten aufs Gerät), T51 (F34), T49, T54, T53, dann der Rest.
 
 Version 1 ist der Stand nach T09 (M1 bis M3, SPEC 12). T10 kann vor dem Zusatzprogramm gezogen werden, weil es ohne Garmin-Zugang auskommt.
 
