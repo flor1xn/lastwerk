@@ -3,11 +3,26 @@
 # Läuft bei jedem Start und bei jedem Fortsetzen, deshalb nur Leichtes und nur in der Cloud.
 # Endet immer mit Exit-Code 0, damit ein Netzwerkfehler die Session nicht blockiert.
 
+cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
+
+# Lokal und in der Cloud: Ist der letzte Lauf eines Workflows auf main rot, steht das am Anfang
+# der Session im Kontext (T46, docs/ci.md). Auch der tägliche Lauf der Sicherheitshinweise kann
+# ohne Commit rot werden und blockiert dann jeden Release. Nur mit gh, höchstens 15 s.
+if command -v gh >/dev/null 2>&1; then
+  red=$(timeout 15 gh run list --branch main --limit 40 \
+    --json conclusion,status,workflowName,createdAt,url \
+    --jq '[.[] | select(.status == "completed")] | group_by(.workflowName)
+      | map(max_by(.createdAt)) | .[] | select(.conclusion == "failure")
+      | "\(.createdAt) \(.workflowName) \(.url)"' 2>/dev/null)
+  if [ -n "$red" ]; then
+    echo "CI: letzter Lauf auf main rot, zuerst beheben (docs/ci.md):"
+    echo "$red"
+  fi
+fi
+
 if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
   exit 0
 fi
-
-cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
 # Hooks gegen versehentliche Commits privater Daten (SPEC 1.5).
 git config core.hooksPath .githooks || true

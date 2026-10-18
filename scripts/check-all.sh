@@ -8,7 +8,7 @@
 # Aufruf im Wurzelverzeichnis: sh scripts/check-all.sh [--quick]
 #   --quick  ohne Tauri-Tests, Playwright und bridge/ (für Zwischenschritte, nicht vor dem Push)
 #
-# Werkzeuge, die fehlen (cargo-deny, actionlint, zizmor, uv, Systembibliotheken für Tauri), werden mit
+# Werkzeuge, die fehlen (cargo-deny, actionlint, zizmor, gitleaks, uv, Systembibliotheken für Tauri), werden mit
 # Hinweis übersprungen; das Skript endet dann mit Exit 3, damit niemand einen Teillauf für einen
 # vollen hält. Exit 1 bei jedem Fehler.
 
@@ -59,8 +59,18 @@ step "Lizenzen und Quellen (cargo-deny)"
 if has cargo-deny; then
   run cargo deny check bans licenses sources
   run cargo deny --manifest-path app/src-tauri/Cargo.toml --config deny.toml check bans licenses sources
+  # Sicherheitshinweise wie advisories.yml beim Push: nur wenn sich Lockdateien, Manifeste oder
+  # deny.toml gegenüber origin/main geändert haben (T46). Sonst würde ein neu veröffentlichter
+  # Hinweis jeden Push blockieren; den meldet der tägliche Lauf.
+  base=$(git merge-base HEAD origin/main 2>/dev/null || true)
+  if [ -z "$base" ] || ! git diff --quiet "$base" -- Cargo.lock app/src-tauri/Cargo.lock deny.toml ':(glob)**/Cargo.toml'; then
+    run cargo deny check advisories
+    run cargo deny --manifest-path app/src-tauri/Cargo.toml --config deny.toml check advisories
+  else
+    printf 'Sicherheitshinweise: keine Lockdatei geändert, Prüfung im täglichen Lauf\n'
+  fi
 else
-  skip "cargo-deny nicht installiert (cargo install cargo-deny --locked)"
+  skip "cargo-deny nicht installiert (cargo install cargo-deny@0.20.2 --locked)"
 fi
 
 step "Workflows (actionlint)"
@@ -77,12 +87,22 @@ else
   skip "zizmor nicht installiert (pip install zizmor==1.31.0)"
 fi
 
+# Wie der Job guards: Inhalte aller Commits. Fehlte hier bis T46; zwei Fehlalarme fielen am
+# 16. Oktober 2026 deshalb erst in der CI auf. Fehlalarm: Fingerprint in .gitleaksignore.
+step "Secret-Scan (gitleaks)"
+if has gitleaks; then
+  run gitleaks detect --source . --no-banner --redact
+else
+  skip "gitleaks nicht installiert (Version 8.18.4 wie in ci.yml)"
+fi
+
 step "Oberfläche"
 if has pnpm; then
   run pnpm --dir app/ui install --frozen-lockfile --silent
   run pnpm --dir app/ui lint
   run pnpm --dir app/ui check
   run pnpm --dir app/ui test
+  run pnpm --dir app/ui audit --prod
   if [ "$QUICK" = 1 ]; then
     skip "Playwright-Rauchtest (--quick)"
   else
@@ -98,7 +118,7 @@ if [ "$QUICK" = 1 ]; then
   skip "bridge/ (--quick)"
 elif has uv; then
   # Unterschale für das Verzeichnis; `failed` wird außerhalb gesetzt.
-  if ! (cd bridge && uv run ruff check . && uv run pytest -q); then
+  if ! (cd bridge && uv run ruff check . && uv run ruff format --check src tests && uv run pytest -q); then
     echo "FEHLER: bridge/ (ruff oder pytest)"
     failed=1
   fi
