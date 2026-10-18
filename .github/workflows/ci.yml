@@ -20,9 +20,46 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Reine Änderungen an Dokumentation (docs/, *.md, .claude/) brauchen die schweren Jobs nicht
+  # (T46): Kein Build und kein Test liest diese Dateien. `guards` läuft trotzdem immer, weil auch
+  # Dokumentation keine Geheimnisse oder privaten Daten enthalten darf. Ohne bekannten
+  # Vergleichscommit (neuer Zweig, manueller Start) oder bei leerem Unterschied läuft alles.
+  scope:
+    name: Umfang der Änderung
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Geänderte Dateien
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          case "$EVENT" in
+            push) from="$BEFORE" ;;
+            pull_request) from="$BASE" ;;
+            *) from="" ;;
+          esac
+          code=true
+          if [ -n "$from" ] && git cat-file -e "${from}^{commit}" 2>/dev/null; then
+            files=$(git diff --name-only "$from" "$GITHUB_SHA")
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -vqE '^(docs/|\.claude/)|\.md$'; then
+              code=false
+            fi
+          fi
+          echo "Code geändert: $code"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
   guards:
     name: Datenschutz, Isolation, Sprachdateien
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,6 +98,8 @@ jobs:
 
   rust:
     name: Rust (${{ matrix.os }})
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -68,13 +107,15 @@ jobs:
       matrix:
         # Ohne macOS (Entscheidung vom 15. Oktober 2026): Es ist kein Mac im Einsatz, und im
         # privaten Repository zählte eine macOS-Minute zehnfach.
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # Die Datenschutzprüfung ist POSIX-sh und muss auch in der Git Bash unter Windows laufen.
+      # Unter Linux läuft sie schon im Job guards.
       - name: Datenschutzprüfung (Git Bash)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
           sh scripts/check-privacy.sh
@@ -84,6 +125,12 @@ jobs:
         shell: bash
         run: |
           if [ -f Cargo.lock ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      # Secret Service des Garmin-Schlüsselbunds über libdbus (T46, crates/garmin).
+      - name: Systembibliothek libdbus (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libdbus-1-dev
       - name: Toolchain
         run: |
           # Version und Komponenten aus rust-toolchain.toml (fest, damit neue Lints nicht
@@ -99,7 +146,7 @@ jobs:
       - name: Tests
         run: cargo test --workspace --locked
       - name: Cargo.lock als Artefakt (nur solange keins eingecheckt ist)
-        if: matrix.os == 'ubuntu-latest' && steps.lock.outputs.present == 'false'
+        if: matrix.os == 'ubuntu-24.04' && steps.lock.outputs.present == 'false'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cargo-lock
@@ -107,7 +154,9 @@ jobs:
 
   supply-chain:
     name: Lizenzen und Quellen
-    runs-on: ubuntu-latest
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -129,7 +178,9 @@ jobs:
 
   ui:
     name: Oberfläche (pnpm)
-    runs-on: ubuntu-latest
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -143,7 +194,7 @@ jobs:
         working-directory: .
         run: |
           if [ -f app/ui/pnpm-lock.yaml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: app/ui/package.json
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -176,7 +227,9 @@ jobs:
   # des Wurzel-Workspace, der Job `rust` oben bleibt davon unberührt.
   tauri:
     name: Tauri-Hülle (Linux)
-    runs-on: ubuntu-latest
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       # Seit 1.0 entstehen acht große Test-Binaries mit Tauri, WebKitGTK und dem Garmin-Zugang.
@@ -196,20 +249,16 @@ jobs:
             build-essential pkg-config libssl-dev xdg-utils xvfb \
             libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
             libayatana-appindicator3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: app/ui/package.json
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
+      # Lint, Typprüfung und Unit-Tests der Oberfläche laufen im Job ui, hier nicht noch einmal
+      # (T46).
       - name: Abhängigkeiten der Oberfläche (festgeschrieben)
         run: pnpm --dir app/ui install --frozen-lockfile
-      - name: Lint
-        run: pnpm --dir app/ui lint
-      - name: Typprüfung
-        run: pnpm --dir app/ui check
-      - name: Tests der Oberfläche
-        run: pnpm --dir app/ui test
       - name: Chromium für Playwright
         run: pnpm --dir app/ui exec playwright install --with-deps chromium
       - name: Rauchtest (Playwright, blockiert fremde Hosts)
@@ -266,6 +315,8 @@ jobs:
   # PowerShell 7. Kein Download, keine Installation, kein Modell, kein Zugriff auf Ollama.
   ollama-setup:
     name: Ollama-Einrichtung (Windows, Trockenlauf)
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
     runs-on: windows-latest
     timeout-minutes: 15
     defaults:
@@ -306,7 +357,9 @@ jobs:
   # PassiveMode und UpdateMode, Sprachen Englisch und Deutsch). Warnungen sind Fehler.
   installer-hook:
     name: NSIS-Hook (Übersetzung)
-    runs-on: ubuntu-latest
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

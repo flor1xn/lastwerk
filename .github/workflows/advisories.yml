@@ -2,12 +2,26 @@ name: Sicherheitshinweise
 
 # RUSTSEC-Hinweise für beide Lockdateien (Wurzel und Tauri-Projekt). Getrennt von der Push-CI,
 # weil ein neu veröffentlichter Hinweis sonst jeden Push rot macht, ohne dass sich Code geändert
-# hat (Lauf 38615312393, rustls, 14. Oktober 2026). Läuft täglich, auf Knopfdruck und als
-# Vorbedingung jedes Releases (release.yml).
+# hat (Lauf 38615312393, rustls, 14. Oktober 2026). Läuft täglich, auf Knopfdruck, als
+# Vorbedingung jedes Releases (release.yml) und seit T46 bei jedem Push, der eine Lockdatei,
+# ein Manifest oder deny.toml ändert: Zurückgezogene Crates (zip, inout) kamen am 16. und
+# 17. Oktober 2026 per Lockdatei herein und fielen erst beim Release auf.
+#
+# Nur cargo-deny (seit T46): cargo-audit las dieselbe RUSTSEC-Datenbank, brauchte eine eigene
+# Liste der Ausnahmen und lief ohne feste Version. Was rot ist und was dann zu tun ist:
+# docs/ci.md.
 
 on:
   schedule:
     - cron: '17 6 * * *'
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'Cargo.lock'
+      - '**/Cargo.toml'
+      - 'app/src-tauri/Cargo.lock'
+      - 'deny.toml'
+      - '.github/workflows/advisories.yml'
   workflow_dispatch:
   workflow_call:
 
@@ -16,23 +30,20 @@ permissions:
 
 jobs:
   advisories:
-    name: RUSTSEC (cargo-deny, cargo-audit)
-    runs-on: ubuntu-latest
+    name: RUSTSEC (cargo-deny)
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Werkzeuge installieren
+      - name: cargo-deny installieren
         uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2.87.28
         with:
-          tool: cargo-deny@0.20.2,cargo-audit
+          tool: cargo-deny@0.20.2
       - name: cargo-deny advisories (Wurzel)
         run: cargo deny check advisories
       - name: cargo-deny advisories (Tauri-Projekt)
+        # Auch wenn die Wurzel rot ist: beide Ergebnisse in einem Lauf sehen.
+        if: success() || failure()
         run: cargo deny --manifest-path app/src-tauri/Cargo.toml --config deny.toml check advisories
-      - name: cargo-audit (Wurzel)
-        run: cargo audit
-      - name: cargo-audit (Tauri-Projekt)
-        # RUSTSEC-2024-0370 wie in deny.toml: nicht gepflegt, nur Makro zur Übersetzungszeit.
-        run: cargo audit --file app/src-tauri/Cargo.lock --ignore RUSTSEC-2024-0370

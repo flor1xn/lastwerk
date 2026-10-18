@@ -1,13 +1,32 @@
 version: 2
+# Kleinere Aktualisierungen (minor, patch) je Ökosystem in einem gemeinsamen PR pro Woche (T46).
+# Hauptversionen kommen einzeln, weil sie eher brechen (zip 9, @types/node 26, Oktober 2026).
+# Ergebnisse gehen direkt nach main (CLAUDE.md): Eine Session übernimmt einen grünen PR in einen
+# eigenen Commit, ein roter wird dort repariert (docs/ci.md).
 updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
       interval: weekly
+    groups:
+      cargo-klein:
+        update-types: [minor, patch]
+  # Das Tauri-Projekt ist ein eigener Workspace mit eigener Lockdatei. Bis T46 bekam es keine
+  # Aktualisierungen; zurückgezogene Crates blieben so liegen, bis die Sicherheitsprüfung rot wurde.
+  - package-ecosystem: cargo
+    directory: /app/src-tauri
+    schedule:
+      interval: weekly
+    groups:
+      tauri-klein:
+        update-types: [minor, patch]
   - package-ecosystem: npm
     directory: /app/ui
     schedule:
       interval: weekly
+    groups:
+      npm-klein:
+        update-types: [minor, patch]
     ignore:
       # @types/node folgt der Node-Hauptversion der CI und der Entwicklung (Node 22,
       # engines in app/ui/package.json). Typen für eine neuere Hauptversion wären falsch.
@@ -17,7 +36,13 @@ updates:
     directory: /bridge
     schedule:
       interval: weekly
+    groups:
+      pip-klein:
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        update-types: [minor, patch]
