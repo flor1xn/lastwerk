@@ -6,5 +6,8 @@
   "license": "MIT OR Apache-2.0",
   "bin": {
     "tauri": "./shim.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/cli": "2.12.2"
   }
 }
