@@ -93,7 +93,7 @@ Die Spezifikation steht in [docs/SPEC.md](docs/SPEC.md) und gilt bei Widerspruch
 | [bridge/](bridge/README.md) | Python-Zusatzprogramm für Vollabzug und Workouts, seit T20 eingefroren, die App braucht es nicht |
 | [schema/](schema/) | JSON-Schemas für Plan, Planänderung, Erholungstag, Archiv-Manifest |
 | [catalog/](catalog/) | Trainingsvorlagen, Sprachdateien, Regelparameter |
-| [scripts/](scripts/) | Datenschutz-, Isolations- und Sprachprüfung, Gesamtprüfung |
+| [scripts/](scripts/) | Datenschutz- und Sprachprüfung, Gesamtprüfung |
 | `local/` | Private Daten (FIT-Dateien, Archiv, Austausch), nicht versioniert |
 
 ## Mitentwickeln

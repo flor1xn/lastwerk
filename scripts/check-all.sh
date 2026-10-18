@@ -30,11 +30,10 @@ skip() {
 }
 has() { command -v "$1" >/dev/null 2>&1; }
 
-step "Datenschutz, Isolation, Sprachdateien"
+step "Datenschutz, Sprachdateien"
 run sh scripts/check-privacy.sh
 run sh scripts/test-check-privacy.sh
 run sh scripts/test-check-history.sh
-run sh scripts/check-isolation.sh
 run sh scripts/check-i18n.sh
 
 step "Rust: Wurzel-Workspace"

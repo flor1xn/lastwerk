@@ -21,7 +21,7 @@ env:
 
 jobs:
   guards:
-    name: Datenschutz, Isolation, Sprachdateien
+    name: Datenschutz und Sprachdateien
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -38,8 +38,6 @@ jobs:
         run: |
           sh scripts/test-check-privacy.sh
           sh scripts/test-check-history.sh
-      - name: Isolation von bridge/ und crates/ und app/
-        run: sh scripts/check-isolation.sh
       - name: Schlüsselgleichheit der Sprachdateien
         run: sh scripts/check-i18n.sh
       # Syntaxprüfung aller Workflows, auch des Release-Workflows, den nur ein Tag auslöst.

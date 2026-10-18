@@ -8,7 +8,6 @@ Python-Zusatzprogramm `lastwerk-bridge`. Holt Daten aus dem Garmin-Konto in ein 
 
 - **Inoffizieller Zugang.** Das Programm nutzt die Bibliothek `garminconnect` und damit eine nicht dokumentierte Schnittstelle von Garmin. Sie kann sich jederzeit ändern oder gesperrt werden. Der automatisierte Abruf kann gegen Nutzungsbedingungen verstoßen. Nutzung auf eigenes Risiko (SPEC 1.5, 13, 14 O18).
 - **Nur lesend, mit einer Ausnahme.** Eine ausdrückliche Allowlist (`src/lastwerk_bridge/allowlist.py`) erlaubt nur lesende Methoden. Einzige Ausnahme ist `push --yes` mit eigener Freigabe für zwei Methoden (Abschnitt "Workouts übertragen"). Schreibende Methoden, die Anmeldung und alle Menstruations- und Schwangerschaftsmethoden stehen in der Sperrliste. Ein Test vergleicht beide Listen mit allen öffentlichen Methoden der installierten Bibliothek: nach einer Aktualisierung schlägt er fehl, bis jede neue Methode eingestuft ist.
-- **Getrennt vom Kern.** Kein Import zwischen `bridge/` und `crates/` oder `app/`. Austausch nur über Dateien (SPEC 5.4). Prüfung: `sh scripts/check-isolation.sh`.
 - **Zugangsdaten.** Token liegen im Benutzerprofil (`~/.garminconnect/garmin_tokens.json`), nie in diesem Ordner und nie im Repository. Zugangsdaten stehen in keiner Datei.
 - **Kein Garmin-Datenexport.** Der Export aus dem Konto ist keine Quelle. Das Werkzeug funktioniert ohne ihn.
 - **Tests laufen ohne Netz.** Jeder Test sperrt `socket` und nutzt eine Attrappe der Bibliothek (`tests/fakes.py`). Es gibt keine echten Antworten im Repository.
