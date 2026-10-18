@@ -29,7 +29,7 @@ from lastwerk_bridge.cli import EXIT_ERROR, EXIT_OK, EXIT_USAGE
 from lastwerk_bridge.manifest import ManifestEntry, load_schema, validate_value
 from lastwerk_bridge.registry import REGISTRY
 
-from .fakes import FakeClock, FakeGarmin
+from .fakes import FakeClock, FakeGarmin, symlink_or_skip
 from .synthetic import Account, Vitals, activity, cli
 
 BRIDGE_DIR = Path(__file__).resolve().parents[1]
@@ -423,8 +423,8 @@ def test_manifest_paths_into_sensitive_or_outside_the_archive_are_not_followed(
     outside = tmp_path / "ausserhalb.json"
     outside.write_text(json.dumps({"hrvSummary": {"lastNightAvg": 77.0}}), encoding="utf-8")
     link_dir = root / "daily" / "2026" / "2026-10-12"
-    (link_dir / "hrv.link.json").symlink_to(secret)
-    (link_dir / "sleep.link.json").symlink_to(outside)
+    symlink_or_skip(link_dir / "hrv.link.json", secret)
+    symlink_or_skip(link_dir / "sleep.link.json", outside)
     archive = Archive(root, lib_version="x", clock=env["clock"])
     for endpoint, day, path in [
         ("hrv", "2026-10-12", "sensitive/" + secret.relative_to(root / "sensitive").as_posix()),

@@ -18,7 +18,7 @@ from lastwerk_bridge.archive import DERIVED_FILES, Archive
 from lastwerk_bridge.cli import EXIT_OK, EXIT_USAGE, main
 
 from .device_fixture import fake_fit, make_device, write
-from .fakes import FakeClock
+from .fakes import FakeClock, symlink_or_skip
 
 ACTIVITY = ("2026-10-10-06-00-00.fit", "2026-10-11-07-30-00.fit")
 MONITOR = ("1A2B3C4D.FIT",)
@@ -137,7 +137,7 @@ def test_unknown_files_are_counted_and_not_copied(
     write(device / "Activity" / "short.fit", b"\x0e")
     write(device / "Music" / "2026-10-10-06-00-00.fit", fake_fit("fremder Ordner"))
     write(device / "Music" / "song.mp3", b"kein fit")
-    (device / "Activity" / "link.fit").symlink_to(device / "Activity" / ACTIVITY[0])
+    symlink_or_skip(device / "Activity" / "link.fit", device / "Activity" / ACTIVITY[0])
 
     code, out, _err = import_device(device, root, clock)
     assert code == EXIT_OK
