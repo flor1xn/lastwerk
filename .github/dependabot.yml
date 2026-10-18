@@ -32,12 +32,14 @@ updates:
       # engines in app/ui/package.json). Typen für eine neuere Hauptversion wären falsch.
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
-  - package-ecosystem: pip
+  # bridge/ ist ein uv-Projekt. Mit `pip` änderte Dependabot nur pyproject.toml, nicht uv.lock,
+  # und `uv sync --locked` in bridge.yml scheiterte (PR #5, 18. Oktober 2026).
+  - package-ecosystem: uv
     directory: /bridge
     schedule:
       interval: weekly
     groups:
-      pip-klein:
+      uv-klein:
         update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /

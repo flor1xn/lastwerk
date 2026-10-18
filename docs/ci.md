@@ -20,7 +20,7 @@ Welche Prüfung wann läuft, warum es sie gibt und was zu tun ist, wenn sie rot 
 | `auto-release.yml` | grüne CI eines Pushes auf `main` | Produktänderung seit dem letzten Tag? Dann `release.yml` | Installer und Update immer aktuell (T30) |
 | `release.yml` | Tag `v*`, Knopfdruck, Aufruf aus `auto-release.yml` | Tag, Sicherheitshinweise, Installer Windows und Linux, Notizen, Release | Auslieferung |
 | `publish-release.yml` | Knopfdruck | veröffentlicht einen Entwurf | Cloud-Sessions können keine Tags pushen |
-| Dependabot | wöchentlich, Cargo (Wurzel und Tauri), npm, pip, Actions | kleine Aktualisierungen gruppiert, Hauptversionen einzeln | Lockdateien frisch halten; zurückgezogene Crates fallen sonst erst in `advisories.yml` auf |
+| Dependabot | wöchentlich, Cargo (Wurzel und Tauri), npm, uv, Actions | kleine Aktualisierungen gruppiert, Hauptversionen einzeln | Lockdateien frisch halten; zurückgezogene Crates fallen sonst erst in `advisories.yml` auf |
 
 Bewusst behalten: Die CI läuft für denselben Commit auf `claude/...` und danach auf `main`. Der erste Lauf ist das Vorab-Signal, der zweite löst `auto-release.yml` aus. Im öffentlichen Repository kosten die Standard-Runner nichts.
 
