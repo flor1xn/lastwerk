@@ -5,7 +5,7 @@ Bibliothek muss in genau einer Liste stehen. Der Test ``tests/test_allowlist.py`
 vergleicht die Listen mit der Bibliothek, damit neue Methoden nach einer
 Aktualisierung auffallen, bevor sie je aufgerufen werden.
 
-Eingestuft gegen garminconnect 0.3.17.
+Eingestuft gegen garminconnect 0.3.18.
 
 Grundsätze der Einstufung:
 
@@ -45,6 +45,7 @@ ALLOWLIST: frozenset[str] = frozenset(
         "get_activity_exercise_sets",
         "get_activity_gear",
         "get_activity_hr_in_timezones",
+        "get_activity_images",
         "get_activity_power_in_timezones",
         "get_activity_split_summaries",
         "get_activity_splits",
@@ -97,6 +98,7 @@ ALLOWLIST: frozenset[str] = frozenset(
         "get_in_progress_badges",
         "get_inprogress_virtual_challenges",
         "get_intensity_minutes_data",
+        "get_jetlag_trips",
         "get_lactate_threshold",
         "get_last_activity",
         "get_lifestyle_logging_data",
@@ -152,6 +154,7 @@ BLOCKLIST: frozenset[str] = frozenset(
         "add_body_composition",
         "add_gear_to_activity",
         "add_hydration_data",
+        "add_jetlag_trip",
         "add_weigh_in",
         "add_weigh_in_with_timestamps",
         "confirm_menstrual_period_start",
@@ -160,6 +163,7 @@ BLOCKLIST: frozenset[str] = frozenset(
         "create_manual_activity_from_json",
         "delete_activity",
         "delete_blood_pressure",
+        "delete_jetlag_trip",
         "delete_weigh_in",
         "delete_weigh_ins",
         "delete_workout",
@@ -185,6 +189,7 @@ BLOCKLIST: frozenset[str] = frozenset(
         "set_blood_pressure",
         "set_gear_default",
         "unschedule_workout",
+        "update_jetlag_trip",
         "update_menstrual_calendar",
         "update_menstrual_daily_log",
         "update_menstrual_settings",
