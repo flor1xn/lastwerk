@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 license = "MIT OR Apache-2.0"
 dependencies = [
     "curl-cffi==0.16.3",
-    "garminconnect==0.3.17",
+    "garminconnect==0.3.18",
 ]
 
 [project.scripts]
