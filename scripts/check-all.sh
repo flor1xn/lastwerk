@@ -99,6 +99,13 @@ fi
 step "Oberfläche"
 if has pnpm; then
   run pnpm --dir app/ui install --frozen-lockfile --silent
+  # `pnpm exec tauri` muss den Shim starten, nicht die CLI direkt; sonst findet sie app/src-tauri
+  # nicht. Fiel am 18. Oktober 2026 erst im Debug-Build der CI auf (Lauf 39128574530, T46), weil
+  # `tauri --version` auch ohne Projekt geht.
+  if ! grep -q 'shim.mjs' app/ui/node_modules/.bin/tauri 2>/dev/null; then
+    printf 'FEHLER: app/ui/node_modules/.bin/tauri zeigt nicht auf tools/tauri-shim/shim.mjs\n'
+    failed=1
+  fi
   run pnpm --dir app/ui lint
   run pnpm --dir app/ui check
   run pnpm --dir app/ui test

@@ -70,3 +70,5 @@ Systembibliothek: libdbus-1 unter Linux zur Laufzeit. Jeder Linux-Desktop mit Se
 ## Blocker oder Vermerke
 
 Keine. Abnahme am 18. Oktober 2026: `check-all.sh` Exit 0 unter Windows; CI, Bridge und Sicherheitshinweise auf `claude/ci-haertung` und `main` grün, darunter `Rust (ubuntu-24.04)` mit dem dbus-Backend; automatischer Release v1.2.1 veröffentlicht. Nachgezogen: Dependabot führt `bridge/` als `uv`-Projekt, weil `pip` die Lockdatei nicht mitzog (PR #5). PRs #1, #4 und #5 geschlossen, alte Zweige `claude/*` gelöscht.
+
+Offen (18. Oktober 2026): Dependabot schreibt bei npm-PRs `file:tools/tauri-shim` zu `link:` um; `link:` installiert die Abhängigkeit des Shims auf `@tauri-apps/cli` nicht, der Debug-Build scheitert (PR #4, PR #7). Der Versuch, die CLI direkt in `app/ui` einzubinden (0a0af80), ist zurückgenommen (db7eca4): Dann gibt es zwei Programme `tauri`, pnpm verlinkt das der CLI, und die Pfade des Shims fehlen. Bis zu einer Lösung (zum Beispiel ein eigener Befehlsname für den Shim) setzt eine Session bei solchen PRs `file:` von Hand zurück, wie in 1f3f564. `check-all.sh` prüft seitdem, dass `tauri` auf den Shim zeigt.
