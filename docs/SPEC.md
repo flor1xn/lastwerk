@@ -459,7 +459,7 @@ Alle Signaturen sind Entwurf. Typnamen und Fehlerarten sind verbindlich, Feinhei
 
 #### lastwerk-core
 
-Keine Abhängigkeit von Dateisystem, Netzwerk, Systemzeit oder Zufall. Erlaubte Abhängigkeiten: `serde`, `chrono` (nur Datumstypen), `thiserror`.
+Keine Abhängigkeit von Dateisystem, Netzwerk, Systemzeit oder Zufall. Bis 18. Oktober 2026 waren nur `serde`, `chrono` (nur Datumstypen) und `thiserror` erlaubt; seitdem ist die Liste offen, solange eine neue Abhängigkeit diese Reinheit nicht bricht (Entscheidung des Nutzers, weniger Regeln).
 
 ```rust
 pub enum Sport { Cycling, Running, Swimming, Strength, Other }
@@ -2300,7 +2300,7 @@ Release auf Tag: Windows-Installer und Archive für Linux (bis 15. Oktober 2026 
 
 Umsetzung in T09: `.github/workflows/release.yml` läuft bei einem Tag `v*` (Matrix Windows, macOS, Linux) und baut mit `tauri build --config tauri.release.conf.json --bundles <liste>` (msi und nsis, dmg, deb und AppImage). Die Version kommt aus dem Tag. Die Artefakte werden mit `actions/upload-artifact` abgelegt, ein letzter Job (einziger mit `contents: write`, dazu `actions: read`) lädt sie mit `gh run download` und legt mit `gh release create --draft` einen Entwurf mit der Beschreibung "ohne Signierung, ohne Support" an. Der Entwurf wird von Hand veröffentlicht. Es gibt keine fremde Release-Action. Die Syntax aller Workflows prüft der Job `guards` der CI mit `actionlint` (v1.7.7). Der macOS-Installer ist ein dmg für die Architektur des Runners (`macos-latest`, Apple Silicon), ein Intel-Build ist nicht vorgesehen.
 
-Änderung vom 15. Oktober 2026 (Entscheidung): macOS fällt aus CI und Release. Es ist kein Mac im Einsatz, und im privaten Repository zählte eine macOS-Minute in GitHub Actions zehnfach, eine Windows-Minute doppelt; das Freikontingent war nach einem Tag mit vielen Pushes erschöpft (Jobs starteten nicht mehr). Diese Begründung galt bis zur Umstellung auf ein öffentliches Repository, dort sind die Standard-Runner kostenlos; macOS wird dadurch nicht wieder aufgenommen, es bleibt entfallen. Die macOS-Pfade im Code (Datenordner, Schlüsselbund) bleiben, sind aber nicht mehr geprüft. Sessions bündeln ihre Arbeit weiterhin in möglichst einen Push (CLAUDE.md, Schritt 6), jetzt wegen CI-Last und Release-Takt: Jeder Push mit Produktänderung löst CI und Release aus.
+Änderung vom 15. Oktober 2026 (Entscheidung): macOS fällt aus CI und Release. Es ist kein Mac im Einsatz, und im privaten Repository zählte eine macOS-Minute in GitHub Actions zehnfach, eine Windows-Minute doppelt; das Freikontingent war nach einem Tag mit vielen Pushes erschöpft (Jobs starteten nicht mehr). Diese Begründung galt bis zur Umstellung auf ein öffentliches Repository, dort sind die Standard-Runner kostenlos; macOS wird dadurch nicht wieder aufgenommen, es bleibt entfallen. Die macOS-Pfade im Code (Datenordner, Schlüsselbund) bleiben, sind aber nicht mehr geprüft. Sessions bündeln ihre Pushes (CLAUDE.md, Arbeitsablauf), jetzt wegen CI-Last und Release-Takt: Jeder Push mit Produktänderung löst CI und Release aus.
 
 Änderung vom 15. Oktober 2026 nach der Analyse aller 63 Läufe (13 von 32 abgeschlossenen CI-Läufen auf main rot, 11 davon nach Pushes ohne vollständigen lokalen Lauf, 10 Läufe durch Folge-Pushes abgebrochen):
 

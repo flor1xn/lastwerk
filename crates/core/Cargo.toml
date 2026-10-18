@@ -7,8 +7,8 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
-# Erlaubte Abhängigkeiten laut SPEC 5.4: serde, chrono (nur Datumstypen), thiserror.
-# chrono ohne Standardfeatures, damit weder Systemzeit (clock) noch Zeitzonendatenbank
+# Rein laut SPEC 5.4: keine Abhängigkeit, die Dateisystem, Netzwerk, Systemzeit oder Zufall
+# hereinholt. chrono ohne Standardfeatures, damit weder Systemzeit (clock) noch Zeitzonendatenbank
 # ins Crate gelangen. Vermerk zu Version, Lizenz und Grund: docs/tasks/T01-core-belastung.md.
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
