@@ -2,7 +2,7 @@
 
 | Feld | Wert |
 |---|---|
-| Status | in Prüfung |
+| Status | erledigt |
 | Meilenstein | nach 1.0 |
 | cloudfähig | ja |
 | Voraussetzung | T38 |
@@ -69,4 +69,4 @@ Systembibliothek: libdbus-1 unter Linux zur Laufzeit. Jeder Linux-Desktop mit Se
 
 ## Blocker oder Vermerke
 
-Keine.
+Keine. Abnahme am 18. Oktober 2026: `check-all.sh` Exit 0 unter Windows; CI, Bridge und Sicherheitshinweise auf `claude/ci-haertung` und `main` grün, darunter `Rust (ubuntu-24.04)` mit dem dbus-Backend; automatischer Release v1.2.1 veröffentlicht. Nachgezogen: Dependabot führt `bridge/` als `uv`-Projekt, weil `pip` die Lockdatei nicht mitzog (PR #5). PRs #1, #4 und #5 geschlossen, alte Zweige `claude/*` gelöscht.

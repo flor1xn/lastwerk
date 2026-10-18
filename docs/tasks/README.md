@@ -55,7 +55,7 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T43](T43-coach-seitenfenster.md) | Coach als globales Seitenfenster mit Ansichtskontext | nach 1.0 | in Prüfung | T42 | ja, Live manuell | crates/coach, app, catalog, docs |
 | [T44](T44-tagesentscheidung.md) | Tagesentscheidung, Coach-Erkenntnisse und Wochen-Story auf Heute | nach 1.0 | erledigt | T41 (Teil A), T43 (Teil B) | ja | crates/core, app, catalog, docs |
 | [T45](T45-coach-strom.md) | Coach-Antworten als Strom | nach 1.0 | offen | T43 | ja, Live manuell | crates/coach, app |
-| [T46](T46-ci-haertung.md) | CI-Härtung und Schlüsselbund ohne zbus | nach 1.0 | in Prüfung | T38 | ja | .github, scripts, crates/garmin, docs |
+| [T46](T46-ci-haertung.md) | CI-Härtung und Schlüsselbund ohne zbus | nach 1.0 | erledigt | T38 | ja | .github, scripts, crates/garmin, docs |
 
 ## Reihenfolge
 
