@@ -26,9 +26,22 @@ ureq = { version = "3.4", default-features = false, features = ["rustls-no-provi
 # Kryptoanbieter für rustls. ureq wählt ohne die Funktion `rustls` keinen, deshalb wird `ring`
 # hier als Funktion aktiviert und in `http.rs` ausdrücklich übergeben.
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
-# Schlüsselbund des Betriebssystems (Funktion `v1`: Windows-Anmeldeinformationsverwaltung,
-# macOS-Schlüsselbund, Secret Service über D-Bus in reinem Rust, ohne Systembibliothek).
-keyring = "4.2"
+# Schlüsselbund des Betriebssystems: Kern ohne Backend, die Backends je Plattform unten. Ersetzt
+# `keyring` 4.2 (Funktion `v1`), das unter Linux fest `zbus` einbindet; `zvariant`, `zbus_names`
+# und `zvariant_derive` sind seit Oktober 2026 nicht mehr gepflegt (RUSTSEC-2026-0370 bis 0372,
+# T46). Dieselbe Auswahl wie `keyring::v1`, nur Linux über libdbus.
+keyring-core = "1.0"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-native-keyring-store = "1.1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store = { version = "1.0", features = ["keychain"] }
+
+# Secret Service über die Systembibliothek libdbus (dynamisch, nicht `vendored`). Die App linkt
+# libdbus unter Linux ohnehin schon über Tauri (`dbus` im Lock von app/src-tauri).
+[target.'cfg(all(unix, not(any(target_os = "macos", target_os = "ios", target_os = "android"))))'.dependencies]
+dbus-secret-service-keyring-store = { version = "1.0", features = ["crypto-rust"] }
 
 [dev-dependencies]
 lastwerk-garmin = { path = ".", features = ["test-endpoints"] }

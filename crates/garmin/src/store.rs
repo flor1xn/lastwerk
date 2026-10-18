@@ -5,7 +5,7 @@
 //! gelesenen Bytes enthalten (`BadEncoding`), deshalb werden sie auf `StoreError` abgebildet,
 //! bevor sie das Crate verlassen.
 
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 
 use crate::auth::{StoredTokens, TokenSet};
 
@@ -90,14 +90,14 @@ impl TokenStore for MemoryStore {
     }
 }
 
-/// Schlüsselbund des Betriebssystems über das Crate `keyring` (Funktion `v1`):
+/// Schlüsselbund des Betriebssystems über `keyring-core` mit einem Backend je Plattform:
 /// Windows-Anmeldeinformationsverwaltung, macOS-Schlüsselbund, Secret Service unter Linux.
 ///
 /// Einschränkung Linux: Ohne laufenden Secret Service (GNOME-Schlüsselbund, KWallet) schlagen
 /// `load`, `save` und `delete` mit `Unavailable` fehl, und es gibt keinen Ersatz im Klartext.
-/// Das Crate braucht dafür keine Systembibliothek (reines Rust über `zbus`), die CI baut also
-/// ohne neues Paket. Der Kernel-Schlüsselbund (`linux-native`) bleibt aus, weil er einen Neustart
-/// nicht überlebt.
+/// Der Zugang läuft über die Systembibliothek libdbus (`dbus-secret-service-keyring-store`), seit
+/// T46 statt über `zbus`, dessen Hilfscrates nicht mehr gepflegt sind. Der Kernel-Schlüsselbund
+/// (`linux-keyutils`) bleibt aus, weil er einen Neustart nicht überlebt.
 #[derive(Debug, Clone)]
 pub struct KeyringStore {
     service: String,
@@ -123,8 +123,11 @@ impl KeyringStore {
         }
     }
 
-    fn entry(&self) -> Result<keyring::Entry, StoreError> {
-        keyring::Entry::new(&self.service, &self.account).map_err(map_keyring_error)
+    fn entry(&self) -> Result<keyring_core::Entry, StoreError> {
+        if DEFAULT_STORE.is_err() {
+            return Err(StoreError::Unavailable);
+        }
+        keyring_core::Entry::new(&self.service, &self.account).map_err(map_keyring_error)
     }
 }
 
@@ -132,7 +135,7 @@ impl TokenStore for KeyringStore {
     fn load(&self) -> Result<Option<TokenSet>, StoreError> {
         match self.entry()?.get_secret() {
             Ok(bytes) => decode(&bytes).map(Some),
-            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(keyring_core::Error::NoEntry) => Ok(None),
             Err(err) => Err(map_keyring_error(err)),
         }
     }
@@ -146,15 +149,40 @@ impl TokenStore for KeyringStore {
 
     fn delete(&self) -> Result<(), StoreError> {
         match self.entry()?.delete_credential() {
-            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+            Ok(()) | Err(keyring_core::Error::NoEntry) => Ok(()),
             Err(err) => Err(map_keyring_error(err)),
         }
     }
 }
 
+/// Ergebnis der einmaligen Einrichtung des Backends beim ersten Zugriff. Nachbildung von
+/// `set_credential_store` aus `keyring` 4.2 (`src/v1.rs`), unter Linux mit libdbus statt zbus.
+/// Der Fehler bleibt im Speicher, damit er keine Meldung nach außen trägt; `entry` meldet dann
+/// `Unavailable` wie bisher `NoDefaultStore`.
+static DEFAULT_STORE: LazyLock<keyring_core::Result<()>> = LazyLock::new(set_default_store);
+
+fn set_default_store() -> keyring_core::Result<()> {
+    #[cfg(target_os = "windows")]
+    let store = windows_native_keyring_store::Store::new()?;
+    #[cfg(target_os = "macos")]
+    let store = apple_native_keyring_store::keychain::Store::new()?;
+    #[cfg(all(
+        unix,
+        not(any(target_os = "macos", target_os = "ios", target_os = "android"))
+    ))]
+    let store = dbus_secret_service_keyring_store::Store::new()?;
+    #[cfg(any(windows, all(unix, not(any(target_os = "ios", target_os = "android")))))]
+    {
+        keyring_core::set_default_store(store);
+        Ok(())
+    }
+    #[cfg(not(any(windows, all(unix, not(any(target_os = "ios", target_os = "android"))))))]
+    Err(keyring_core::Error::NoDefaultStore)
+}
+
 /// Bildet Fehler des Schlüsselbund-Crates auf `StoreError` ab, ohne Meldung und ohne Bytes.
-fn map_keyring_error(err: keyring::Error) -> StoreError {
-    use keyring::Error as E;
+fn map_keyring_error(err: keyring_core::Error) -> StoreError {
+    use keyring_core::Error as E;
     match err {
         E::NoStorageAccess(_)
         | E::PlatformFailure(_)
@@ -235,7 +263,7 @@ mod tests {
 
     #[test]
     fn keyring_errors_map_without_payload() {
-        use keyring::Error as E;
+        use keyring_core::Error as E;
         assert_eq!(
             map_keyring_error(E::NoDefaultStore),
             StoreError::Unavailable
