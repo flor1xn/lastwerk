@@ -14,6 +14,16 @@ Die Wahrheit steht in [docs/SPEC.md](docs/SPEC.md). Bei Widerspruch gilt die Spe
 6. Möglichst ein Push je Session: Arbeit in lokalen Commits sammeln und erst am Ende pushen, nicht nach jedem Teilschritt. Jeder Push mit Produktänderung löst CI und Release aus, ein Release je Push (SPEC 11.6); gebündelte Pushes halten die CI-Last und den Release-Takt klein. Dann `git pull --rebase origin main`, `sh scripts/check-all.sh` erneut, dann `git push origin HEAD:main`. Ergebnisse gehen direkt nach `main`, es gibt keinen Pull Request. Arbeitet die Session auf einem Zweig `claude/...`, läuft die CI dort beim Push; `main` bekommt den Stand erst, wenn sie grün ist. Prüfe nach dem Push, ob die CI auf `main` grün ist (`gh run list --limit 3`, falls `gh` verfügbar ist), und behebe Fehler, die du verursacht hast. Nach grüner CI baut `auto-release.yml` bei Änderungen an `app/`, `crates/`, `catalog/` oder `schema/` von selbst einen neuen Release mit Installer (T30); prüfe auch diesen Lauf. Größere Neuerungen bekommen einen Eintrag in `catalog/changelog.json` unter der nächsten Version.
 7. Schließe mit einem kurzen Bericht: was fertig ist, was nicht, welche manuellen Schritte für den Nutzer offen sind.
 
+## CI und Sicherheitsprüfungen
+
+Einzelheiten und Vorgehen bei Rot: [docs/ci.md](docs/ci.md).
+
+- **Rot auf `main` zuerst.** Der SessionStart-Hook meldet Workflows, deren letzter Lauf auf `main` rot ist (ohne Hook: `gh run list --branch main --limit 10`). Das geht dem Auftrag vor, auch beim täglichen Lauf `Sicherheitshinweise`, der ohne Commit rot werden kann und jeden Release blockiert.
+- **Lockdatei geändert** (`Cargo.lock`, `app/src-tauri/Cargo.lock`, ein `Cargo.toml`, `deny.toml`): `cargo deny check advisories` in beiden Workspaces; `check-all.sh` macht das dann von selbst.
+- **Ursache statt Ausnahme.** Nicht gepflegte, zurückgezogene oder unsichere Crates werden aktualisiert oder ersetzt. Eine Ausnahme in `deny.toml` nur, wenn es nachweislich keinen Ersatz gibt, mit Grund und Datum.
+- **Feste Versionen.** Kein `ubuntu-latest` oder anderes `-latest` für Linux-Runner, keine Action ohne Commit-SHA, keine ungepinnten Prüfwerkzeuge.
+- **Dependabot-PRs** werden nicht gemergt, sondern in einer Session als eigener Commit übernommen; danach den PR schließen.
+
 ## Harte Regeln
 
 - **Keine privaten Daten ins Repository.** Nichts aus `local/`, keine `*.fit`, keine Datenbanken, keine Token- oder `.env`-Dateien. Prüfung: `sh scripts/check-privacy.sh`.
