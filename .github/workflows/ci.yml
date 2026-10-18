@@ -20,43 +20,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # Reine Änderungen an Dokumentation (docs/, *.md, .claude/) brauchen die schweren Jobs nicht
-  # (T46): Kein Build und kein Test liest diese Dateien. `guards` läuft trotzdem immer, weil auch
-  # Dokumentation keine Geheimnisse oder privaten Daten enthalten darf. Ohne bekannten
-  # Vergleichscommit (neuer Zweig, manueller Start) oder bei leerem Unterschied läuft alles.
-  scope:
-    name: Umfang der Änderung
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      code: ${{ steps.diff.outputs.code }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Geänderte Dateien
-        id: diff
-        env:
-          EVENT: ${{ github.event_name }}
-          BEFORE: ${{ github.event.before }}
-          BASE: ${{ github.event.pull_request.base.sha }}
-        run: |
-          case "$EVENT" in
-            push) from="$BEFORE" ;;
-            pull_request) from="$BASE" ;;
-            *) from="" ;;
-          esac
-          code=true
-          if [ -n "$from" ] && git cat-file -e "${from}^{commit}" 2>/dev/null; then
-            files=$(git diff --name-only "$from" "$GITHUB_SHA")
-            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -vqE '^(docs/|\.claude/)|\.md$'; then
-              code=false
-            fi
-          fi
-          echo "Code geändert: $code"
-          echo "code=$code" >> "$GITHUB_OUTPUT"
-
   guards:
     name: Datenschutz, Isolation, Sprachdateien
     runs-on: ubuntu-24.04
@@ -98,8 +61,6 @@ jobs:
 
   rust:
     name: Rust (${{ matrix.os }})
-    needs: scope
-    if: needs.scope.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -154,8 +115,6 @@ jobs:
 
   supply-chain:
     name: Lizenzen und Quellen
-    needs: scope
-    if: needs.scope.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -168,7 +127,7 @@ jobs:
         with:
           tool: cargo-deny@0.20.2
       # Nur Lizenzen, Verbote und Quellen. Sicherheitshinweise (RUSTSEC) prüft advisories.yml
-      # täglich und vor jedem Release; ein neu veröffentlichter Hinweis macht so nicht jeden
+      # bei geänderter Lockdatei und vor jedem Release; ein neu veröffentlichter Hinweis macht so nicht jeden
       # Push rot (Analyse vom 15. Oktober 2026).
       - name: cargo-deny (Wurzel)
         run: cargo deny check bans licenses sources
@@ -178,8 +137,6 @@ jobs:
 
   ui:
     name: Oberfläche (pnpm)
-    needs: scope
-    if: needs.scope.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -227,8 +184,6 @@ jobs:
   # des Wurzel-Workspace, der Job `rust` oben bleibt davon unberührt.
   tauri:
     name: Tauri-Hülle (Linux)
-    needs: scope
-    if: needs.scope.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -290,7 +245,7 @@ jobs:
         run: cargo test --locked
         working-directory: app/src-tauri
       - name: Debug-Build der App
-        run: pnpm --dir app/ui exec tauri build --debug
+        run: pnpm --dir app/ui tauri build --debug
       - name: Debug-Binary als Artefakt
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -315,8 +270,6 @@ jobs:
   # PowerShell 7. Kein Download, keine Installation, kein Modell, kein Zugriff auf Ollama.
   ollama-setup:
     name: Ollama-Einrichtung (Windows, Trockenlauf)
-    needs: scope
-    if: needs.scope.outputs.code == 'true'
     runs-on: windows-latest
     timeout-minutes: 15
     defaults:
@@ -357,8 +310,6 @@ jobs:
   # PassiveMode und UpdateMode, Sprachen Englisch und Deutsch). Warnungen sind Fehler.
   installer-hook:
     name: NSIS-Hook (Übersetzung)
-    needs: scope
-    if: needs.scope.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

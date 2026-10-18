@@ -77,7 +77,7 @@ jobs:
             fi
           fi
 
-  # Kein Release mit bekanntem Sicherheitshinweis: dieselbe Prüfung wie täglich (advisories.yml).
+  # Kein Release mit bekanntem Sicherheitshinweis (advisories.yml).
   advisories:
     needs: check-tag
     uses: ./.github/workflows/advisories.yml
@@ -174,7 +174,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           OVERLAY: ${{ steps.config.outputs.overlay }}
           BUNDLES: ${{ matrix.bundles }}
-        run: pnpm --dir app/ui exec tauri build --config "$OVERLAY" --bundles "$BUNDLES"
+        run: pnpm --dir app/ui tauri build --config "$OVERLAY" --bundles "$BUNDLES"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.artifact }}

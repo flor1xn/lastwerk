@@ -16,9 +16,9 @@ Im Repository-Wurzelverzeichnis, nach `pnpm --dir app/ui install --frozen-lockfi
 | Zweck | Befehl |
 |---|---|
 | Oberfläche im Browser mit Attrappe (synthetische Daten, kein Rust nötig) | `pnpm --dir app/ui dev`, dann http://127.0.0.1:5173 |
-| App mit echtem Rust-Teil und Datenbank | `pnpm --dir app/ui exec tauri dev` |
-| Debug-Build der App | `pnpm --dir app/ui exec tauri build --debug`, Programm unter `app/src-tauri/target/debug/lastwerk-app` |
-| Installer (wie der Release-Workflow) | `pnpm --dir app/ui exec tauri build --config app/src-tauri/tauri.release.conf.json --bundles deb` (unter Windows `nsis`, unter Linux auch `appimage`; macOS ist seit dem 15. Oktober 2026 aus CI und Release entfallen, SPEC 11.6), Ergebnis unter `app/src-tauri/target/release/bundle/` |
+| App mit echtem Rust-Teil und Datenbank | `pnpm --dir app/ui tauri dev` |
+| Debug-Build der App | `pnpm --dir app/ui tauri build --debug`, Programm unter `app/src-tauri/target/debug/lastwerk-app` |
+| Installer (wie der Release-Workflow) | `pnpm --dir app/ui tauri build --config app/src-tauri/tauri.release.conf.json --bundles deb` (unter Windows `nsis`, unter Linux auch `appimage`; macOS ist seit dem 15. Oktober 2026 aus CI und Release entfallen, SPEC 11.6), Ergebnis unter `app/src-tauri/target/release/bundle/` |
 | Installer lokal (Windows, nsis) | `powershell -File scripts/build-installer.ps1` (mit `TAURI_SIGNING_PRIVATE_KEY` auch `.sig`) |
 | Tests der Oberfläche | `pnpm --dir app/ui lint`, `check`, `test` |
 | Rauchtest im Browser (Deutsch und Englisch, ohne Netzwerk) | `pnpm --dir app/ui exec playwright test`, Screenshots unter `app/ui/test-results/screens/` (nicht einchecken) |
@@ -30,7 +30,7 @@ Update auf Knopfdruck (T17): `plugins.updater` in `tauri.conf.json` trägt Endpu
 
 Die Oberfläche erkennt selbst, ob sie in Tauri läuft (`window.__TAURI_INTERNALS__`). Sonst nutzt sie die Attrappe `ui/src/lib/backend/mock.ts`. Beide stehen hinter dem Interface `Backend` (`ui/src/lib/backend/types.ts`).
 
-`tauri` im Ordner `ui` ist ein kleines Skript (`ui/tools/tauri-shim`), das der unveränderten Tauri-CLI die Pfade von `ui` und `src-tauri` mitgibt. Die CLI sucht ihre Konfiguration sonst nur im aktuellen Ordner und darunter.
+`pnpm tauri` im Ordner `ui` startet ein kleines Skript (`ui/tools/tauri-shim/shim.mjs`, eingetragen als Skript `tauri` in `ui/package.json`), das der unveränderten Tauri-CLI die Pfade von `ui` und `src-tauri` mitgibt. Die CLI sucht ihre Konfiguration sonst nur im aktuellen Ordner und darunter.
 
 ## Systembibliotheken (Linux)
 

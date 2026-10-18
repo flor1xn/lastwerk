@@ -6,8 +6,7 @@
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
 # Lokal und in der Cloud: Ist der letzte Lauf eines Workflows auf main rot, steht das am Anfang
-# der Session im Kontext (T46, docs/ci.md). Auch der tägliche Lauf der Sicherheitshinweise kann
-# ohne Commit rot werden und blockiert dann jeden Release. Nur mit gh, höchstens 15 s.
+# der Session im Kontext (T46). Nur mit gh, höchstens 15 s.
 if command -v gh >/dev/null 2>&1; then
   red=$(timeout 15 gh run list --branch main --limit 40 \
     --json conclusion,status,workflowName,createdAt,url \
@@ -15,7 +14,7 @@ if command -v gh >/dev/null 2>&1; then
       | map(max_by(.createdAt)) | .[] | select(.conclusion == "failure")
       | "\(.createdAt) \(.workflowName) \(.url)"' 2>/dev/null)
   if [ -n "$red" ]; then
-    echo "CI: letzter Lauf auf main rot, zuerst beheben (docs/ci.md):"
+    echo "CI: letzter Lauf auf main rot, zuerst beheben:"
     echo "$red"
   fi
 fi

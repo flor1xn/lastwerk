@@ -52,8 +52,8 @@ Desktop-App mit Rust-Teil (eigenes Cargo-Projekt in `app/src-tauri`, nicht Teil 
 
 ```
 pnpm --dir app/ui install --frozen-lockfile
-pnpm --dir app/ui exec tauri dev
-pnpm --dir app/ui exec tauri build --debug
+pnpm --dir app/ui tauri dev
+pnpm --dir app/ui tauri build --debug
 ```
 
 Weitere Befehle (Installer, Tests der Hülle, Pfade) stehen in [app/README.md](app/README.md). Alle Prüfungen der CI in einem Lauf: `sh scripts/check-all.sh`.

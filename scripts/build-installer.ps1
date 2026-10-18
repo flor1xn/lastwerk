@@ -25,7 +25,7 @@ $tmp = Join-Path $env:TEMP 'lastwerk-release.conf.json'
 $overlay | ConvertTo-Json -Depth 10 | Set-Content -Path $tmp -Encoding utf8
 
 pnpm --dir app/ui install --frozen-lockfile
-pnpm --dir app/ui exec tauri build --config $tmp --bundles 'nsis'
+pnpm --dir app/ui tauri build --config $tmp --bundles 'nsis'
 if ($LASTEXITCODE -ne 0) { throw 'tauri build fehlgeschlagen' }
 
 Get-ChildItem 'app/src-tauri/target/release/bundle' -Recurse -Include *.exe, *.sig |

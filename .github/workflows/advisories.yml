@@ -1,19 +1,11 @@
 name: Sicherheitshinweise
 
-# RUSTSEC-Hinweise für beide Lockdateien (Wurzel und Tauri-Projekt). Getrennt von der Push-CI,
-# weil ein neu veröffentlichter Hinweis sonst jeden Push rot macht, ohne dass sich Code geändert
-# hat (Lauf 38615312393, rustls, 14. Oktober 2026). Läuft täglich, auf Knopfdruck, als
-# Vorbedingung jedes Releases (release.yml) und seit T46 bei jedem Push, der eine Lockdatei,
-# ein Manifest oder deny.toml ändert: Zurückgezogene Crates (zip, inout) kamen am 16. und
-# 17. Oktober 2026 per Lockdatei herein und fielen erst beim Release auf.
-#
-# Nur cargo-deny (seit T46): cargo-audit las dieselbe RUSTSEC-Datenbank, brauchte eine eigene
-# Liste der Ausnahmen und lief ohne feste Version. Was rot ist und was dann zu tun ist:
-# docs/ci.md.
+# RUSTSEC-Hinweise für beide Lockdateien (Wurzel und Tauri-Projekt). Läuft, wenn sich eine
+# Lockdatei, ein Manifest oder deny.toml ändert, und vor jedem Release (release.yml). Kein
+# täglicher Lauf mehr (T46): Er wurde ohne Commit rot und blockierte dann jeden Release; neue
+# Hinweise zu bestehenden Abhängigkeiten meldet GitHub über Dependabot.
 
 on:
-  schedule:
-    - cron: '17 6 * * *'
   push:
     branches: [main, 'claude/**']
     paths:
@@ -44,6 +36,5 @@ jobs:
       - name: cargo-deny advisories (Wurzel)
         run: cargo deny check advisories
       - name: cargo-deny advisories (Tauri-Projekt)
-        # Auch wenn die Wurzel rot ist: beide Ergebnisse in einem Lauf sehen.
         if: success() || failure()
         run: cargo deny --manifest-path app/src-tauri/Cargo.toml --config deny.toml check advisories

@@ -2306,7 +2306,7 @@ Umsetzung in T09: `.github/workflows/release.yml` läuft bei einem Tag `v*` (Mat
 
 - `scripts/check-all.sh` führt alle Prüfungen der CI lokal aus (auch das Tauri-Projekt, das `cargo test --workspace` nicht erfasst, `actionlint`, `cargo deny`, `bridge/`). CLAUDE.md verlangt den Lauf vor jedem Push.
 - Rust ist in `rust-toolchain.toml` fest auf 1.99.0 gesetzt, CI und Release installieren genau diese Version (`rustup toolchain install` liest die Datei). Vorher zog die CI jede neue Stable-Version, deren neue Clippy-Lints Pushes ohne Codeänderung rot machten. Anheben geschieht bewusst mit eigenem Commit.
-- Punkt 4 ist geteilt: Die Push-CI prüft `cargo deny check bans licenses sources` (Wurzel und Tauri-Projekt, cargo-deny fest 0.20.2, ein Job statt bisher zwei mit derselben Prüfung). RUSTSEC-Hinweise (`cargo deny check advisories`, `cargo audit`) prüft `.github/workflows/advisories.yml` täglich, auf Knopfdruck und als Vorbedingung jedes Releases (`release.yml`, Job `advisories`). Ein neuer Hinweis blockiert also das Release, nicht jeden Push.
+- Punkt 4 ist geteilt: Die Push-CI prüft `cargo deny check bans licenses sources` (Wurzel und Tauri-Projekt, cargo-deny fest 0.20.2, ein Job statt bisher zwei mit derselben Prüfung). RUSTSEC-Hinweise prüft `.github/workflows/advisories.yml` (seit T46 bei geänderter Lockdatei statt täglich, siehe unten) und als Vorbedingung jedes Releases (`release.yml`, Job `advisories`). Ein neuer Hinweis blockiert also das Release, nicht jeden Push.
 - Läufe auf main werden nicht mehr abgebrochen (`cancel-in-progress` nur außerhalb von main). Die CI läuft auch auf Arbeitszweigen `claude/**`.
 - Release ohne Tag-Push (15. Oktober 2026): `release.yml` lässt sich auch manuell auf `main` starten, mit dem neuen Tag als Eingabe (Muster `vX.Y.Z`, Tag darf noch nicht existieren). Der Entwurf zeigt dann auf den Commit des Laufs; `publish-release.yml` veröffentlicht ihn, und GitHub legt den Tag dabei an. Grund: Cloud-Sessions können keine Tags pushen. Der Weg über einen gepushten Tag bleibt unverändert.
 - Automatischer Release (T30, Entscheidung und Anforderung vom 15. Oktober 2026): Nach jeder grünen CI eines Pushes auf `main` prüft `.github/workflows/auto-release.yml`, ob sich seit dem letzten Tag etwas am Produkt geändert hat (`app/`, `crates/`, `catalog/`, `schema/`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`). Wenn ja und der Commit noch die Spitze von `main` ist, ruft er `release.yml` mit dem nächsten Tag und genau diesem Commit auf und veröffentlicht den Release ohne Entwurfsprüfung von Hand. Nächster Tag: Patch + 1, außer `catalog/changelog.json` nennt schon eine höhere Version. Fehlt der Changelog-Eintrag, stehen die Betreffzeilen der Commits seit dem letzten Tag in den Notizen und in `latest.json`. Damit findet "Nach Update suchen" jeden Stand von `main` mit Produktänderung, und der Installer am neuesten Release ist immer aktuell. Abweichung von "Der Entwurf wird von Hand veröffentlicht" oben; Tag-Push und manueller Start bleiben möglich. Gibt es noch keinen Tag (Neuanfang nach T38), gilt die höchste Version aus `catalog/changelog.json`.
@@ -2314,14 +2314,11 @@ Umsetzung in T09: `.github/workflows/release.yml` läuft bei einem Tag `v*` (Mat
 - Windows nur noch als NSIS-Installer (`-setup.exe`, T30): Das Update aus der App installiert die `setup.exe`, die Frage nach Ollama hat nur der NSIS-Installer (T29), und ein per MSI installiertes Lastwerk bekäme beim Update eine zweite Installation daneben. Abweichung von "msi und nsis" oben.
 - Jeder Job hat ein Zeitlimit (`timeout-minutes`). Der Tauri-Job baut mit Zeilentabellen statt voller Debug-Information und gibt Platz und Speicher vor den Tests aus (Linker-Abbruch "Bus error" am 15. Oktober 2026).
 
-Änderung vom 18. Oktober 2026 nach der Analyse von 58 Läufen (13 rot, keiner davon ein Fehler im Code auf `main`; Einzelheiten in T46, Vorgehen bei Rot in `docs/ci.md`):
+Änderung vom 18. Oktober 2026 (T46; 13 von 58 Läufen rot, keiner durch Code auf `main`):
 
-- Feste Runner: `ubuntu-24.04` statt `ubuntu-latest`, das ab 19. Oktober 2026 auf Ubuntu 26 wechselt. Tauri-Systempakete und die glibc-Basis von AppImage und deb hängen am Image; ein Wechsel geschieht bewusst mit eigenem Commit, wie bei der Rust-Version. `windows-latest` bleibt, bis ein Wechsel angekündigt ist.
-- RUSTSEC-Hinweise nur noch mit `cargo deny check advisories`; `cargo audit` las dieselbe Datenbank und brauchte eine eigene Liste der Ausnahmen. `advisories.yml` läuft zusätzlich bei jedem Push, der eine Lockdatei, ein `Cargo.toml` oder `deny.toml` ändert, damit ein zurückgezogenes Crate nicht erst den Release blockiert.
-- Ein nicht mehr gepflegtes Crate wird ersetzt, nicht ausgenommen, wenn es einen Ersatz gibt (Entscheidung des Nutzers vom 18. Oktober 2026). Erstes Beispiel: zbus im Garmin-Schlüsselbund (5.4, `lastwerk-garmin`). Eine Ausnahme in `deny.toml` braucht Grund, Datum und den Hinweis, warum es keinen Ersatz gibt.
-- Reine Dokuänderungen (`docs/`, `*.md`, `.claude/`) überspringen in `ci.yml` die Jobs `rust`, `ui`, `tauri`, `supply-chain`, `ollama-setup` und `installer-hook` (Job `scope`). `guards` mit Datenschutz, gitleaks, actionlint und zizmor läuft immer. Kein Release folgt, weil `auto-release.yml` Dokumentation nicht als Produktänderung zählt.
-- `scripts/check-all.sh` enthält jetzt alles, was die CI auf Linux prüft: dazu gitleaks, `pnpm audit --prod`, `ruff format --check` und die Sicherheitshinweise, wenn sich eine Lockdatei geändert hat. `scripts/cloud-env-setup.sh` installiert die Prüfwerkzeuge mit fester Version und Prüfsumme.
-- Dependabot aktualisiert auch das Tauri-Projekt und fasst kleine Aktualisierungen je Ökosystem in einem PR zusammen.
+- Linux-Runner fest auf `ubuntu-24.04`; `ubuntu-latest` wechselt ab 19. Oktober 2026 auf Ubuntu 26.
+- `advisories.yml` läuft nur noch bei geänderter Lockdatei, `Cargo.toml` oder `deny.toml` und vor jedem Release, nicht mehr täglich (der tägliche Lauf wurde ohne Commit rot und blockierte Releases). `cargo audit` entfällt, es las dieselbe Datenbank wie `cargo deny`. Abweichung von Punkt 4 oben.
+- Ein nicht gepflegtes oder zurückgezogenes Crate wird ersetzt statt ausgenommen, wenn es Ersatz gibt; erstes Beispiel zbus im Garmin-Schlüsselbund (5.4).
 
 ---
 
@@ -2390,7 +2387,7 @@ cargo test -p lastwerk-core pmc::
 cargo run -p lastwerk-cli -- pmc --db target/m1.db --from 2026-01-01 --to 2026-03-31 --format csv > target/pmc.csv
 pnpm --dir app/ui test
 pnpm --dir app/ui exec playwright test
-pnpm --dir app/ui exec tauri build --debug
+pnpm --dir app/ui tauri build --debug
 ```
 
 Erfolg:

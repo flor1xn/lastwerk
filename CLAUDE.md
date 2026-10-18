@@ -10,19 +10,15 @@ Die Wahrheit steht in [docs/SPEC.md](docs/SPEC.md). Bei Widerspruch gilt die Spe
 2. Nimm den Task, den der Auftrag nennt. Nennt er keinen, nimm den ersten mit Status `offen`, dessen Voraussetzungen `erledigt` sind.
 3. Lies die Task-Datei ganz und die dort genannten SPEC-Abschnitte. Bearbeite nur diesen Task. Nichts aus anderen Tasks vorwegnehmen.
 4. Baue in kleinen Schritten, committe je abgeschlossenem Schritt. Prüfe nach jedem Schritt mit den Befehlen aus dem Abschnitt "Befehle".
-5. Führe am Ende alle Befehle unter "Abnahme" der Task-Datei aus und danach `sh scripts/check-all.sh` (Exit 0, also nichts übersprungen; das Skript baut auch das Tauri-Projekt, das `cargo test --workspace` nicht erfasst). Erst wenn alles besteht, setze den Status auf `erledigt`. Trage Status in der Task-Datei und in der Tabelle in `docs/tasks/README.md` nach.
+5. Führe am Ende alle Befehle unter "Abnahme" der Task-Datei aus und danach `sh scripts/check-all.sh` (das Skript baut auch das Tauri-Projekt, das `cargo test --workspace` nicht erfasst; Exit 3 heißt, ein Werkzeug fehlte: dann zuerst auf einen Zweig `claude/...` pushen und dessen CI abwarten). Erst wenn alles besteht, setze den Status auf `erledigt`. Trage Status in der Task-Datei und in der Tabelle in `docs/tasks/README.md` nach.
 6. Möglichst ein Push je Session: Arbeit in lokalen Commits sammeln und erst am Ende pushen, nicht nach jedem Teilschritt. Jeder Push mit Produktänderung löst CI und Release aus, ein Release je Push (SPEC 11.6); gebündelte Pushes halten die CI-Last und den Release-Takt klein. Dann `git pull --rebase origin main`, `sh scripts/check-all.sh` erneut, dann `git push origin HEAD:main`. Ergebnisse gehen direkt nach `main`, es gibt keinen Pull Request. Arbeitet die Session auf einem Zweig `claude/...`, läuft die CI dort beim Push; `main` bekommt den Stand erst, wenn sie grün ist. Prüfe nach dem Push, ob die CI auf `main` grün ist (`gh run list --limit 3`, falls `gh` verfügbar ist), und behebe Fehler, die du verursacht hast. Nach grüner CI baut `auto-release.yml` bei Änderungen an `app/`, `crates/`, `catalog/` oder `schema/` von selbst einen neuen Release mit Installer (T30); prüfe auch diesen Lauf. Größere Neuerungen bekommen einen Eintrag in `catalog/changelog.json` unter der nächsten Version.
 7. Schließe mit einem kurzen Bericht: was fertig ist, was nicht, welche manuellen Schritte für den Nutzer offen sind.
 
-## CI und Sicherheitsprüfungen
+## CI
 
-Einzelheiten und Vorgehen bei Rot: [docs/ci.md](docs/ci.md).
-
-- **Rot auf `main` zuerst.** Der SessionStart-Hook meldet Workflows, deren letzter Lauf auf `main` rot ist (ohne Hook: `gh run list --branch main --limit 10`). Das geht dem Auftrag vor, auch beim täglichen Lauf `Sicherheitshinweise`, der ohne Commit rot werden kann und jeden Release blockiert.
-- **Lockdatei geändert** (`Cargo.lock`, `app/src-tauri/Cargo.lock`, ein `Cargo.toml`, `deny.toml`): `cargo deny check advisories` in beiden Workspaces; `check-all.sh` macht das dann von selbst.
-- **Ursache statt Ausnahme.** Nicht gepflegte, zurückgezogene oder unsichere Crates werden aktualisiert oder ersetzt. Eine Ausnahme in `deny.toml` nur, wenn es nachweislich keinen Ersatz gibt, mit Grund und Datum.
-- **Feste Versionen.** Kein `ubuntu-latest` oder anderes `-latest` für Linux-Runner, keine Action ohne Commit-SHA, keine ungepinnten Prüfwerkzeuge.
-- **Dependabot-PRs** werden nicht gemergt, sondern in einer Session als eigener Commit übernommen; danach den PR schließen.
+- Meldet der Session-Start einen roten Lauf auf `main`, zuerst den beheben.
+- Ein rotes Crate (RUSTSEC, zurückgezogen) wird aktualisiert oder ersetzt; eine Ausnahme in `deny.toml` nur, wenn es keinen Ersatz gibt.
+- Dependabot-PRs nicht mergen, sondern als eigenen Commit übernehmen und den PR schließen.
 
 ## Harte Regeln
 

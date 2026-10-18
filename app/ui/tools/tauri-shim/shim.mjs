@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Die Tauri-CLI sucht `tauri.conf.json` nur im aktuellen Ordner und darunter. In Lastwerk
-// liegt die Oberfläche in app/ui und die Hülle in app/src-tauri (SPEC 5.2), die Abnahme ruft
-// aber `pnpm --dir app/ui exec tauri ...` auf. Dieses Skript trägt die beiden Pfade ein, die
+// liegt die Oberfläche in app/ui und die Hülle in app/src-tauri (SPEC 5.2), aufgerufen wird
+// `pnpm --dir app/ui tauri ...` (Skript `tauri` in app/ui/package.json; bis T46 ein eigenes
+// Paket, das Dependabot bei jedem npm-PR von file: zu link: umschrieb und damit den Build
+// brach). Dieses Skript trägt die beiden Pfade ein, die
 // die CLI dafür kennt (TAURI_APP_PATH: Ordner mit src-tauri, TAURI_FRONTEND_PATH: Ordner der
 // Oberfläche, dort laufen auch beforeDevCommand und beforeBuildCommand), und startet dann die
 // unveränderte CLI. Bereits gesetzte Werte bleiben. Gesucht wird vom aktuellen Ordner aus.

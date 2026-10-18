@@ -19,7 +19,7 @@ def symlink_or_skip(link: Path, target: Path) -> None:
 
     Windows verlangt dafür Adminrechte oder den Entwicklermodus (WinError 1314). Die CI testet
     bridge/ unter Ubuntu, dort laufen diese Tests immer; lokal unter Windows blockierte der
-    Fehler sonst jeden Lauf von scripts/check-all.sh (T46).
+    Fehler sonst jeden lokalen Lauf von scripts/check-all.sh (T46).
     """
     try:
         link.symlink_to(target)
