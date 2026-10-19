@@ -130,30 +130,31 @@
     font-family: var(--font-sans);
   }
 
-  /* Stufen aus dem Akzent, in den Hintergrund gemischt: 0 ist nur die Fläche, 4 die volle Farbe. */
+  /* Stufen aus der Textfarbe, in die Fläche gemischt: 0 ist nur die Fläche, 4 fast Text. Limette
+     bleibt dem vorbehalten, was jetzt zählt (SPEC 5.5). */
   .l0 {
     fill: var(--panel-2);
     background: var(--panel-2);
   }
 
   .l1 {
-    fill: color-mix(in srgb, var(--accent) 28%, var(--panel-2));
-    background: color-mix(in srgb, var(--accent) 28%, var(--panel-2));
+    fill: color-mix(in oklch, var(--text) 22%, var(--panel-2));
+    background: color-mix(in oklch, var(--text) 22%, var(--panel-2));
   }
 
   .l2 {
-    fill: color-mix(in srgb, var(--accent) 52%, var(--panel-2));
-    background: color-mix(in srgb, var(--accent) 52%, var(--panel-2));
+    fill: color-mix(in oklch, var(--text) 45%, var(--panel-2));
+    background: color-mix(in oklch, var(--text) 45%, var(--panel-2));
   }
 
   .l3 {
-    fill: color-mix(in srgb, var(--accent) 76%, var(--panel-2));
-    background: color-mix(in srgb, var(--accent) 76%, var(--panel-2));
+    fill: color-mix(in oklch, var(--text) 68%, var(--panel-2));
+    background: color-mix(in oklch, var(--text) 68%, var(--panel-2));
   }
 
   .l4 {
-    fill: var(--accent);
-    background: var(--accent);
+    fill: color-mix(in oklch, var(--text) 90%, var(--panel-2));
+    background: color-mix(in oklch, var(--text) 90%, var(--panel-2));
   }
 
   .cell.today {

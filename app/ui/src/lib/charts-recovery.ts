@@ -5,9 +5,9 @@
 
 import uPlot from 'uplot';
 import type { Locale, RecoveryPagePoint } from './backend/types';
-import { axisBase, epochOf, isoOfEpoch, type ChartColors } from './charts';
+import { axisBase, epochOf, isoOfEpoch, timeAxis, type ChartColors } from './charts';
 import { withAlpha } from './charts-dashboard';
-import { formatDate, formatDayMonth, formatNumber, MISSING } from './format';
+import { formatDate, formatNumber, MISSING } from './format';
 
 /** Gemeinsamer Schlüssel: Der Zeiger steht in allen Diagrammen der Seite am selben Tag. */
 export const RECOVERY_SYNC = 'lastwerk-recovery';
@@ -48,14 +48,6 @@ export interface MetricLabels {
   base: string;
   floor: string;
   low: string;
-}
-
-function timeAxis(colors: ChartColors, locale: Locale): uPlot.Axis {
-  return {
-    ...axisBase(colors),
-    grid: { show: false },
-    values: (_u, splits) => splits.map((s) => formatDayMonth(isoOfEpoch(s), locale)),
-  };
 }
 
 function base(
@@ -150,12 +142,12 @@ export function batteryOptions(
     ...common,
     scales: { x: { time: true }, y: { range: [0, 100] } },
     axes: [timeAxis(colors, locale), { ...axisBase(colors), size: 44 }],
-    bands: [{ series: [1, 2], fill: withAlpha(colors.accent, 0.18) }],
+    bands: [{ series: [1, 2], fill: withAlpha(colors.text, 0.1) }],
     series: [
       dateSeries,
       {
         label: labels.high,
-        stroke: colors.accent,
+        stroke: colors.text,
         width: 1.5,
         points: { show: false },
         value: fmt,

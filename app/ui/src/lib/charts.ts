@@ -3,6 +3,7 @@
 
 import uPlot from 'uplot';
 import type { ActivityDetail, Locale, PmcPoint } from './backend/types';
+import { intlTag } from './i18n';
 import {
   formatDate,
   formatDayMonth,
@@ -59,6 +60,22 @@ export function isoOfEpoch(seconds: number): string {
 const AXIS_FONT_SIZE = 13;
 
 /**
+ * Mindestabstand der Beschriftungen in Pixeln: Auf senkrechten Achsen so, dass höchstens vier
+ * Gitterlinien entstehen (Apple, WWDC22 "Design an effective chart", siehe
+ * docs/designsprache.md), auf waagerechten 64 Pixel (Faustregel).
+ */
+export function axisSpace(
+  u: uPlot,
+  axisIdx: number,
+  _min: number,
+  _max: number,
+  plotDim: number,
+): number {
+  const side = u.axes[axisIdx]?.side ?? 2;
+  return side % 2 === 1 ? Math.max(36, plotDim / 4.2) : 64;
+}
+
+/**
  * Gemeinsame Achsen: Beschriftung in der Schrift der Oberfläche, Gitter nur als feine Linie,
  * keine Teilstriche und kein Rahmen (SPEC 5.5). Die Linien tragen die Daten, nicht das Gitter.
  */
@@ -70,6 +87,53 @@ export function axisBase(colors: ChartColors): uPlot.Axis {
     ticks: { show: false },
     border: { show: false },
     gap: 8,
+    space: axisSpace,
+  };
+}
+
+const DAY = 86_400;
+
+/**
+ * Teilung einer Zeitachse in Tagen (UTC-Mitternacht): Monatsanfänge, wenn mindestens zwei im
+ * Bereich liegen, sonst Montage. Höchstens `max` Marken, sonst jede zweite, dritte und so fort.
+ */
+export function timeSplits(min: number, max: number, maxCount: number): number[] {
+  const start = new Date(Math.ceil(min / DAY) * DAY * 1000);
+  const months: number[] = [];
+  const m = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+  if (m.getTime() / 1000 < min) m.setUTCMonth(m.getUTCMonth() + 1);
+  while (m.getTime() / 1000 <= max) {
+    months.push(m.getTime() / 1000);
+    m.setUTCMonth(m.getUTCMonth() + 1);
+  }
+  let marks = months;
+  if (months.length < 2) {
+    marks = [];
+    const first = Math.ceil(min / DAY) * DAY;
+    // 1970-01-01 war ein Donnerstag: Tag 4 ist ein Montag.
+    const offset = (((4 - Math.floor(first / DAY)) % 7) + 7) % 7;
+    for (let s = first + offset * DAY; s <= max; s += 7 * DAY) marks.push(s);
+  }
+  const step = Math.max(1, Math.ceil(marks.length / Math.max(1, maxCount)));
+  return marks.filter((_, i) => i % step === 0);
+}
+
+/** Beschriftung einer Marke: Monatsname am Monatsanfang, im Januar das Jahr, sonst Tag.Monat. */
+export function timeLabel(seconds: number, locale: Locale): string {
+  const iso = isoOfEpoch(seconds);
+  const d = new Date(seconds * 1000);
+  if (d.getUTCDate() !== 1) return formatDayMonth(iso, locale);
+  if (d.getUTCMonth() === 0) return String(d.getUTCFullYear());
+  return new Intl.DateTimeFormat(intlTag(locale), { month: 'short', timeZone: 'UTC' }).format(d);
+}
+
+/** Zeitachse unten: Monatswechsel als Marken, kein senkrechtes Gitter (SPEC 5.5). */
+export function timeAxis(colors: ChartColors, locale: Locale): uPlot.Axis {
+  return {
+    ...axisBase(colors),
+    grid: { show: false },
+    splits: (u, _i, min, max) => timeSplits(min, max, Math.floor(u.width / 72)),
+    values: (_u, splits) => splits.map((s) => timeLabel(s, locale)),
   };
 }
 
@@ -104,14 +168,7 @@ export function pmcOptions(
     // Die Legende der Bibliothek zeigt Beschriftung und Wert in einer Zeile mit Doppelpunkt und
     // Platzhalter. Stattdessen steht unter dem Diagramm die eigene (PmcChart).
     legend: { show: false },
-    axes: [
-      {
-        ...axisBase(colors),
-        grid: { show: false },
-        values: (_u, splits) => splits.map((s) => formatDayMonth(isoOfEpoch(s), locale)),
-      },
-      { ...axisBase(colors), size: 40 },
-    ],
+    axes: [timeAxis(colors, locale), { ...axisBase(colors), size: 40 }],
     series: [
       {
         label: labels.date,
@@ -152,7 +209,7 @@ export function activitySeriesOptions(
           scale: 'pace',
           side: channels.power ? 1 : 3,
           size: 52,
-          stroke: colors.accent,
+          stroke: colors.text,
           grid: { show: false },
           values: (_u, splits) => splits.map((s) => formatDuration(s)),
         },
@@ -163,7 +220,7 @@ export function activitySeriesOptions(
         {
           label: labels.pace ?? '',
           scale: 'pace',
-          stroke: colors.accent,
+          stroke: colors.text,
           width: 1.5,
           value: (_u, v) => (v === null ? MISSING : formatDuration(v)),
           points: { show: false },

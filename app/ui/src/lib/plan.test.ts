@@ -51,7 +51,7 @@ describe('keyText und Namen', () => {
 
   it('schlägt den Vorlagennamen nach', () => {
     expect(templateName('de', 'bike.endurance.steady')).toBe('Grundlagenfahrt');
-    expect(templateName('de', 'bike.unbekannt.x')).toBe('template.bike.unbekannt.x.name');
+    expect(templateName('de', 'bike.unbekannt.x_y')).toBe('bike unbekannt x y');
   });
 });
 

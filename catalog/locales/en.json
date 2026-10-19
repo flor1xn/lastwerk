@@ -1460,6 +1460,15 @@
         "settings_profile": "FTP threshold heart rate athlete PMC zones",
         "settings_app": "language theme dark light update about"
       }
+    },
+    "instrument": {
+      "form": {
+        "scale_label": "Form state {state} on the scale from overloaded to fresh"
+      },
+      "week": {
+        "rest": "Rest day",
+        "load_of_day": "load {load}"
+      }
     }
   },
   "sport": {

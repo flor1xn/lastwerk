@@ -24,9 +24,12 @@ export function keyText(locale: Locale, key: string): string {
   return hasKey(locale, key) ? translate(locale, key) : key;
 }
 
-/** Name der Vorlage einer Einheit (`template.<id>.name`). */
+/** Name der Vorlage einer Einheit (`template.<id>.name`). Fehlt er (Vorlage aus einem neueren
+ *  Katalog), steht die ID mit Leerzeichen statt Punkten und Unterstrichen, damit sie umbricht
+ *  und nicht als roher Schlüssel erscheint. */
 export function templateName(locale: Locale, templateId: string): string {
-  return keyText(locale, `template.${templateId}.name`);
+  const key = `template.${templateId}.name`;
+  return hasKey(locale, key) ? translate(locale, key) : templateId.replace(/[._]+/g, ' ');
 }
 
 /** Beschreibung der Vorlage, falls es eine gibt. */

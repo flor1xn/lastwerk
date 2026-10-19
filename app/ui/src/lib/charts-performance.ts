@@ -3,9 +3,9 @@
 
 import uPlot from 'uplot';
 import type { Locale, PerfFtpSuggestion, PerfPower, PerfThreshold } from './backend/types';
-import { axisBase, epochOf, isoOfEpoch, type ChartColors } from './charts';
+import { axisBase, epochOf, isoOfEpoch, timeAxis, type ChartColors } from './charts';
 import { withAlpha } from './charts-dashboard';
-import { formatDate, formatDayMonth, formatNumber, MISSING } from './format';
+import { formatDate, formatNumber, MISSING } from './format';
 import { formatCurveDuration, stepValueOn } from './performance';
 
 export interface CurveLabels {
@@ -131,11 +131,7 @@ export function ftpOptions(
     cursor: { drag: { x: false, y: false } },
     legend: { show: false },
     axes: [
-      {
-        ...axisBase(colors),
-        grid: { show: false },
-        values: (_u, splits) => splits.map((s) => formatDayMonth(isoOfEpoch(s), locale)),
-      },
+      timeAxis(colors, locale),
       {
         ...axisBase(colors),
         size: 52,
@@ -158,10 +154,10 @@ export function ftpOptions(
       },
       {
         label: labels.suggestion,
-        stroke: colors.accent,
+        stroke: colors.text,
         width: 0,
         paths: () => null,
-        points: { show: true, size: 9, fill: colors.accent, stroke: colors.accent },
+        points: { show: true, size: 9, fill: colors.text, stroke: colors.text },
         value: watts,
       },
     ],

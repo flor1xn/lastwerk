@@ -16,6 +16,10 @@ export interface StoryDay {
   done: number;
   /** Mindestens eine geplante Einheit ist hart. */
   hard: boolean;
+  /** Last der zählenden Aktivitäten des Tages, nur berechenbare Werte (bis heute). */
+  load: number;
+  /** Geplante Last des Tages. */
+  plannedLoad: number;
 }
 
 export interface WeekOutlook {
@@ -86,12 +90,15 @@ export function buildWeekStory(
     const { sessions, covered } = plannedOn(plan, date);
     const state = dayState(date, today, sessions.length, acts.length, covered);
     story.hasPlan ||= covered;
+    const plannedLoad = sessions.reduce((s, x) => s + x.planned_load, 0);
+    const load = acts.reduce(
+      (s, a) => s + (a.load.status === 'ok' && a.load.value !== null ? a.load.value : 0),
+      0,
+    );
     story.plannedSessions += sessions.length;
-    story.plannedLoad += sessions.reduce((s, x) => s + x.planned_load, 0);
+    story.plannedLoad += plannedLoad;
     story.sessions += acts.length;
-    for (const a of acts) {
-      if (a.load.status === 'ok' && a.load.value !== null) story.load += a.load.value;
-    }
+    story.load += load;
     if (date < today && sessions.length > 0) {
       story.plannedPast += sessions.length;
       story.donePast += Math.min(acts.length, sessions.length);
@@ -103,6 +110,8 @@ export function buildWeekStory(
       planned: sessions.length,
       done: acts.length,
       hard: sessions.some((s) => s.hard),
+      load,
+      plannedLoad,
     });
   }
   for (let i = 1; i <= 7; i++) {

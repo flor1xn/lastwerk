@@ -13,7 +13,7 @@
     testid?: string;
   }
 
-  let { values, baseline = null, label, color = 'var(--accent)', testid }: Props = $props();
+  let { values, baseline = null, label, color = 'var(--text-2)', testid }: Props = $props();
 
   const W = 200;
   const H = 44;

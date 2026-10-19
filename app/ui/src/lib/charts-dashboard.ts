@@ -6,6 +6,7 @@ import uPlot from 'uplot';
 import type { Locale } from './backend/types';
 import {
   axisBase,
+  timeAxis,
   epochOf,
   isoOfEpoch,
   type BandKey,
@@ -13,7 +14,7 @@ import {
   type PmcLabels,
 } from './charts';
 import type { PmcSplit } from './dashboard';
-import { formatDate, formatDayMonth, formatNumber, MISSING } from './format';
+import { formatDate, formatNumber, MISSING } from './format';
 import { FORM_BALANCED_FROM, FORM_FRESH_FROM, FORM_LOADED_FROM } from './today';
 
 /** Farbe mit Deckkraft. Nur für #rrggbb, alles andere bleibt unverändert. */
@@ -43,7 +44,14 @@ export interface DashPmcExtras {
   today?: { date: string; label: string };
 }
 
-/** Zeichnet die vier Formzustände als sehr dezente Flächen hinter den Linien. */
+/** Breite des rechten Rands für die Namen der Bänder (Faustregel für zwölf Pixel Text). */
+export const BAND_GUTTER = 84;
+
+/**
+ * Zeichnet die vier Formzustände als sehr leise Flächen hinter den Linien und schreibt ihre
+ * Namen rechts neben die Zeichenfläche, damit sie keine Linie überdecken (Befund der
+ * Bestandsaufnahme, docs/designsprache.md).
+ */
 function drawBands(u: uPlot, colors: ChartColors, names: Record<BandKey, string>): void {
   const yMin = u.scales.y.min;
   const yMax = u.scales.y.max;
@@ -52,24 +60,22 @@ function drawBands(u: uPlot, colors: ChartColors, names: Record<BandKey, string>
   const px = uPlot.pxRatio;
   const ctx = u.ctx;
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(left, top, width, height);
-  ctx.clip();
-  ctx.textBaseline = 'top';
-  ctx.font = `600 ${12 * px}px ${colors.font}`;
+  ctx.font = `500 ${12 * px}px ${colors.font}`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
   for (const band of FORM_BANDS) {
     const hi = Math.min(band.to, yMax);
     const lo = Math.max(band.from, yMin);
     if (hi <= lo) continue;
-    const y0 = u.valToPos(hi, 'y', true);
-    const y1 = u.valToPos(lo, 'y', true);
-    ctx.globalAlpha = 0.55;
+    const y0 = Math.max(top, u.valToPos(hi, 'y', true));
+    const y1 = Math.min(top + height, u.valToPos(lo, 'y', true));
+    ctx.globalAlpha = 0.35;
     ctx.fillStyle = colors.bandFill[band.key];
     ctx.fillRect(left, y0, width, y1 - y0);
-    if (y1 - y0 > 22 * px) {
-      ctx.globalAlpha = 0.9;
+    if (y1 - y0 > 14 * px) {
+      ctx.globalAlpha = 1;
       ctx.fillStyle = colors.bandText[band.key];
-      ctx.fillText(names[band.key].toUpperCase(), left + 10 * px, y0 + 6 * px);
+      ctx.fillText(names[band.key], left + width + 10 * px, (y0 + y1) / 2);
     }
   }
   ctx.restore();
@@ -153,18 +159,12 @@ export function dashPmcOptions(
     scales: { x: { time: true } },
     cursor: { drag: { x: false, y: false } },
     legend: { show: false },
+    padding: [null, BAND_GUTTER, null, null],
     hooks: {
       drawClear: [(u) => drawBands(u, colors, extras.bands)],
       ...(today ? { draw: [(u: uPlot) => drawToday(u, colors, today)] } : {}),
     },
-    axes: [
-      {
-        ...axisBase(colors),
-        grid: { show: false },
-        values: (_u, splits) => splits.map((s) => formatDayMonth(isoOfEpoch(s), locale)),
-      },
-      { ...axisBase(colors), size: 40 },
-    ],
+    axes: [timeAxis(colors, locale), { ...axisBase(colors), size: 40 }],
     series,
   };
 }
@@ -221,14 +221,7 @@ export function rampOptions(
         },
       ],
     },
-    axes: [
-      {
-        ...axisBase(colors),
-        grid: { show: false },
-        values: (_u, splits) => splits.map((s) => formatDayMonth(isoOfEpoch(s), locale)),
-      },
-      { ...axisBase(colors), size: 36 },
-    ],
+    axes: [timeAxis(colors, locale), { ...axisBase(colors), size: 36 }],
     series: [
       {
         label: labels.date,
@@ -268,11 +261,7 @@ export function efOptions(
     cursor: { drag: { x: false, y: false } },
     legend: { show: false },
     axes: [
-      {
-        ...axisBase(colors),
-        grid: { show: false },
-        values: (_u, splits) => splits.map((s) => formatDayMonth(isoOfEpoch(s), locale)),
-      },
+      timeAxis(colors, locale),
       {
         ...axisBase(colors),
         size: 44,

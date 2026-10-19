@@ -90,7 +90,7 @@
               label={$t('ui.dash.readiness.spark_label', {
                 name: $t(`ui.dash.readiness.${v.key}`),
               })}
-              color={low && v.key !== 'resting_hr' ? 'var(--warn)' : 'var(--accent)'}
+              color={low && v.key !== 'resting_hr' ? 'var(--warn)' : 'var(--text-2)'}
             />
             <p class="caption muted">
               {v.value.baseline === null

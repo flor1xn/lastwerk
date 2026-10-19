@@ -1460,6 +1460,15 @@
         "settings_profile": "FTP Schwelle Puls Athlet PMC Zonen",
         "settings_app": "Sprache Thema dunkel hell Update Über"
       }
+    },
+    "instrument": {
+      "form": {
+        "scale_label": "Formzustand {state} auf der Skala von überlastet bis frisch"
+      },
+      "week": {
+        "rest": "Ruhetag",
+        "load_of_day": "Last {load}"
+      }
     }
   },
   "sport": {

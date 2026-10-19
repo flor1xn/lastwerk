@@ -61,9 +61,9 @@ export function cumulativeOptions(
       { label: labels.day },
       {
         label: labels.current,
-        stroke: colors.accent,
+        stroke: colors.text,
         width: 2.5,
-        fill: withAlpha(colors.accent, 0.08),
+        fill: withAlpha(colors.text, 0.06),
         points: { show: false },
         value,
       },

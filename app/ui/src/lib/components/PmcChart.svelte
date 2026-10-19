@@ -8,8 +8,8 @@
   import { resolvedTheme } from '../state';
   import UplotChart from './UplotChart.svelte';
 
-  // Verlauf von Fitness, Ermüdung und Form mit eigener Legende (Punkt, Name, Wert). Die Werte
-  // zeigen den letzten Tag und folgen dem Zeiger. Mit `bands` kommen die Formzustände als
+  // Verlauf von Fitness, Ermüdung und Form. Über dem Diagramm stehen Name und Wert jeder Reihe
+  // (SPEC 5.5, Diagramme); die Werte zeigen den letzten Tag und folgen dem Zeiger. Mit `bands` kommen die Formzustände als
   // dezente Bänder hinzu und mit `projection` die gestrichelte Prognose (Startseite).
   interface Props {
     history: PmcPoint[];
@@ -69,7 +69,6 @@
 </script>
 
 <div class="pmc" data-testid={testid}>
-  <UplotChart {options} {data} {height} {label} oncursor={(i) => (hover = i)} />
   <div class="legend" role="group" aria-label={label}>
     <ul>
       {#each items as item (item.key)}
@@ -95,6 +94,7 @@
       <p class="when muted">{MISSING}</p>
     {/if}
   </div>
+  <UplotChart {options} {data} {height} {label} oncursor={(i) => (hover = i)} />
 </div>
 
 <style>
@@ -104,7 +104,7 @@
     align-items: baseline;
     justify-content: space-between;
     gap: var(--space-1) var(--space-5);
-    margin-top: var(--space-3);
+    margin-bottom: var(--space-3);
     font-size: var(--fs-small);
     line-height: var(--lh-tight);
   }
@@ -143,7 +143,7 @@
   }
 
   .val {
-    font-weight: var(--fw-bold);
+    font-weight: var(--fw-semibold);
     font-variant-numeric: tabular-nums;
     min-width: 3.2ch;
   }
