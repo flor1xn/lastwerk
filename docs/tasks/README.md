@@ -69,6 +69,13 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T57](T57-dfa-alpha1.md) | Hinweis auf die aerobe Schwelle aus HRV (DFA alpha1) | nach 1.0 | offen | T31, T55 | ja | crates/fit, testkit, core, app, catalog, docs |
 | [T58](T58-streckenform.md) | Streckenform ohne Kartenkacheln | nach 1.0 | offen | T31, T53 | ja | crates/fit, testkit, app |
 | [T59](T59-vergleich.md) | Aktivitäten vergleichen | nach 1.0 | offen | T31 | ja | app, catalog |
+| [T60](T60-design-tokens.md) | Tokens und Schrift der Designsprache "Instrument" | nach 1.0 | offen | keine | ja | app/ui, docs |
+| [T61](T61-geruest-palette.md) | Gerüst, schmales Layout und Befehlspalette | nach 1.0 | offen | T60 | ja | app/ui, catalog, docs |
+| [T62](T62-bausteine-instrumente.md) | Bausteine und Diagrammstil | nach 1.0 | offen | T60 | ja | app/ui |
+| [T63](T63-heute-tafel.md) | Heute als Tafel | nach 1.0 | offen | T61, T62 | ja | app/ui, catalog, docs |
+| [T64](T64-verlauf-plan.md) | Verlauf und Plan in der neuen Sprache | nach 1.0 | offen | T62 | ja | app/ui, catalog |
+| [T65](T65-einstellungen-coach-einrichtung.md) | Einstellungen, Coach-Fenster und Einrichtung | nach 1.0 | offen | T61, T62 | ja | app/ui, catalog |
+| [T66](T66-design-pruefung.md) | Prüfung der Designsprache und Abgleich mit REA | nach 1.0 | offen | T60 bis T65 | Teil A ja, Teil B lokal | app/ui, docs |
 
 ## Reihenfolge
 
@@ -121,6 +128,14 @@ T32 ─ T48          T33 ─ T49          T07, T35 ─ T50          T31 ─ T59
 T35, T44 ─ T51 ─ T52                  (T51 erst nach Entscheidung O15)
 T31 ─ T54 ─ T53 ─┬─ T55 ─ T57         (crates/fit: nacheinander, nie parallel)
                  └─ T58
+```
+
+Designsprache "Instrument" vom 19. Oktober 2026 (Begründung und Entscheidungen E12 bis E14 in [../designsprache.md](../designsprache.md); alle in `app/ui`, deshalb nacheinander):
+
+```
+T60 ─┬─ T61 ─┬─ T63 ─┐
+     └─ T62 ─┼─ T64 ─┼─ T66
+             └─ T65 ─┘
 ```
 
 Vorschlag für die Reihenfolge nach Nutzen: T47 (schließt O29 a, Kraft zählt), T50 (Einheiten aufs Gerät), T51 (F34), T49, T54, T53, dann der Rest.
