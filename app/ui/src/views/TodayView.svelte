@@ -3,7 +3,7 @@
   import type { ActivityItem, Dashboard, Plan } from '../lib/backend/types';
   import { addDays, localIso, mondayOf } from '../lib/dates';
   import ErrorNote from '../lib/components/ErrorNote.svelte';
-  import { formatDate, formatWeekday } from '../lib/format';
+  import { formatLongDate } from '../lib/format';
   import { locale, t } from '../lib/i18n';
   import { Loader } from '../lib/loader.svelte';
   import { dataVersion, paletteOpen } from '../lib/state';
@@ -69,16 +69,16 @@
 {:else}
   <div class="page today" data-testid="today">
     <header class="head">
-      <h1 class="when" data-testid="today-head">
-        <span>{formatWeekday(today, $locale)} {formatDate(today, $locale)}</span>
+      <div class="when" data-testid="today-head">
+        <h1>{formatLongDate(today, $locale)}</h1>
         {#if planWeek}
-          <span class="muted" data-testid="today-plan-week">
-            · {$t('ui.instrument.head.week', { n: planWeek.n, of: planWeek.of })} · {$t(
+          <p class="where" data-testid="today-plan-week">
+            {$t('ui.instrument.head.week', { n: planWeek.n, of: planWeek.of })} · {$t(
               `ui.plan.phase.${planWeek.phase}`,
             )}
-          </span>
+          </p>
         {/if}
-      </h1>
+      </div>
       <button
         type="button"
         class="cmd"
@@ -129,23 +129,41 @@
     min-height: 36px;
   }
 
+  /* Das Datum ist der Titel der Seite (wie Apple Fitness und Oura), Woche und Phase stehen
+     leise darunter. Die Navigation sagt schon "Heute". */
   .when {
-    margin: 0;
-    font-size: var(--fs-label);
-    line-height: var(--lh-tight);
-    font-weight: var(--fw-semibold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    min-width: 0;
   }
 
+  .when h1 {
+    font-size: var(--fs-title);
+  }
+
+  .where {
+    margin: 2px 0 0;
+    font-size: var(--fs-small);
+    color: var(--muted);
+  }
+
+  /* Suchfeld als ruhige Fläche ohne Rand: Es lädt ein, drängt sich aber nicht vor. */
   .cmd {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    min-width: 240px;
-    background: transparent;
+    min-width: 260px;
+    min-height: 36px;
+    background: var(--surface-hover);
+    border-color: transparent;
     color: var(--muted);
     font-size: var(--fs-small);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .cmd:hover:not(:disabled) {
+      border-color: transparent;
+      background: color-mix(in oklch, var(--text) 9%, transparent);
+      color: var(--text-2);
+    }
   }
 
   .cmd svg {
@@ -163,12 +181,11 @@
   .instruments {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+    margin-top: var(--space-3);
   }
 
   .instruments > :global(*) {
-    padding: var(--space-5) var(--space-5) var(--space-5);
+    padding: var(--space-2) var(--space-6);
   }
 
   .instruments > :global(:first-child) {

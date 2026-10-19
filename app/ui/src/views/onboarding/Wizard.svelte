@@ -256,10 +256,8 @@
   .label,
   .part {
     margin: 0 0 8px;
-    font-size: var(--fs-label);
-    font-weight: var(--fw-bold);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-label);
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
     color: var(--muted);
   }
 

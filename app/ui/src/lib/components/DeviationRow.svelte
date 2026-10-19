@@ -68,19 +68,25 @@
     color: var(--muted);
   }
 
+  /* Schiene über die ganze Breite (±25 %), damit eine kleine Abweichung als Lage auf einer Skala
+     lesbar ist und nicht als verirrter Strich. Die Mitte ist die eigene Basis. */
   .bar {
     position: relative;
     height: 14px;
+    background: linear-gradient(var(--line), var(--line)) center / 100% 2px no-repeat;
+    border-radius: 1px;
   }
 
   .bar::before {
     content: '';
     position: absolute;
     left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--border-strong);
+    top: 1px;
+    bottom: 1px;
+    width: 2px;
+    margin-left: -1px;
+    border-radius: 1px;
+    background: var(--muted);
   }
 
   .bar i {

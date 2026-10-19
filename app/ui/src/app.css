@@ -1,6 +1,7 @@
-/* Gestaltung nach SPEC 5.5, Designsprache "Instrument" (seit T60, E12): dunkel zuerst, eine
-   Signalfarbe (--accent) nur für das, was jetzt zählt, Schrift Archivo mit Breitenachse (Zahlen
-   schmal, Text normal). Dunkel ist der Standard. Hell gilt bei data-theme="light" und bei
+/* Gestaltung nach SPEC 5.5 und docs/gestaltung.md (Lastwerk-CI, verbindlich für jede neue
+   Oberfläche): dunkel zuerst, eine Signalfarbe (--accent) nur für das, was jetzt zählt, Schrift
+   Archivo mit Breitenachse (Zahlen schmal, Text normal). Ordnung entsteht aus Schrift, Abstand und
+   Fläche, nicht aus Rahmen, Kanten, Versalien oder Pillen. Dunkel ist der Standard. Hell gilt bei data-theme="light" und bei
    data-theme="system", wenn das Betriebssystem hell meldet. Schrift aus dem Build (fonts.css),
    nie aus dem Netz (SPEC 10.4). Kein Kachelraster: Kennzahlen stehen auf der Fläche, Abschnitte
    trennt eine Haarlinie, eine erhobene Fläche je Ansicht für das, was man anfasst. */
@@ -17,13 +18,18 @@
   --fs-lead: 17px; /* Aussage in einem Satz */
   --fs-body: 14px; /* Fließtext, Tabellen, Formularfelder */
   --fs-small: 13px; /* Erläuterungen, Legenden, Achsen */
-  --fs-label: 12px; /* Marken in Versalien */
+  --fs-heading: 15px; /* Überschrift eines Abschnitts, normal geschrieben */
+  --fs-label: 12px; /* Tastenkürzel, Achsen, Fußnoten */
   --lh-display: 1;
   --lh-title: 1.2;
   --lh-body: 1.5;
   --lh-tight: 1.3;
-  --ls-display: -0.02em; /* große Zahlen und Titel */
-  --ls-label: 0.06em; /* Versalien */
+  /* Laufweite je Größe (Skill apple-design, Typografie): groß enger, klein eine Spur weiter,
+     Fließtext bei null. Nie ein Wert für alle Größen. */
+  --ls-display: -0.025em; /* 40 und 64 */
+  --ls-title: -0.015em; /* 24 */
+  --ls-lead: -0.005em; /* 15 bis 17 */
+  --ls-small: 0.005em; /* 12 und 13 */
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
@@ -60,6 +66,9 @@
   --accent-line: color-mix(in oklch, var(--accent) 40%, transparent);
   --surface-hover: color-mix(in oklch, var(--text) 6%, transparent);
   --border-strong: color-mix(in oklch, var(--muted) 55%, var(--border));
+  /* Haarlinie einer erhobenen Fläche: kaum sichtbar, die Tiefe trägt der Schatten. */
+  --ring: color-mix(in oklch, var(--text) 7%, transparent);
+  --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, monospace;
 }
 
 :root,
@@ -98,6 +107,13 @@
   --form-loaded-bg: #3a2e19;
   --form-overloaded: #f29486;
   --form-overloaded-bg: #3a1d1a;
+  /* Tiefe (Skill apple-design, Materialien): große Flächen wirken dicker als kleine. Im Dunkeln
+     trägt die hellere Fläche, der Schatten bleibt tief und weich. */
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.03), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+  --shadow-float:
+    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 24px 64px -12px rgb(0 0 0 / 0.7),
+    0 4px 16px rgb(0 0 0 / 0.35);
+  --scrim: rgb(5 6 7 / 0.55);
 }
 
 :root[data-theme='light'] {
@@ -135,6 +151,9 @@
   --form-loaded-bg: #fbebcb;
   --form-overloaded: #a8332a;
   --form-overloaded-bg: #fbdcd8;
+  --shadow-raised: 0 1px 2px rgb(27 29 31 / 0.06), 0 12px 32px -16px rgb(27 29 31 / 0.18);
+  --shadow-float: 0 2px 6px rgb(27 29 31 / 0.08), 0 24px 64px -12px rgb(27 29 31 / 0.28);
+  --scrim: rgb(27 29 31 / 0.22);
 }
 
 @media (prefers-color-scheme: light) {
@@ -173,6 +192,9 @@
     --form-loaded-bg: #fbebcb;
     --form-overloaded: #a8332a;
     --form-overloaded-bg: #fbdcd8;
+    --shadow-raised: 0 1px 2px rgb(27 29 31 / 0.06), 0 12px 32px -16px rgb(27 29 31 / 0.18);
+    --shadow-float: 0 2px 6px rgb(27 29 31 / 0.08), 0 24px 64px -12px rgb(27 29 31 / 0.28);
+    --scrim: rgb(27 29 31 / 0.22);
   }
 }
 
@@ -206,22 +228,23 @@ h3 {
 h1 {
   font-size: var(--fs-title);
   line-height: var(--lh-title);
-  letter-spacing: var(--ls-display);
+  letter-spacing: var(--ls-title);
 }
 
 h2 {
   font-size: var(--fs-lead);
   line-height: var(--lh-tight);
+  letter-spacing: var(--ls-lead);
 }
 
-/* Marke in Versalien: Abschnittsköpfe, Karten, Panels. */
+/* Überschrift eines Abschnitts, einer Karte oder eines Panels: normal geschrieben, halbfett, in
+   Textfarbe. Keine Versalien mit Sperrung (docs/gestaltung.md, Schrift). */
 h3 {
-  font-size: var(--fs-label);
+  font-size: var(--fs-heading);
   line-height: var(--lh-tight);
   font-weight: var(--fw-semibold);
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-label);
+  letter-spacing: var(--ls-lead);
+  color: var(--text);
 }
 
 button,
@@ -267,6 +290,22 @@ button:disabled {
   cursor: default;
 }
 
+/* Leiser Knopf: Text ohne Fläche und Rahmen, Fläche erst beim Überfahren. Für Nebenhandlungen
+   neben einer Primäraktion und für wiederholte Handlungen in Listen (Löschen je Zeile). */
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button.ghost:hover:not(:disabled) {
+    border-color: transparent;
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+}
+
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
@@ -291,14 +330,30 @@ kbd {
   padding: 0 5px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  font: var(--fw-semibold) 11px / 1 var(--font-sans);
+  font: var(--fw-medium) 11px / 1 var(--font-sans);
+  letter-spacing: var(--ls-small);
   color: var(--muted);
+  background: var(--surface-hover);
+  border-color: transparent;
 }
 
 button.primary kbd {
   border-color: color-mix(in oklch, var(--accent-text) 30%, transparent);
   color: inherit;
   opacity: 0.75;
+}
+
+/* Häkchen, Optionen und Regler in der Signalfarbe statt im Blau des Systems. */
+input,
+progress {
+  accent-color: var(--accent);
+}
+
+code,
+pre,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
 }
 
 input,
@@ -378,10 +433,8 @@ th {
 /* Datum oder Kontext über dem Titel. */
 .page-eyebrow {
   margin: 0 0 var(--space-1);
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--ls-label);
-  text-transform: uppercase;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
   color: var(--muted);
 }
 
@@ -391,7 +444,9 @@ th {
   max-width: var(--measure);
   font-size: var(--fs-lead);
   line-height: var(--lh-tight);
+  letter-spacing: var(--ls-lead);
   color: var(--muted);
+  text-wrap: pretty;
 }
 
 .page-head .page-lead {
@@ -417,16 +472,15 @@ th {
   min-width: 0;
 }
 
-/* Marke: kleine Versalien, gedämpft. Dieselbe Form wie h3 in Karten und Panels. */
+/* Überschrift des Abschnitts: dieselbe Form wie h3 in Karten und Panels. */
 .section-label,
 .section > h3 {
-  margin: 0 0 var(--space-4);
-  font-size: var(--fs-label);
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-heading);
   line-height: var(--lh-tight);
   font-weight: var(--fw-semibold);
-  letter-spacing: var(--ls-label);
-  text-transform: uppercase;
-  color: var(--muted);
+  letter-spacing: var(--ls-lead);
+  color: var(--text);
 }
 
 .section-head .section-label {
@@ -441,7 +495,9 @@ th {
   text-wrap: balance;
   font-size: var(--fs-lead);
   line-height: var(--lh-tight);
-  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-lead);
+  font-weight: var(--fw-regular);
+  color: var(--text-2);
 }
 
 /* Kennzahl: Zahl schmal und groß, Einheit klein und normal breit, Marke darunter. */
@@ -492,11 +548,10 @@ th {
 .metric-label {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: var(--fs-label);
+  font-size: var(--fs-small);
   line-height: var(--lh-tight);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--ls-label);
-  text-transform: uppercase;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-small);
   color: var(--muted);
 }
 
@@ -524,61 +579,32 @@ th {
   flex: none;
 }
 
-/* Mehrere Kennzahlen nebeneinander, getrennt durch Haarlinien. */
+/* Mehrere Kennzahlen nebeneinander: Abstand trennt, keine Linien. Linien zwischen Spalten
+   brechen beim Umbruch falsch und machen aus Zahlen Kacheln. */
 .stat-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  row-gap: var(--space-4);
-}
-
-.stat-row > * {
-  padding: 0 var(--space-5);
-}
-
-.stat-row > :first-child {
-  padding-left: 0;
-}
-
-.stat-row > * + * {
-  border-left: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, max-content));
+  align-items: end;
+  gap: var(--space-5) var(--space-7);
 }
 
 @media (max-width: 640px) {
   .stat-row {
-    flex-direction: column;
-    align-items: stretch;
-    row-gap: 0;
-  }
-
-  .stat-row > * {
-    padding: var(--space-3) 0;
-  }
-
-  .stat-row > * + * {
-    border-left: 0;
-    border-top: 1px solid var(--line);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4) var(--space-5);
   }
 }
 
-/* Zustandsmarke: quadratische Marke und Text, die Farbe allein trägt nichts. */
+/* Zustand: das Wort in seiner Farbe. Das Wort trägt die Bedeutung, die Farbe bestätigt sie; kein
+   Punkt oder Quadrat davor (docs/gestaltung.md, Zustand). */
 .state-mark {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: var(--fs-small);
+  margin: 0;
+  font-size: var(--fs-body);
   line-height: var(--lh-tight);
   font-weight: var(--fw-semibold);
   color: var(--text);
-}
-
-.state-mark::before {
-  content: '';
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  background: currentColor;
 }
 
 .state-mark.fresh {
@@ -619,13 +645,12 @@ th {
 }
 
 .inst-label {
-  margin: 0 0 var(--space-1);
-  font-size: var(--fs-label);
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-heading);
   line-height: var(--lh-tight);
   font-weight: var(--fw-semibold);
-  letter-spacing: var(--ls-label);
-  text-transform: uppercase;
-  color: var(--muted);
+  letter-spacing: var(--ls-lead);
+  color: var(--text);
 }
 
 .inst-big {
@@ -684,42 +709,107 @@ th {
   overflow-wrap: anywhere;
 }
 
-/* Leiser Verweis in die Tiefe, unten im Instrument. */
-.inst-more {
+/* Verweis in die Tiefe: Text mit Winkel, ohne Unterstrich und ohne Rahmen (wie "Alle anzeigen"
+   bei Apple). Der Winkel rückt beim Überfahren ein Stück nach, sonst bewegt sich nichts. */
+.inst-more,
+.link-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   align-self: flex-start;
   min-height: 28px;
-  margin-top: var(--space-2);
   padding: 0;
   background: none;
   border: 0;
-  color: var(--muted);
+  color: var(--text-2);
   font-size: var(--fs-small);
-  text-decoration: underline;
-  text-decoration-color: var(--border-strong);
-  text-underline-offset: 3px;
+  font-weight: var(--fw-medium);
+}
+
+.inst-more {
+  margin-top: auto;
+  padding-top: var(--space-3);
+}
+
+.inst-more::after,
+.link-more::after {
+  content: '›';
+  font-size: 1.3em;
+  line-height: 1;
+  transition: transform 160ms var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .inst-more:hover:not(:disabled) {
+  .inst-more:hover:not(:disabled),
+  .link-more:hover:not(:disabled) {
     color: var(--text);
+  }
+
+  .inst-more:hover:not(:disabled)::after,
+  .link-more:hover:not(:disabled)::after {
+    transform: translateX(2px);
   }
 }
 
+.inst-more:active:not(:disabled),
+.link-more:active:not(:disabled) {
+  transform: none;
+}
+
 /* Erhobene Fläche: höchstens eine je Ansicht, für Dinge, die man anfasst (Tagesentscheidung,
-   Vorschlag des Coachs, Formulare des Planers). Flach, mit Rand, ohne Schatten. */
+   Vorschlag des Coachs, Formulare des Planers). Tiefe aus Fläche und weichem Schatten, die
+   Haarlinie ist nur ein Hauch (Skill apple-design, Materialien). Nie eine farbige Kante. */
 .card {
   background: var(--panel);
-  border: 1px solid var(--border);
+  border: 1px solid var(--ring);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
   padding: var(--space-5) var(--space-6);
 }
 
-/* Panel: ruhige Arbeitsfläche (Plan, Aktivitäten, Detail). */
+/* Panel: ruhige Arbeitsfläche (Plan, Aktivitäten, Detail). Fläche ohne Schatten. */
 .panel {
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--ring);
   border-radius: var(--radius-card);
   padding: var(--space-4) var(--space-5);
+}
+
+/* Nebenangaben in einer Zeile, getrennt durch Mittelpunkte: "Aufbau · 310 min". Ersetzt umrandete
+   Kennzeichen (Pillen) für Phase, Intensität, Herkunft und Status. */
+.meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-small);
+}
+
+.meta-line > * + *::before {
+  content: '·';
+  margin-right: var(--space-2);
+  color: var(--border-strong);
+}
+
+/* Rückfrage vor einer Handlung, die sich nicht zurücknehmen lässt (Löschen, Freigeben): leicht
+   getönte Fläche in der Warnfarbe, kein Rahmen und keine Kante. Der Text sagt, was passiert. */
+.confirm {
+  margin: var(--space-2) 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-button);
+  background: color-mix(in oklch, var(--warn) 12%, var(--panel));
+}
+
+/* Sportfarbe als runder Punkt vor dem Namen: die einzige Form, in der Sportfarbe an Text steht. */
+.sport-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sport, var(--sport-other));
 }
 
 .panel > h3 {

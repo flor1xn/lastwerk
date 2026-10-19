@@ -154,7 +154,9 @@
                   title={$t('ui.perf.open_activity')}
                   data-testid="cal-activity"
                 >
-                  <span class="name">{$t(`ui.sport.${a.sport}`)}</span>
+                  <span class="name"
+                    ><span class="sport-dot"></span>{$t(`ui.sport.${a.sport}`)}</span
+                  >
                   <span class="meta"
                     >{formatDuration(a.duration_s)}{a.load.value !== null
                       ? ` · ${formatNumber(a.load.value, $locale, 0)}`
@@ -236,10 +238,8 @@
 
   .wd {
     padding: var(--space-2);
-    font-size: var(--fs-label);
-    font-weight: var(--fw-bold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
     color: var(--muted);
   }
 
@@ -330,20 +330,32 @@
     border: 1px dashed var(--border);
   }
 
+  /* Harte Einheit: kräftigerer Strich und halbfetter Name. Limette gehört dem, was jetzt zählt. */
   .chip.plan.hard {
-    border-color: var(--accent);
+    border-color: var(--border-strong);
+  }
+
+  .chip.plan.hard .name {
+    font-weight: var(--fw-semibold);
+  }
+
+  .chip .sport-dot {
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    vertical-align: 1px;
   }
 
   .chip.act {
     min-height: 0;
     border: none;
-    background: color-mix(in srgb, var(--sport) 16%, var(--panel-2));
+    background: var(--panel-2);
     color: var(--text);
     font-weight: var(--fw-medium);
   }
 
   .chip.act:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--sport) 28%, var(--panel-2));
+    background: color-mix(in oklch, var(--text) 10%, var(--panel-2));
   }
 
   .cell.sum {
@@ -387,7 +399,7 @@
   }
 
   .sw.act {
-    background: color-mix(in srgb, var(--sport-running) 16%, var(--panel-2));
+    background: var(--panel-2);
   }
 
   .sw.missed {

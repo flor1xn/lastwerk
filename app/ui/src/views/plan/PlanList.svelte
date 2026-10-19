@@ -81,16 +81,15 @@
     white-space: nowrap;
   }
 
+  /* Status als Wort; der aktive Plan in der Signalfarbe und halbfett. */
   .status {
-    padding: 0 6px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-chip);
-    font-size: var(--fs-label);
+    color: var(--muted);
+    font-size: var(--fs-small);
   }
 
   .status.active {
-    border-color: var(--ok);
-    color: var(--ok);
+    color: var(--accent);
+    font-weight: var(--fw-semibold);
   }
 
   .status.archived {

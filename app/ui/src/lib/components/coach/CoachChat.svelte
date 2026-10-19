@@ -340,7 +340,7 @@
 
     <div class="seen-row">
       <button
-        class="link"
+        class="link-more"
         type="button"
         aria-expanded={seen}
         onclick={() => (seen = !seen)}
@@ -453,24 +453,8 @@
     font-size: var(--fs-small);
   }
 
-  button.link {
-    min-height: 32px;
-    padding: 2px 0;
-    background: none;
-    border: 0;
-    color: var(--muted);
-    font-size: var(--fs-small);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
   @media (hover: hover) and (pointer: fine) {
     button.quiet:hover:not(:disabled) {
-      color: var(--text);
-    }
-
-    button.link:hover:not(:disabled) {
-      border-color: transparent;
       color: var(--text);
     }
   }
@@ -516,7 +500,7 @@
     border-radius: 8px;
     background: var(--panel-2);
     border: 1px solid var(--border);
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: var(--fs-small);
     overflow-wrap: anywhere;
   }
@@ -729,9 +713,7 @@
 
   .seen h4 {
     margin: 0 0 var(--space-1);
-    font-size: var(--fs-label);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    font-size: var(--fs-small);
     color: var(--muted);
   }
 
@@ -752,7 +734,7 @@
     padding: var(--space-2);
     border-radius: 8px;
     background: var(--panel);
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.45;
     white-space: pre-wrap;

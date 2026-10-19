@@ -376,11 +376,11 @@
     gap: 14px;
   }
 
+  /* Kennzeichen als leises Wort, kein Rahmen. */
   .flag {
-    padding: 0 5px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-chip);
-    font-size: var(--fs-label);
+    color: var(--muted);
+    font-size: var(--fs-small);
+    font-style: italic;
   }
 
   @media (max-width: 900px) {

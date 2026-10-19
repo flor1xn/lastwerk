@@ -192,7 +192,10 @@
     position: fixed;
     inset: 0;
     z-index: 60;
-    background: rgb(0 0 0 / 0.4);
+    background: var(--scrim);
+    /* Leichte Unschärfe trennt die Palette vom Inhalt (Skill apple-design, Materialien). Ohne
+       Bewegung: Die Palette öffnet oft und per Tastatur. */
+    backdrop-filter: blur(3px);
   }
 
   .palette {
@@ -206,9 +209,9 @@
     display: flex;
     flex-direction: column;
     background: var(--panel);
-    border: 1px solid var(--border);
+    border: 1px solid var(--ring);
     border-radius: var(--radius-card);
-    box-shadow: 0 24px 48px -16px rgb(0 0 0 / 0.5);
+    box-shadow: var(--shadow-float);
     overflow: hidden;
   }
 
@@ -251,10 +254,8 @@
 
   .group {
     padding: var(--space-3) var(--space-3) var(--space-1);
-    font-size: var(--fs-label);
-    font-weight: var(--fw-semibold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    font-size: var(--fs-small);
+    font-weight: var(--fw-medium);
     color: var(--muted);
   }
 
@@ -269,20 +270,9 @@
     cursor: pointer;
   }
 
+  /* Die gewählte Zeile ist eine Fläche, keine Kante (wie Raycast und Linear). */
   .option.active {
     background: var(--panel-2);
-  }
-
-  /* Die gewählte Zeile trägt die Limettenmarke wie die aktive Navigation. */
-  .option.active .label::before {
-    content: '';
-    display: inline-block;
-    width: 3px;
-    height: 14px;
-    margin-right: var(--space-2);
-    border-radius: 2px;
-    background: var(--accent);
-    vertical-align: -2px;
   }
 
   .label {
@@ -296,6 +286,7 @@
     margin: 0;
     padding: var(--space-2) var(--space-4);
     border-top: 1px solid var(--line);
+    background: color-mix(in oklch, var(--panel-2) 50%, var(--panel));
     font-size: var(--fs-small);
     color: var(--muted);
   }

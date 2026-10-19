@@ -48,11 +48,10 @@
       {#each insights as item (item.code)}
         {@const text = insightStatement(item.code, dash, $t, $locale)}
         <li data-testid="insight" data-code={item.code}>
-          <span class="mark" aria-hidden="true"></span>
           <p>{text}</p>
           <button
             type="button"
-            class="quiet"
+            class="link-more"
             aria-label={$t('ui.insight.discuss_label', { text })}
             onclick={() =>
               openCoach({ topic: item.code, prefill: $t(`ui.insight.ask.${item.code}`) })}
@@ -63,15 +62,13 @@
       {/each}
       {#if quiet}
         <li data-testid="insight-quiet">
-          <span class="mark off" aria-hidden="true"></span>
           <p class="muted">{$t('ui.insight.empty')}</p>
         </li>
       {/if}
       {#if outlook && insights.length < MAX}
         <li data-testid="week-story-outlook">
-          <span class="mark off" aria-hidden="true"></span>
           <p>{outlook}</p>
-          <button type="button" class="quiet" onclick={() => view.set('plan')}>
+          <button type="button" class="link-more" onclick={() => view.set('plan')}>
             {$t('ui.today.open_plan')}
           </button>
         </li>
@@ -81,8 +78,10 @@
 {/if}
 
 <style>
+  /* Notizen als ruhige Zeilen: Satz links, Verweis rechts, keine Aufzählungszeichen. */
   .notes {
-    margin-top: var(--space-2);
+    margin-top: var(--space-4);
+    border-top: 1px solid var(--line);
   }
 
   ul {
@@ -93,24 +92,12 @@
 
   li {
     display: grid;
-    grid-template-columns: 16px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--space-3);
-    min-height: 44px;
-    padding: var(--space-1) 0;
+    gap: var(--space-4);
+    min-height: 48px;
+    padding: var(--space-2) 0;
     border-bottom: 1px solid var(--line);
-  }
-
-  .mark {
-    width: 7px;
-    height: 7px;
-    border-radius: 2px;
-    background: var(--text-2);
-    justify-self: center;
-  }
-
-  .mark.off {
-    background: var(--border-strong);
   }
 
   p {
@@ -118,19 +105,5 @@
     max-width: var(--measure);
     overflow-wrap: anywhere;
     color: var(--text-2);
-  }
-
-  /* Leiser Knopf: gehört zur Zeile, konkurriert nicht mit der Primäraktion. */
-  .quiet {
-    background: transparent;
-    border-color: transparent;
-    color: var(--muted);
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    .quiet:hover:not(:disabled) {
-      color: var(--text);
-      border-color: var(--border);
-    }
   }
 </style>

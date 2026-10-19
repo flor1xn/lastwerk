@@ -243,15 +243,17 @@
   .verdict,
   .label {
     margin: 0;
-    font-size: var(--fs-label);
+    font-size: var(--fs-small);
     line-height: var(--lh-tight);
-    font-weight: var(--fw-semibold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    font-weight: var(--fw-medium);
     color: var(--muted);
   }
 
+  /* Das Urteil ist ein Satz in der Signalfarbe, keine Marke in Versalien. */
   .verdict {
+    font-size: var(--fs-heading);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-lead);
     color: var(--accent);
   }
 
@@ -274,9 +276,15 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-5);
+    gap: var(--space-1) var(--space-2);
     margin: var(--space-1) 0 0;
     color: var(--text-2);
+  }
+
+  .meta > span + span:not(.sr)::before {
+    content: '·';
+    margin-right: var(--space-2);
+    color: var(--border-strong);
   }
 
   .meta b {
@@ -337,20 +345,18 @@
   .rules {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-1) var(--space-4);
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
+  /* Regel als Text: Kennung halbfett, Name gedämpft, kein Rahmen. */
   .chip {
     display: inline-flex;
     align-items: baseline;
     gap: 6px;
     max-width: 100%;
-    padding: 1px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-chip);
     font-size: var(--fs-small);
     color: var(--muted);
     overflow-wrap: anywhere;
@@ -358,7 +364,8 @@
 
   .code {
     font-weight: var(--fw-semibold);
-    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-2);
   }
 
   .more ul {
@@ -381,13 +388,25 @@
     margin-top: var(--space-2);
   }
 
+  /* Alternativen sind leise Knöpfe ohne Rahmen, die Primäraktion bleibt die einzige Fläche. */
   .alt {
     background: transparent;
+    border-color: transparent;
+    color: var(--text-2);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .alt:hover:not(:disabled) {
+      border-color: transparent;
+      background: var(--surface-hover);
+      color: var(--text);
+    }
   }
 
   .alt[aria-expanded='true'] {
-    border-color: var(--border-strong);
+    border-color: transparent;
     background: var(--panel-2);
+    color: var(--text);
   }
 
   .alt-detail {

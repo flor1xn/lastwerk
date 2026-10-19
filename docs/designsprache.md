@@ -176,4 +176,23 @@ Teil B (REA) wartet auf die Einrichtung durch den Nutzer, siehe [T66](tasks/T66-
 
 ## 6. Nachbesserung: Farbkanten (19. Oktober 2026)
 
-Der Nutzer fand die Kästen mit farbigem Streifen links zu sehr nach Standard-KI. Der Skill `apple-design` kam in `.claude/skills/` hinzu. Entfernt: Limettenkante des Entscheidungsstreifens, Warnkante der Coach-Einrichtung, Zitatlinie der Coach-Antwort, Sportkante der Kalenderchips und der Legende, Limettenkante der Anpassung in Erholung, Linie der Alternativen (jetzt leise Fläche). Die Sportfarbe steht im Kalender als Tönung der ganzen Fläche, der Sportname bleibt Text. Geblieben: Marken der Navigation, der Reiter und der Palette als Zustandsanzeige (SPEC 5.5, Regel 7).
+Der Nutzer fand die Kästen mit farbigem Streifen links zu sehr nach Standard-KI. Der Skill `apple-design` kam in `.claude/skills/` hinzu. Entfernt: Limettenkante des Entscheidungsstreifens, Warnkante der Coach-Einrichtung, Zitatlinie der Coach-Antwort, Sportkante der Kalenderchips und der Legende, Limettenkante der Anpassung in Erholung, Linie der Alternativen (jetzt leise Fläche). Die Sportfarbe stand danach kurz als Tönung der Kalenderchips; seit E15 (Abschnitt 7) ist sie ein runder Punkt vor dem Namen. Geblieben: Marken der Navigation, der Reiter und der Palette als Zustandsanzeige (SPEC 5.5, Regel 7).
+
+## 7. E15: Lastwerk-CI (19. Oktober 2026)
+
+Auftrag des Nutzers: das Ganze genauer durchgehen, mit Blick auf die Vorbilder aus Abschnitt 2 vieles grundlegend brechen und daraus eine verbindliche CI ableiten, an die sich künftige Features halten. Grundlage: 68 Bildschirmfotos der Attrappe (alle Ansichten, hell und dunkel, 390 und 1440 px), Skills `apple-design` und `emil-design-eng`.
+
+Befund am Stand nach T66: Die Oberfläche war ruhig, trug aber die Erkennungszeichen generierter Oberflächen. Jeder Abschnitt begann mit einer Marke in Versalien ("FORM", "WARUM", "DIESE WOCHE", "SPRINGEN"), Phase, Intensität, Status, Regeln und Duplikate standen in umrandeten Kästchen, Zustände hatten ein Quadrat davor, Verweise waren unterstrichen, die Planansicht stapelte drei umrandete Flächen, Kennzahlen trennten Linien (beim Umbruch stand eine verirrte Linie vor der zweiten Zeile), Häkchen erschienen im Blau des Systems, die Palette lag ohne erkennbare Abdunklung über dem Inhalt, und die Abweichungsbalken der Erholung lasen sich bei kleinen Werten als verirrte Striche.
+
+Umgesetzt (Regeln in [gestaltung.md](gestaltung.md), SPEC 5.5 Prinzip 9):
+
+- Überschriften normal geschrieben in 15 px halbfett (`--fs-heading`), Laufweite je Größe (`--ls-*`), keine Versalien mehr im Code.
+- Kennzeichen als Wort mit Mittelpunkt (`.meta-line`), Status des Plans und Urteil als Wort in Limette, Regeln als Text mit halbfetter Kennung.
+- Tiefe statt Rahmen: `.card` und die laufende Planwoche mit Hauchlinie `--ring` und `--shadow-raised`, Palette und Coach mit `--shadow-float` über `--scrim` (Palette mit leichter Unschärfe), Leiste unten durchscheinend.
+- Heute mit Datum als Titel, Suchfeld als Fläche ohne Rand, Notizen ohne Aufzählungszeichen, Verweise als Text mit Winkel.
+- Leiste, Palette und Reiter ohne Kanten: aktive Ansicht als Fläche mit Symbol in Limette, gewählte Zeile als Fläche, Reiterstrich 2 px.
+- Rückfragen als getönte Fläche (`.confirm`) statt Warnrahmen, Löschen je Zeile als leiser Knopf (`button.ghost`), "geschätzt" und "Duplikat" als leises Wort.
+- Abweichungsbalken auf einer durchgehenden Schiene, Kennzahlenreihen durch Abstand getrennt.
+- `design-rules.test.ts` prüft Versalien, Sperrung, farbige Kanten (Rand, Schatten, Pseudoelement), Pillen, eigene Farbwerte und Schriften, `transition: all` und `ease-in`; eine Probe mit sechs Verstößen schlug sechsfach an.
+
+Prüfung: 391 Komponenten- und Einheitentests, 35 Playwright-Tests (darunter kein waagerechtes Scrollen bei 360 px), Sichtprüfung hell und dunkel bei 390 und 1440 px mit `?dashboard=extreme&decision=worst`. Die Bilder liegen nur lokal im Scratchpad der Session.

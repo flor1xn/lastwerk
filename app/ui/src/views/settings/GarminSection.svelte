@@ -208,13 +208,6 @@
     margin-top: 8px;
   }
 
-  .confirm {
-    margin: 6px 0;
-    padding: 6px 10px;
-    border: 1px solid var(--warn);
-    border-radius: 4px;
-  }
-
   .sensitive {
     margin-top: 16px;
   }
@@ -231,10 +224,8 @@
 
   .label {
     margin: 12px 0 4px;
-    font-size: var(--fs-label);
-    font-weight: var(--fw-bold);
-    text-transform: uppercase;
-    letter-spacing: var(--ls-label);
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
     color: var(--muted);
   }
 </style>

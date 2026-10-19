@@ -70,16 +70,14 @@
     place-items: center;
     width: 28px;
     height: 28px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-chip);
+    border-radius: 50%;
+    background: var(--panel-2);
     font-weight: var(--fw-semibold);
     font-stretch: var(--num-stretch);
     color: var(--text-2);
   }
 
   .done .num {
-    border-color: transparent;
-    background: var(--panel-2);
     color: var(--ok);
   }
 

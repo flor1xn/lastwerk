@@ -312,21 +312,11 @@
     }
   }
 
+  /* Aktuelle Ansicht: Fläche und Symbol in der Signalfarbe, keine Kante am Rand. Zwei Merkmale,
+     damit nicht die Farbe allein trägt. */
   .rail-item.active {
     background: var(--panel-2);
-    color: var(--text);
-  }
-
-  /* Marke der aktuellen Ansicht: Limette, nicht allein der Hintergrund. */
-  .rail-item.active[aria-current='page']::before {
-    content: '';
-    position: absolute;
-    left: -9px;
-    top: 10px;
-    bottom: 10px;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: var(--accent);
+    color: var(--accent);
   }
 
   /* Tooltip: erscheint nach kurzer Wartezeit, damit Überfahren nicht flackert, ohne Bewegung.
@@ -342,9 +332,10 @@
     align-items: center;
     gap: var(--space-2);
     padding: 5px 8px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--ring);
     border-radius: var(--radius-chip);
     background: var(--panel-2);
+    box-shadow: var(--shadow-raised);
     color: var(--text);
     font-size: var(--fs-small);
     font-weight: var(--fw-medium);
@@ -382,7 +373,7 @@
   .sync-dot {
     width: 8px;
     height: 8px;
-    border-radius: 2px;
+    border-radius: 50%;
     background: var(--muted);
   }
 
@@ -436,6 +427,18 @@
       padding: 0 var(--space-2) env(safe-area-inset-bottom);
       border-right: 0;
       border-top: 1px solid var(--line);
+      /* Durchscheinende Leiste über dem Inhalt (Skill apple-design, Materialien): Der Inhalt
+         bleibt beim Scrollen darunter ahnbar. Wer weniger Transparenz will, bekommt die volle
+         Fläche. */
+      background: color-mix(in oklch, var(--sidebar) 80%, transparent);
+      backdrop-filter: blur(18px) saturate(140%);
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      .rail {
+        background: var(--sidebar);
+        backdrop-filter: none;
+      }
     }
 
     .brand,
@@ -463,18 +466,9 @@
       line-height: 1;
     }
 
+    /* Unten wie in iOS: Symbol und Name in der Signalfarbe, ohne Fläche. */
     .rail-item.active {
       background: none;
-    }
-
-    .rail-item.active[aria-current='page']::before {
-      left: 14px;
-      right: 14px;
-      top: -5px;
-      bottom: auto;
-      width: auto;
-      height: 3px;
-      border-radius: 0 0 3px 3px;
     }
 
     main {

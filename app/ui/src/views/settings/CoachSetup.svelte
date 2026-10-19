@@ -326,10 +326,8 @@
   .label,
   .models-title {
     margin: var(--space-3) 0 0;
-    font-size: var(--fs-label);
-    font-weight: var(--fw-bold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
     color: var(--muted);
   }
 

@@ -196,20 +196,16 @@
 
   .eyebrow {
     margin: 0 0 var(--space-2);
-    font-size: var(--fs-label);
-    font-weight: var(--fw-bold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    font-size: var(--fs-small);
+    font-weight: var(--fw-semibold);
     color: var(--accent);
   }
 
   h4 {
     margin: var(--space-3) 0 var(--space-1);
-    font-size: var(--fs-label);
+    font-size: var(--fs-small);
     line-height: var(--lh-tight);
-    font-weight: var(--fw-bold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    font-weight: var(--fw-semibold);
     color: var(--muted);
   }
 

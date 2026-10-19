@@ -129,8 +129,8 @@
     left: 0;
     right: 0;
     bottom: -1px;
-    height: 3px;
-    border-radius: 3px 3px 0 0;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
     background: var(--accent);
   }
 

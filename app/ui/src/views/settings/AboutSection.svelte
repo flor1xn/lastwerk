@@ -39,9 +39,7 @@
   h4 {
     margin: 14px 0 6px;
     font-size: var(--fs-small);
-    text-transform: uppercase;
-    font-weight: var(--fw-bold);
-    letter-spacing: var(--ls-label);
+    font-weight: var(--fw-semibold);
     color: var(--muted);
   }
 

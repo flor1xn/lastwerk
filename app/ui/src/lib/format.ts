@@ -68,7 +68,10 @@ export function formatSpeed(speedMps: number | null | undefined, locale: Locale)
 
 const dateFormats = new Map<string, Intl.DateTimeFormat>();
 
-function dateFormat(locale: Locale, kind: 'date' | 'weekday' | 'day-month'): Intl.DateTimeFormat {
+function dateFormat(
+  locale: Locale,
+  kind: 'date' | 'weekday' | 'day-month' | 'long',
+): Intl.DateTimeFormat {
   const key = `${locale}:${kind}`;
   let f = dateFormats.get(key);
   if (!f) {
@@ -77,7 +80,9 @@ function dateFormat(locale: Locale, kind: 'date' | 'weekday' | 'day-month'): Int
         ? { year: 'numeric', month: '2-digit', day: '2-digit' }
         : kind === 'weekday'
           ? { weekday: 'short' }
-          : { day: '2-digit', month: '2-digit' };
+          : kind === 'long'
+            ? { weekday: 'long', day: 'numeric', month: 'long' }
+            : { day: '2-digit', month: '2-digit' };
     f = new Intl.DateTimeFormat(intlTag(locale), { ...options, timeZone: 'UTC' });
     dateFormats.set(key, f);
   }
@@ -92,6 +97,11 @@ export function formatDate(iso: string, locale: Locale): string {
 /** Kurzer Wochentag, de Mo, en Mon. */
 export function formatWeekday(iso: string, locale: Locale): string {
   return dateFormat(locale, 'weekday').format(fromIso(iso));
+}
+
+/** Datum als Titel, de "Dienstag, 13. Oktober", en "Tuesday, October 13". */
+export function formatLongDate(iso: string, locale: Locale): string {
+  return dateFormat(locale, 'long').format(fromIso(iso));
 }
 
 /** Tag und Monat, de 13.10., en 10/13. */

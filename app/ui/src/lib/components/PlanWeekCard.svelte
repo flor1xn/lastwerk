@@ -70,7 +70,7 @@
             {:else}
               {#each day.sessions as s (s.slot)}
                 <div class="session" data-testid="plan-session" data-hard={s.hard}>
-                  <span class="sport-dot" style:background={`var(--sport-${s.sport})`}></span>
+                  <span class="sport-dot" style:--sport={`var(--sport-${s.sport})`}></span>
                   <strong title={templateDescription($locale, s.template_id) ?? undefined}
                     >{templateName($locale, s.template_id)}</strong
                   >
@@ -117,20 +117,31 @@
     border-bottom: 1px solid var(--line);
   }
 
+  /* Die laufende Woche ist die eine erhobene Fläche der Planansicht. */
   .week.current {
-    padding: var(--space-4) var(--space-5) var(--space-3);
-    border: 1px solid var(--border);
+    padding: var(--space-5) var(--space-6) var(--space-4);
+    border: 1px solid var(--ring);
     border-radius: var(--radius-card);
     background: var(--panel);
+    box-shadow: var(--shadow-raised);
   }
 
   .now {
     margin: 0 0 var(--space-1);
-    font-size: var(--fs-label);
+    font-size: var(--fs-heading);
     font-weight: var(--fw-semibold);
-    letter-spacing: var(--ls-label);
-    text-transform: uppercase;
+    letter-spacing: var(--ls-lead);
     color: var(--accent);
+  }
+
+  h3 {
+    font-size: var(--fs-small);
+    font-weight: var(--fw-medium);
+    color: var(--muted);
+  }
+
+  .range {
+    font-weight: var(--fw-medium);
   }
 
   header,
@@ -180,10 +191,9 @@
     margin: 0;
   }
 
+  /* Phase als Wort, keine Pille. */
   .phase {
-    padding: 0 6px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-chip);
+    color: var(--text-2);
     font-size: var(--fs-small);
   }
 
@@ -221,23 +231,17 @@
   }
 
   .sport-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
+    align-self: center;
   }
 
+  /* Intensität als Wort: leicht gedämpft, hart halbfett. Hart ist kein Fehler, deshalb keine
+     Warnfarbe und kein Rahmen. */
   .intensity {
-    padding: 0 5px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-chip);
     color: var(--muted);
-    font-size: var(--fs-label);
+    font-size: var(--fs-small);
   }
 
-  /* Hart ist kein Fehler: Text und kräftiger Rand statt Warnfarbe. */
   .intensity.hard {
-    border-color: var(--text-2);
     color: var(--text);
     font-weight: var(--fw-semibold);
   }

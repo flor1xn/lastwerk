@@ -97,13 +97,6 @@
     gap: 8px;
   }
 
-  .confirm {
-    margin: 6px 0;
-    padding: 6px 10px;
-    border: 1px solid var(--warn);
-    border-radius: 4px;
-  }
-
   .row {
     display: flex;
     gap: 8px;

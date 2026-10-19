@@ -49,13 +49,17 @@
   data-plan-id={plan.plan_id}
   data-status={detail.status}
 >
-  <section class="panel head">
-    <h2>
-      {goalLine}
-      <span class="status" data-testid="plan-status">{$t(`ui.plan.status.${detail.status}`)}</span>
-    </h2>
-    <p class="muted">{meta.join(', ')}</p>
-    <p data-testid="plan-totals">
+  <!-- Kopf des Plans auf der Fläche, ohne Kasten: Ziel als Titel, alles Weitere als eine Zeile
+       Nebenangaben. Der Status ist ein Wort in der Signalfarbe, keine Pille. -->
+  <section class="head">
+    <h2>{goalLine}</h2>
+    <p class="meta-line">
+      <span class="status" data-status={detail.status} data-testid="plan-status"
+        >{$t(`ui.plan.status.${detail.status}`)}</span
+      >
+      {#each meta as m (m)}<span>{m}</span>{/each}
+    </p>
+    <p class="totals" data-testid="plan-totals">
       {$t('ui.plan.view.totals', {
         sessions: totals.sessions,
         minutes: totals.minutes,
@@ -101,26 +105,37 @@
   .plan {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-5);
   }
 
   .weeks {
     border-top: 1px solid var(--line);
   }
 
-  .head p {
-    margin: 4px 0;
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .head h2 {
+    font-size: var(--fs-title);
+    letter-spacing: var(--ls-title);
   }
 
   .status {
-    margin-left: 8px;
-    padding: 0 6px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radius-chip);
+    font-weight: var(--fw-semibold);
+    color: var(--text-2);
+  }
+
+  .status[data-status='active'] {
     color: var(--accent);
-    font-size: var(--fs-label);
-    font-weight: 500;
-    vertical-align: 1px;
+  }
+
+  .totals {
+    margin: 0;
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
   }
 
   .explain {

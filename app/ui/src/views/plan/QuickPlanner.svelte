@@ -228,7 +228,7 @@
     margin: 0 0 var(--space-4);
     font-size: var(--fs-lead);
     line-height: var(--lh-tight);
-    letter-spacing: -0.01em;
+    letter-spacing: var(--ls-lead);
   }
 
   .q {

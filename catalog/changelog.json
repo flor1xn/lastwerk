@@ -1,5 +1,9 @@
 {
   "de": {
+    "1.3.2": [
+      "Ruhigere Oberfläche: Überschriften stehen normal geschrieben statt in kleinen Großbuchstaben, Phase, Intensität und Status als Wort statt als umrandetes Kästchen, Verweise als Text mit Winkel. Farbige Kanten an Kästen sind verschwunden, die Tagesentscheidung und die laufende Planwoche heben sich durch Fläche und weichen Schatten ab.",
+      "Heute trägt das Datum als Titel. Befehlspalette und Coach schweben über einem abgedunkelten Hintergrund, die Leiste am Telefon ist durchscheinend. Im Kalender steht die Sportart als farbiger Punkt, die Erholungswerte zeigen ihre Abweichung auf einer durchgehenden Schiene."
+    ],
     "1.3.0": [
       "Neue Designsprache: Heute zeigt oben die Entscheidung des Tages mit Grund und darunter drei Instrumente für Form, Erholung und Woche. Die Form steht als Zahl und als Lage auf einer Skala von überlastet bis frisch, die Erholung als Abweichung von deinem eigenen Schnitt, die Woche als Tagessäulen mit gemacht, geplant und verpasst. Form-Verlauf, Rampe und Verteilung findest du im Verlauf unter Fortschritt.",
       "Strg+K öffnet eine Befehlspalette: Ansichten, Reiter, Einstellungen und Aktivitäten finden, einen Plan erstellen oder dem Coach eine Frage stellen. Den Coach öffnest du jetzt mit Strg+J, G dann H, P, V oder E springt zu Heute, Plan, Verlauf oder Einstellungen, auf Heute öffnet B das Gespräch über die Entscheidung.",
@@ -48,6 +52,10 @@
     ]
   },
   "en": {
+    "1.3.2": [
+      "Calmer interface: headings are written in sentence case instead of small capitals, phase, intensity and status appear as words instead of outlined boxes, links as text with a chevron. Colored edges on boxes are gone; the decision of the day and the current plan week stand out through surface and a soft shadow.",
+      "Today uses the date as its title. The command palette and the coach float above a dimmed background, and the bar on narrow screens is translucent. The calendar shows the sport as a colored dot, and recovery values show their deviation on a continuous track."
+    ],
     "1.3.0": [
       "New design language: Today shows the decision of the day with its reason at the top and three instruments for form, recovery and week below. Form appears as a number and as a position on a scale from overreached to fresh, recovery as the deviation from your own average, the week as daily columns with done, planned and missed. Form history, ramp and distribution are now under History, Progress.",
       "Ctrl+K opens a command palette: find views, tabs, settings and activities, create a plan or ask the coach a question. The coach now opens with Ctrl+J, G then H, P, V or E jumps to Today, Plan, History or Settings, and on Today B opens the conversation about the decision.",

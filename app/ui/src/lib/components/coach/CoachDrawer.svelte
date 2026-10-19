@@ -156,7 +156,7 @@
     flex-direction: column;
     padding: var(--space-4) var(--space-4) var(--space-3);
     background: var(--panel);
-    border-left: 1px solid var(--border);
+    border-left: 1px solid var(--ring);
     transform: translateX(100%);
     visibility: hidden;
     transition:
@@ -239,11 +239,12 @@
       position: fixed;
       inset: 0;
       z-index: 39;
-      background: rgb(0 0 0 / 0.32);
+      background: var(--scrim);
     }
 
+    /* Über dem Inhalt schwebt das Fenster: Tiefe aus dem Schatten der schwebenden Ebene. */
     .drawer {
-      box-shadow: -12px 0 32px rgb(0 0 0 / 0.24);
+      box-shadow: var(--shadow-float);
     }
   }
 

@@ -130,7 +130,7 @@
           >
             <td>{formatDate(a.local_date, $locale)}</td>
             <td
-              ><span class="sport-dot" style:background={`var(--sport-${a.sport})`}></span>{$t(
+              ><span class="sport-dot" style:--sport={`var(--sport-${a.sport})`}></span>{$t(
                 `ui.sport.${a.sport}`,
               )}</td
             >
@@ -214,20 +214,15 @@
     font-size: var(--fs-label);
   }
 
+  /* Kennzeichen als leises Wort, kein Rahmen. */
   .flag {
-    padding: 0 5px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-chip);
-    font-size: var(--fs-label);
+    color: var(--muted);
+    font-size: var(--fs-small);
+    font-style: italic;
   }
 
-  /* Sportfarbe als kleine Marke vor dem Namen: Identität, kein Zustand. */
   .sport-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
     margin-right: 8px;
-    border-radius: 2px;
-    vertical-align: 0;
+    vertical-align: 1px;
   }
 </style>

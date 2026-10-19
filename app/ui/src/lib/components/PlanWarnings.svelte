@@ -17,7 +17,8 @@
   const valid = $derived(validation.schema_errors.length === 0 && hard.length === 0);
 </script>
 
-<section class="panel" data-testid="plan-checks">
+<!-- Prüfung und Warnungen als Abschnitt auf der Fläche, ohne eigenen Kasten. -->
+<section class="checks" data-testid="plan-checks">
   <h3>{$t('ui.plan.validation.title')}</h3>
   <p data-testid="plan-validation" data-valid={valid} class:ok={valid} class:error={!valid}>
     {#if validation.schema_errors.length > 0}
@@ -71,8 +72,13 @@
 </section>
 
 <style>
+  .checks {
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--line);
+  }
+
   .sub {
-    margin-top: 10px;
+    margin-top: var(--space-4);
   }
 
   p {
@@ -94,19 +100,19 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: 2px 8px;
-    padding: 3px 0;
-    border-bottom: 1px solid var(--border);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--line);
   }
 
+  /* Regelkennung als Text, halbfett; eine Warnung trägt zusätzlich die Warnfarbe und das Wort
+     "Warnung" daneben. */
   .code {
-    padding: 0 5px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-chip);
+    font-weight: var(--fw-semibold);
     font-variant-numeric: tabular-nums;
+    color: var(--text-2);
   }
 
   .code.warn {
-    border-color: var(--warn);
     color: var(--warn);
   }
 
