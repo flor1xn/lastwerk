@@ -90,7 +90,7 @@
 
   <div class="actions">
     <div class="action">
-      <button class="primary" onclick={() => void rescan()} disabled={busy} data-testid="rescan">
+      <button onclick={() => void rescan()} disabled={busy} data-testid="rescan">
         {$t('ui.settings.rescan')}
       </button>
       <p class="muted hint">{$t('ui.settings.rescan_hint')}</p>

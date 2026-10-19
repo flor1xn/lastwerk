@@ -74,7 +74,7 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T62](T62-bausteine-instrumente.md) | Bausteine und Diagrammstil | nach 1.0 | erledigt | T60 | ja | app/ui |
 | [T63](T63-heute-tafel.md) | Heute als Tafel | nach 1.0 | erledigt | T61, T62 | ja | app/ui, catalog, docs |
 | [T64](T64-verlauf-plan.md) | Verlauf und Plan in der neuen Sprache | nach 1.0 | erledigt | T62 | ja | app/ui, catalog |
-| [T65](T65-einstellungen-coach-einrichtung.md) | Einstellungen, Coach-Fenster und Einrichtung | nach 1.0 | offen | T61, T62 | ja | app/ui, catalog |
+| [T65](T65-einstellungen-coach-einrichtung.md) | Einstellungen, Coach-Fenster und Einrichtung | nach 1.0 | erledigt | T61, T62 | ja | app/ui, catalog |
 | [T66](T66-design-pruefung.md) | Prüfung der Designsprache und Abgleich mit REA | nach 1.0 | offen | T60 bis T65 | Teil A ja, Teil B lokal | app/ui, docs |
 
 ## Reihenfolge

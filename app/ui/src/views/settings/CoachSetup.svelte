@@ -192,7 +192,7 @@
                   })}</span
                 >
                 {#each badges as badge (badge)}
-                  <span class={`pill badge ${badge}`} data-testid={`badge-${badge}`}>
+                  <span class={`state-mark badge ${badge}`} data-testid={`badge-${badge}`}>
                     {$t(`ui.coach_setup.badge.${badge}`)}
                   </span>
                 {/each}
@@ -386,29 +386,25 @@
     line-height: var(--lh-tight);
   }
 
+  /* Zustandsmarken statt Pillen (SPEC 5.5): Marke und Text, keine Fläche. */
   .badge {
-    font-size: var(--fs-label);
-    padding: 1px 10px;
+    font-size: var(--fs-small);
   }
 
   .badge.recommended {
-    background: var(--accent);
-    color: var(--accent-text);
+    color: var(--accent);
   }
 
   .badge.slow {
-    background: var(--form-loaded-bg);
     color: var(--form-loaded);
   }
 
   .badge.too_big {
-    background: var(--form-overloaded-bg);
     color: var(--form-overloaded);
   }
 
   .badge.active {
-    background: var(--form-fresh-bg);
-    color: var(--form-fresh);
+    color: var(--ok);
   }
 
   .pulling {

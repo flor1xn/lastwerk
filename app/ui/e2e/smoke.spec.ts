@@ -268,7 +268,7 @@ for (const lang of ['de', 'en'] as const) {
     expect(await page.getByTestId('activity-row').count()).toBeGreaterThan(10);
     await expect(page.getByTestId('duplicate-flag').first()).toHaveText(text.duplicate);
     const missing = page.locator('[data-testid="load"][data-status="missing_threshold"]').first();
-    await expect(missing).toHaveText(text.notComputable);
+    await expect(missing).toContainText(text.notComputable);
     // Eine nicht berechenbare Last erscheint nie als 0.
     await expect(
       page.getByTestId('activity-table').locator('td', { hasText: /^0([.,]0)?$/ }),

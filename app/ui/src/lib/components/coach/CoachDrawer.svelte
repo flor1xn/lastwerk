@@ -160,15 +160,17 @@
     transform: translateX(100%);
     visibility: hidden;
     transition:
-      transform 180ms var(--ease-out),
-      visibility 0s linear 180ms;
+      transform 200ms var(--ease-drawer),
+      visibility 0s linear 200ms;
   }
 
+  /* Öffnen per Klick in 200 ms mit der Kurve für Seitenfenster (SPEC 5.5, Skill
+     emil-design-eng: Modale und Seitenfenster 200 bis 500 ms). Per Tastatur ohne Bewegung. */
   .drawer.open {
     transform: none;
     visibility: visible;
     transition:
-      transform 180ms var(--ease-out),
+      transform 200ms var(--ease-drawer),
       visibility 0s;
   }
 
@@ -242,6 +244,15 @@
 
     .drawer {
       box-shadow: -12px 0 32px rgb(0 0 0 / 0.24);
+    }
+  }
+
+  /* Schmal: Blatt über die volle Breite, über der Leiste unten (SPEC 5.5). */
+  @media (max-width: 759px) {
+    .drawer {
+      width: 100vw;
+      border-left: 0;
+      padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
     }
   }
 
