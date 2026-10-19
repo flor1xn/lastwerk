@@ -46,10 +46,10 @@
       host,
     );
     plot = created;
-    // Das Canvas misst und zeichnet mit der Schrift, die beim Aufbau schon geladen ist. Cairo
+    // Das Canvas misst und zeichnet mit der Schrift, die beim Aufbau schon geladen ist. Archivo
     // kommt als Datei aus dem Build und kann etwas später da sein: danach Achsen neu messen.
     // jsdom kennt document.fonts nicht (dort ersetzt eine Attrappe das Diagramm ohnehin).
-    void document.fonts?.load?.(`13px "Cairo Variable"`).then(() => {
+    void document.fonts?.load?.(`13px "Archivo Variable"`).then(() => {
       if (plot === created) created.redraw(false, true);
     });
     return () => {

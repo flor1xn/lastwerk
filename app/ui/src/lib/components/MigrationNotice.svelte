@@ -41,7 +41,7 @@
     padding: var(--space-3) var(--space-4);
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: var(--radius-panel);
+    border-radius: var(--radius-card);
   }
 
   .text {

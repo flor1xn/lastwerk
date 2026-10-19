@@ -25,7 +25,7 @@
     swatch?: string;
     /** Test-ID nur des Werts, für Tests, die den Text lesen. */
     valueTestid?: string;
-    /** Zusatz neben der Beschriftung, zum Beispiel eine Zustandspille. */
+    /** Zusatz neben der Beschriftung, zum Beispiel eine Zustandsmarke. */
     extra?: Snippet;
   }
 
@@ -41,8 +41,8 @@
     extra,
   }: Props = $props();
 
-  // Echtes Minuszeichen (U+2212) statt Bindestrich: In Cairo ist es so breit wie eine Ziffer
-  // und liegt auf Höhe des Querstrichs, der Bindestrich wirkt vor 60-Punkt-Ziffern zu kurz.
+  // Echtes Minuszeichen (U+2212) statt Bindestrich: Es ist so breit wie eine Ziffer
+  // und liegt auf Höhe des Querstrichs, der Bindestrich wirkt vor großen Ziffern zu kurz.
   const shown = $derived(value.replace(/^-(?=\d)/, '\u2212'));
 </script>
 

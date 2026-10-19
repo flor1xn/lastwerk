@@ -194,7 +194,7 @@
 
 <style>
   .calendar {
-    max-width: var(--page-max-wide);
+    max-width: var(--page-max);
     container-type: inline-size;
   }
 
@@ -217,7 +217,7 @@
   .month {
     margin: 0 var(--space-2);
     min-width: 10ch;
-    font-size: var(--fs-heading);
+    font-size: var(--fs-lead);
     line-height: 1.3;
     text-align: center;
   }

@@ -327,7 +327,7 @@
 
   .statement {
     margin: 0 0 var(--space-4);
-    font-size: var(--fs-heading);
+    font-size: var(--fs-lead);
     line-height: 1.3;
     font-weight: var(--fw-semibold);
   }

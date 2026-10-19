@@ -38,7 +38,7 @@
         label={$t('ui.week.tsb')}
       >
         {#snippet extra()}
-          <span class="pill {state}" data-testid="form-state">{$t(`ui.form.${state}`)}</span>
+          <span class="state-mark {state}" data-testid="form-state">{$t(`ui.form.${state}`)}</span>
         {/snippet}
       </Metric>
       <Metric value={formatNumber(form.ctl, $locale, 0)} label={$t('ui.week.ctl')} />

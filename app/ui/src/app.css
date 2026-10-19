@@ -1,39 +1,39 @@
-/* Gestaltung nach SPEC 5.5: ruhig, dunkel zuerst, eine Signalfarbe (--accent), Schrift Cairo.
-   Dunkel ist der Standard. Hell gilt bei data-theme="light" und bei data-theme="system", wenn
-   das Betriebssystem hell meldet. Schrift aus dem Build (fonts.css), nie aus dem Netz
-   (SPEC 10.4). Seit T24 ohne Kachelraster: Kennzahlen stehen auf der Fläche, Abschnitte
-   trennt eine feine Linie, Karten bleiben für Dinge, die man anfasst. */
+/* Gestaltung nach SPEC 5.5, Designsprache "Instrument" (seit T60, E12): dunkel zuerst, eine
+   Signalfarbe (--accent) nur für das, was jetzt zählt, Schrift Archivo mit Breitenachse (Zahlen
+   schmal, Text normal). Dunkel ist der Standard. Hell gilt bei data-theme="light" und bei
+   data-theme="system", wenn das Betriebssystem hell meldet. Schrift aus dem Build (fonts.css),
+   nie aus dem Netz (SPEC 10.4). Kein Kachelraster: Kennzahlen stehen auf der Fläche, Abschnitte
+   trennt eine Haarlinie, eine erhobene Fläche je Ansicht für das, was man anfasst. */
 
 /* Maße, Schriftskala und Bewegung: unabhängig vom Thema. */
 :root {
-  --font-sans: 'Cairo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  /* Skala für Cairo: breit, kleine x-Höhe (0,5 em), hohe Ober- und Unterlängen (Ascent
-     1,30 em, Descent 0,57 em). Deshalb ist Fließtext etwas größer als bei einer Systemschrift
-     und Anzeigegrößen sitzen enger. Zeilenhöhen immer ausdrücklich setzen, `normal` wäre 1,87. */
-  --fs-metric: 60px; /* größte Kennzahl, SPEC 5.5: 56 bis 64 */
-  --fs-display: 48px; /* Empfehlung, SPEC 5.5: 40 bis 52 */
-  --fs-title: 32px; /* Seitentitel */
-  --fs-metric-sm: 34px; /* Kennzahl in einer Reihe */
-  --fs-heading: 20px; /* Aussage unter einer Abschnittsmarke, Unterüberschrift */
-  --fs-lead: 17px; /* Ein-Satz-Aussage, SPEC 5.5: Text 15 bis 17 */
-  --fs-body: 15px; /* Fließtext */
-  --fs-dense: 14px; /* Tabellen und Formularfelder */
-  --fs-small: 13px; /* Erläuterungen, Legenden */
-  --fs-label: 12px; /* Versalien-Marken */
-  --lh-display: 1.05;
-  --lh-title: 1.15;
-  --lh-heading: 1.3;
-  --lh-body: 1.55;
-  --lh-tight: 1.35;
+  /* Sieben Stufen statt zehn (Begründung in docs/designsprache.md, Faustregel geprüft an den
+     Skizzen). Archivo hat eine x-Höhe von 0,53 em, Fließtext braucht deshalb nur 14 Pixel. */
+  --fs-metric: 64px; /* größte Kennzahl einer Seite */
+  --fs-display: 40px; /* Vorlage der Tagesentscheidung, große Kennzahl */
+  --fs-title: 24px; /* Seitentitel, Kennzahl in einer Reihe */
+  --fs-lead: 17px; /* Aussage in einem Satz */
+  --fs-body: 14px; /* Fließtext, Tabellen, Formularfelder */
+  --fs-small: 13px; /* Erläuterungen, Legenden, Achsen */
+  --fs-label: 12px; /* Marken in Versalien */
+  --lh-display: 1;
+  --lh-title: 1.2;
+  --lh-body: 1.5;
+  --lh-tight: 1.3;
   --ls-display: -0.02em; /* große Zahlen und Titel */
-  --ls-label: 0.08em; /* Versalien */
+  --ls-label: 0.06em; /* Versalien */
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
   --fw-bold: 700;
+  /* Breite der Zahlen (Achse wdth von Archivo): schmal und groß wie auf einem Messgerät. */
+  --num-stretch: 75%;
+  /* Breite eines gut lesbaren Absatzes (Faustregel). */
+  --measure: 64ch;
 
-  /* Raster 8 (SPEC 5.5) */
+  /* Raster 4 */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -41,14 +41,22 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
-  --radius-button: 12px;
-  --radius-card: 20px;
-  --radius-panel: 16px;
-  --radius-pill: 999px;
-  --page-max: 1080px;
-  /* Das Dashboard der Startseite nutzt die Breite für zwei Spalten (T25). */
-  --page-max-wide: 1200px;
+  --space-8: 64px;
+  --radius-chip: 6px;
+  --radius-button: 10px;
+  --radius-card: 14px;
+  --page-max: 1240px;
+  --rail: 56px;
+
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Abgeleitete Töne, nur aus den festen Farben (kein neuer Farbton). */
+  --text-2: color-mix(in oklch, var(--text) 80%, var(--bg));
+  --accent-soft: color-mix(in oklch, var(--accent) 12%, transparent);
+  --accent-line: color-mix(in oklch, var(--accent) 40%, transparent);
+  --surface-hover: color-mix(in oklch, var(--text) 6%, transparent);
+  --border-strong: color-mix(in oklch, var(--muted) 55%, var(--border));
 }
 
 :root,
@@ -68,17 +76,12 @@
   --danger: #f2877a;
   --ok: #7bd0a0;
   --row-hover: #1d2125;
-  --card-edge: rgba(255, 255, 255, 0.07);
-  --card-sheen: rgba(255, 255, 255, 0.035);
-  --shadow: rgba(0, 0, 0, 0.55);
-  --glow: rgba(200, 241, 105, 0.08);
-  --glow-2: rgba(124, 196, 232, 0.045);
   --sport-cycling: #7cc4e8;
   --sport-running: #f0b35a;
   --sport-swimming: #5fd0c0;
   --sport-strength: #b79ce8;
   --sport-other: #9a9fa4;
-  --pmc-ctl: #c8f169;
+  --pmc-ctl: #ece9e3;
   --pmc-atl: #f0b35a;
   --pmc-tsb: #7cc4e8;
   --power: #f0b35a;
@@ -110,17 +113,12 @@
   --danger: #a8332a;
   --ok: #1f7a4d;
   --row-hover: #f0efea;
-  --card-edge: rgba(27, 29, 31, 0.09);
-  --card-sheen: rgba(255, 255, 255, 0.8);
-  --shadow: rgba(52, 46, 28, 0.22);
-  --glow: rgba(110, 150, 0, 0.09);
-  --glow-2: rgba(14, 106, 148, 0.05);
   --sport-cycling: #0e6a94;
   --sport-running: #a35f00;
   --sport-swimming: #11786b;
   --sport-strength: #7a4fc0;
   --sport-other: #6c7077;
-  --pmc-ctl: #4f7000;
+  --pmc-ctl: #1b1d1f;
   --pmc-atl: #a35f00;
   --pmc-tsb: #0e6a94;
   --power: #a35f00;
@@ -153,17 +151,12 @@
     --danger: #a8332a;
     --ok: #1f7a4d;
     --row-hover: #f0efea;
-    --card-edge: rgba(27, 29, 31, 0.09);
-    --card-sheen: rgba(255, 255, 255, 0.8);
-    --shadow: rgba(52, 46, 28, 0.22);
-    --glow: rgba(110, 150, 0, 0.09);
-    --glow-2: rgba(14, 106, 148, 0.05);
     --sport-cycling: #0e6a94;
     --sport-running: #a35f00;
     --sport-swimming: #11786b;
     --sport-strength: #7a4fc0;
     --sport-other: #6c7077;
-    --pmc-ctl: #4f7000;
+    --pmc-ctl: #1b1d1f;
     --pmc-atl: #a35f00;
     --pmc-tsb: #0e6a94;
     --power: #a35f00;
@@ -210,35 +203,22 @@ h3 {
 h1 {
   font-size: var(--fs-title);
   line-height: var(--lh-title);
-  font-weight: var(--fw-bold);
   letter-spacing: var(--ls-display);
 }
 
 h2 {
-  font-size: var(--fs-heading);
-  line-height: var(--lh-heading);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-tight);
 }
 
 /* Marke in Versalien: Abschnittsköpfe, Karten, Panels. */
 h3 {
   font-size: var(--fs-label);
   line-height: var(--lh-tight);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: var(--ls-label);
-}
-
-/* Ansichtswechsel: nur opacity und transform, 160 ms (SPEC 5.5). */
-main > * {
-  animation: view-in 160ms var(--ease-out);
-}
-
-@keyframes view-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
 }
 
 button,
@@ -249,16 +229,20 @@ textarea {
   color: inherit;
 }
 
+/* Knöpfe: 32 hoch, Primäraktion 40, mit grobem Zeiger (Touch) 44. Hover ohne Limette, die
+   gehört dem, was jetzt zählt. */
 button {
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-button);
-  padding: 6px 16px;
-  min-height: 36px;
+  padding: 0 14px;
+  min-height: 32px;
+  font-weight: var(--fw-medium);
   cursor: pointer;
   transition:
-    border-color 120ms ease-out,
-    transform 120ms ease-out;
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms var(--ease-out);
 }
 
 button:active:not(:disabled) {
@@ -267,7 +251,11 @@ button:active:not(:disabled) {
 
 @media (hover: hover) and (pointer: fine) {
   button:hover:not(:disabled) {
-    border-color: var(--accent);
+    border-color: var(--border-strong);
+  }
+
+  button.primary:hover:not(:disabled) {
+    background: color-mix(in oklch, var(--accent) 88%, var(--text));
   }
 }
 
@@ -280,9 +268,34 @@ button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-text);
-  min-height: 44px;
-  padding: 8px 24px;
-  font-weight: var(--fw-bold);
+  min-height: 40px;
+  padding: 0 18px;
+  font-weight: var(--fw-semibold);
+}
+
+@media (pointer: coarse) {
+  button {
+    min-height: 44px;
+  }
+}
+
+/* Tastenkürzel an einer Aktion (Raycast-Prinzip: Kürzel lernt man durch Sehen). */
+kbd {
+  display: inline-flex;
+  align-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font: var(--fw-semibold) 11px / 1 var(--font-sans);
+  color: var(--muted);
+}
+
+button.primary kbd {
+  border-color: color-mix(in oklch, var(--accent-text) 30%, transparent);
+  color: inherit;
+  opacity: 0.75;
 }
 
 input,
@@ -290,29 +303,31 @@ select,
 textarea {
   background: var(--panel-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-button);
   padding: 5px 10px;
-  font-size: var(--fs-dense);
+  min-height: 32px;
+  font-size: var(--fs-body);
 }
 
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 table {
   border-collapse: collapse;
   width: 100%;
-  font-size: var(--fs-dense);
+  font-size: var(--fs-body);
 }
 
 th,
 td {
-  padding: 4px 8px;
+  padding: 6px 8px;
   text-align: left;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
@@ -324,7 +339,7 @@ th {
   font-size: var(--fs-small);
 }
 
-/* Cairo hat kein tnum, die Ziffern sind aber in jedem Gewicht gleich breit (fonts.css). */
+/* Archivo hat tabellarische Ziffern (tnum). */
 .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -343,8 +358,8 @@ th {
 }
 
 /* ---------------------------------------------------------------------------------------
-   Bausteine (SPEC 5.5, seit T24). Reihenfolge der Verwendung: Seitenkopf, Abschnitte mit
-   Kennzahlen, Diagrammen und Balken auf der Fläche, Karten nur für Bedienbares.
+   Bausteine (SPEC 5.5). Reihenfolge der Verwendung: Seitenkopf, Abschnitte mit Kennzahlen,
+   Diagrammen und Balken auf der Fläche, eine erhobene Fläche nur für Bedienbares.
    Svelte-Hüllen dazu: lib/components/Section, Metric, StatRow.
    --------------------------------------------------------------------------------------- */
 
@@ -361,15 +376,16 @@ th {
 .page-eyebrow {
   margin: 0 0 var(--space-1);
   font-size: var(--fs-label);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
   color: var(--muted);
 }
 
-/* Ein-Satz-Aussage unter dem Titel jeder Hauptansicht (SPEC 5.5, Gestaltung der Oberfläche). */
+/* Ein-Satz-Aussage unter dem Titel oder unter den Reitern. */
 .page-lead {
   margin: var(--space-1) 0 var(--space-5);
+  max-width: var(--measure);
   font-size: var(--fs-lead);
   line-height: var(--lh-tight);
   color: var(--muted);
@@ -379,7 +395,7 @@ th {
   margin-bottom: 0;
 }
 
-/* Abschnitt: kein Kasten, nur Weißraum und eine feine Linie oben. */
+/* Abschnitt: kein Kasten, nur Weißraum und eine Haarlinie oben. */
 .section {
   padding: var(--space-5) 0 var(--space-6);
   border-top: 1px solid var(--line);
@@ -391,7 +407,7 @@ th {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-1) var(--space-5);
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
 }
 
 .section-title {
@@ -401,10 +417,10 @@ th {
 /* Marke: kleine Versalien, gedämpft. Dieselbe Form wie h3 in Karten und Panels. */
 .section-label,
 .section > h3 {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   font-size: var(--fs-label);
   line-height: var(--lh-tight);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
   color: var(--muted);
@@ -414,23 +430,22 @@ th {
   margin: 0;
 }
 
-/* Aussage in einem Satz unter der Marke. */
+/* Aussage in einem Satz unter der Marke, nur wo sie sagt, was die Zahl nicht sagt. */
 .section-statement {
   margin: var(--space-1) 0 0;
-  max-width: 54ch;
+  max-width: 56ch;
   overflow-wrap: anywhere;
   text-wrap: balance;
-  font-size: var(--fs-heading);
-  line-height: var(--lh-heading);
-  font-weight: var(--fw-semibold);
-  letter-spacing: -0.01em;
+  font-size: var(--fs-lead);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-medium);
 }
 
-/* Kennzahl: großer Wert, Einheit klein daneben, Beschriftung darunter, optional Veränderung. */
+/* Kennzahl: Zahl schmal und groß, Einheit klein und normal breit, Marke darunter. */
 .metric {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -439,9 +454,10 @@ th {
   align-items: baseline;
   gap: 6px;
   margin: 0;
-  font-size: var(--fs-metric-sm);
+  font-size: var(--fs-title);
   line-height: var(--lh-display);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
+  font-stretch: var(--num-stretch);
   letter-spacing: var(--ls-display);
   font-variant-numeric: tabular-nums;
 }
@@ -452,13 +468,13 @@ th {
 
 .metric.size-xl .metric-value {
   font-size: var(--fs-metric);
-  letter-spacing: -0.03em;
 }
 
 .metric-unit {
-  font-size: var(--fs-body);
+  font-size: var(--fs-small);
   line-height: 1;
   font-weight: var(--fw-medium);
+  font-stretch: 100%;
   letter-spacing: 0;
   color: var(--muted);
 }
@@ -489,7 +505,7 @@ th {
   gap: 4px;
   font-size: var(--fs-small);
   line-height: var(--lh-tight);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-medium);
   color: var(--muted);
 }
 
@@ -505,7 +521,7 @@ th {
   flex: none;
 }
 
-/* Mehrere Kennzahlen nebeneinander, getrennt durch dünne senkrechte Linien. */
+/* Mehrere Kennzahlen nebeneinander, getrennt durch Haarlinien. */
 .stat-row {
   display: flex;
   flex-wrap: wrap;
@@ -542,116 +558,85 @@ th {
   }
 }
 
-/* Zustand als Pille: Punkt und Text, die Farbe allein trägt nichts. */
-.pill {
+/* Zustandsmarke: quadratische Marke und Text, die Farbe allein trägt nichts. */
+.state-mark {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 12px;
-  border-radius: var(--radius-pill);
   font-size: var(--fs-small);
   line-height: var(--lh-tight);
   font-weight: var(--fw-semibold);
-  background: var(--panel-2);
   color: var(--text);
 }
 
-.pill::before {
+.state-mark::before {
   content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
   background: currentColor;
 }
 
-.pill.fresh {
-  background: var(--form-fresh-bg);
+.state-mark.fresh {
   color: var(--form-fresh);
 }
 
-.pill.balanced {
-  background: var(--form-balanced-bg);
+.state-mark.balanced {
   color: var(--form-balanced);
 }
 
-.pill.loaded {
-  background: var(--form-loaded-bg);
+.state-mark.loaded {
   color: var(--form-loaded);
 }
 
-.pill.overloaded {
-  background: var(--form-overloaded-bg);
+.state-mark.overloaded {
   color: var(--form-overloaded);
 }
 
-/* Karte: leicht erhoben, feiner Rand innen. Nur für Dinge, die man anfasst (Empfehlung,
-   Vorschlag des Coachs, Formulare). */
-.card {
-  background: linear-gradient(180deg, var(--card-sheen), transparent 60%), var(--panel);
-  border: 1px solid var(--card-edge);
-  border-radius: var(--radius-card);
-  padding: var(--space-6);
-  box-shadow: 0 20px 40px -28px var(--shadow);
+.state-mark.ok {
+  color: var(--ok);
 }
 
-/* Panel: ruhige Fläche für Arbeitsbereiche (Plan, Aktivitäten, Detail), ohne Schatten. */
+.state-mark.warn {
+  color: var(--warn);
+}
+
+.state-mark.off {
+  color: var(--muted);
+}
+
+/* Erhobene Fläche: höchstens eine je Ansicht, für Dinge, die man anfasst (Tagesentscheidung,
+   Vorschlag des Coachs, Formulare des Planers). Flach, mit Rand, ohne Schatten. */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5) var(--space-6);
+}
+
+/* Panel: ruhige Arbeitsfläche (Plan, Aktivitäten, Detail). */
 .panel {
   background: var(--panel);
-  border: 1px solid var(--card-edge);
-  border-radius: var(--radius-panel);
-  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-4) var(--space-5);
 }
 
 .panel > h3 {
   margin-bottom: var(--space-2);
 }
 
-/* Diagramm: uPlot-Legende an das Thema anpassen. Linksbündig, ohne Tabellenlinien (die
-   globalen th/td-Regeln dürfen hier nicht greifen), Marken als kurze Striche. */
-.uplot .u-legend {
-  margin: var(--space-3) 0 0;
-  text-align: left;
-  color: var(--text);
-  font-size: var(--fs-small);
-  line-height: var(--lh-tight);
-}
-
-.uplot .u-legend th,
-.uplot .u-legend td {
-  padding: 0;
-  border: 0;
-  color: var(--text);
-  font-size: inherit;
-  font-weight: var(--fw-medium);
-}
-
-.uplot .u-legend .u-series {
-  padding: 2px var(--space-4) 2px 0;
-}
-
-.uplot .u-legend .u-marker {
-  width: 12px;
-  height: 3px;
-  margin-right: 6px;
-  border-radius: 2px;
-  vertical-align: middle;
-}
-
-.uplot .u-legend .u-series:first-child .u-marker {
-  display: none;
-}
-
-.uplot .u-legend .u-value {
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-
-/* Kein Bewegungswunsch des Systems missachten (SPEC 5.5). */
+/* Bewegung: Was sich bewegt, erklärt eine Veränderung. Bei reduzierter Bewegung fällt jede
+   Ortsveränderung weg, kurze Überblendungen von Deckkraft und Farbe bleiben (weniger, nicht
+   null; Skill emil-design-eng). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    transition: none !important;
-    animation: none !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity, color, background-color, border-color !important;
+    scroll-behavior: auto !important;
   }
 }

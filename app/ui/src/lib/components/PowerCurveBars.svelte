@@ -68,7 +68,7 @@
     grid-template-columns: 52px minmax(0, 1fr) 64px 84px;
     align-items: center;
     gap: var(--space-3);
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
   }
 
   .dur {

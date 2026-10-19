@@ -10,7 +10,7 @@
     /** Aussage in einem Satz unter der Marke. */
     statement?: string;
     testid?: string;
-    /** Rechts neben der Kopfzeile, zum Beispiel eine Zustandspille. */
+    /** Rechts neben der Kopfzeile, zum Beispiel eine Zustandsmarke. */
     aside?: Snippet;
     children: Snippet;
   }

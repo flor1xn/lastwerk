@@ -166,13 +166,9 @@
 {/if}
 
 <style>
-  /* Sehr dezenter Verlauf oben im Inhaltsbereich, nur aus Tokens (SPEC 5.5, T24). */
   .shell {
     display: flex;
     min-height: 100vh;
-    background:
-      radial-gradient(900px 420px at 72% -160px, var(--glow), transparent 70%),
-      radial-gradient(640px 360px at 8% -120px, var(--glow-2), transparent 70%);
   }
 
   aside {
@@ -195,7 +191,7 @@
     align-items: center;
     gap: 10px;
     padding: 0 12px;
-    font-size: var(--fs-heading);
+    font-size: var(--fs-lead);
     line-height: 1.2;
     font-weight: var(--fw-bold);
     letter-spacing: -0.01em;

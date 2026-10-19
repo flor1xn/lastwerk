@@ -405,7 +405,7 @@
   }
 
   .performance {
-    max-width: var(--page-max-wide);
+    max-width: var(--page-max);
     container-type: inline-size;
   }
 

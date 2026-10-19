@@ -478,13 +478,13 @@
   /* Einrichtung ohne Modell. */
   .setup h4 {
     margin: 0 0 var(--space-2);
-    font-size: var(--fs-heading);
-    line-height: var(--lh-heading);
+    font-size: var(--fs-lead);
+    line-height: var(--lh-tight);
   }
 
   .setup p {
     margin: 0 0 var(--space-2);
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
   }
 
   .setup .reason {
@@ -503,7 +503,7 @@
   .setup ol {
     margin: var(--space-3) 0;
     padding-left: 20px;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
   }
 
   .setup li {
@@ -529,13 +529,13 @@
 
   .consent h4 {
     margin: 0 0 var(--space-2);
-    font-size: var(--fs-heading);
-    line-height: var(--lh-heading);
+    font-size: var(--fs-lead);
+    line-height: var(--lh-tight);
   }
 
   .consent p {
     margin: 0 0 var(--space-3);
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     line-height: var(--lh-body);
     text-wrap: pretty;
   }
@@ -559,8 +559,8 @@
 
   .empty-title {
     margin: 0;
-    font-size: var(--fs-heading);
-    line-height: var(--lh-heading);
+    font-size: var(--fs-lead);
+    line-height: var(--lh-tight);
     font-weight: var(--fw-semibold);
   }
 
@@ -576,7 +576,7 @@
     max-width: 100%;
     text-align: left;
     border-radius: 16px;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     line-height: var(--lh-tight);
     padding: 6px 14px;
     overflow-wrap: anywhere;
@@ -601,7 +601,7 @@
     margin: 0;
     padding: var(--space-2) var(--space-3);
     max-width: 92%;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     line-height: var(--lh-body);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -688,7 +688,7 @@
     padding: var(--space-2) var(--space-3);
     border-radius: 12px;
     resize: none;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     line-height: var(--lh-tight);
   }
 

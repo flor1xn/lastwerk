@@ -61,9 +61,9 @@
   {:else}
     <p class="state-line">
       <span
-        class="pill"
+        class="state-mark"
         class:ok={status.ollama === 'running'}
-        class:warn-pill={status.ollama !== 'running'}
+        class:warn={status.ollama !== 'running'}
         data-testid="coach-setup-state"
         data-ollama={status.ollama}
       >
@@ -297,14 +297,6 @@
     gap: var(--space-2) var(--space-3);
   }
 
-  .pill.ok {
-    color: var(--ok);
-  }
-
-  .pill.warn-pill {
-    color: var(--warn);
-  }
-
   .model-line {
     font-size: var(--fs-small);
     color: var(--muted);
@@ -316,19 +308,19 @@
 
   .ok-line {
     color: var(--ok);
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
   }
 
   .install p,
   .manual p,
   .installing p {
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
   }
 
   .manual ol {
     margin: var(--space-2) 0 var(--space-3);
     padding-left: 20px;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
   }
 
   .label,
@@ -431,7 +423,7 @@
     position: relative;
     height: 6px;
     overflow: hidden;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-chip);
     background: var(--panel-2);
   }
 
@@ -439,7 +431,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-chip);
     background: var(--accent);
     transform-origin: left center;
     transition: transform 250ms linear;

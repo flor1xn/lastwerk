@@ -165,7 +165,7 @@
   /* Die Spalten der Feineinstellungen richten sich nach der Breite der Seite, nicht des
      Fensters (Seitenleiste links, Coach rechts nehmen Platz). */
   .plan-page {
-    max-width: var(--page-max-wide);
+    max-width: var(--page-max);
     container-type: inline-size;
   }
 

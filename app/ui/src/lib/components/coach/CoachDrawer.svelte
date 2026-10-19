@@ -186,8 +186,8 @@
 
   .drawer-head h2 {
     margin: 0;
-    font-size: var(--fs-heading);
-    line-height: var(--lh-heading);
+    font-size: var(--fs-lead);
+    line-height: var(--lh-tight);
   }
 
   .close {

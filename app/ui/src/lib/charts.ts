@@ -55,7 +55,7 @@ export function isoOfEpoch(seconds: number): string {
   return new Date(seconds * 1000).toISOString().slice(0, 10);
 }
 
-/** Achsenschrift: Cairo ist kleiner im Bild als eine Systemschrift, deshalb 13 statt 12 Pixel. */
+/** Achsenschrift 13 Pixel (--fs-small), wie Legenden und Erläuterungen. */
 const AXIS_FONT_SIZE = 13;
 
 /**

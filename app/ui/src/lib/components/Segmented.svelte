@@ -48,7 +48,7 @@
     border-radius: 999px;
     background: none;
     color: var(--muted);
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     font-weight: var(--fw-medium);
     transition:
       background-color 140ms ease-out,

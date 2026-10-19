@@ -24,7 +24,12 @@
 <div class="connect" data-testid="garmin-connect">
   <p class="state">
     {#if $garminStatus}
-      <span class="pill" class:on={connected} data-testid="garmin-state">
+      <span
+        class="state-mark"
+        class:ok={connected}
+        class:off={!connected}
+        data-testid="garmin-state"
+      >
         {connected ? $t('ui.garmin.connected') : $t('ui.garmin.not_connected')}
       </span>
     {/if}
@@ -73,9 +78,5 @@
 
   .hint {
     margin: 0;
-  }
-
-  .pill.on {
-    color: var(--ok);
   }
 </style>

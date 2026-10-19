@@ -84,7 +84,7 @@
 
   .value {
     height: 22px;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     font-weight: var(--fw-bold);
     font-variant-numeric: tabular-nums;
   }

@@ -1,36 +1,23 @@
-/* Cairo (variable, Gewicht 200 bis 1000), SIL Open Font License 1.1, Paket
-   @fontsource-variable/cairo. Die Dateien liegen im Build (dist/assets) und werden von
+/* Archivo (variable, Gewicht 100 bis 900, Breite 62 bis 125 %), SIL Open Font License 1.1,
+   Paket @fontsource-variable/archivo 5.3.0. Die Datei liegt im Build (dist/assets) und wird von
    derselben Herkunft geladen, die CSP erlaubt nur `font-src 'self'` (SPEC 10.4).
 
-   Hier stehen nur die Untermengen latin und latin-ext. Das Paket liefert zusätzlich arabic
-   (rund 100 KB mehr), das Lastwerk nicht braucht: Die Oberfläche ist Deutsch und Englisch.
-   Zeichen außerhalb der Untermengen (zum Beispiel die Pfeile ▲ ▼ in Tabellenköpfen) fallen
-   auf die Systemschrift zurück. Die Unicode-Bereiche stammen unverändert aus wght.css des
-   Pakets, Version 5.3.0.
+   Eingebunden ist nur die Untermenge latin mit beiden Achsen ("standard", rund 88 KB). Sie deckt
+   Deutsch und Englisch ab. latin-ext (weitere 84 KB) fehlt bewusst: seltene Zeichen in Namen von
+   Aktivitäten fallen auf die Systemschrift zurück, ebenso Zeichen wie ▲ ▼. Der Unicode-Bereich
+   stammt unverändert aus standard.css des Pakets.
 
-   Ziffern: Cairo hat kein OpenType-Merkmal tnum, aber alle Ziffern sind in jedem Gewicht
-   gleich breit (Messung T24, siehe docs/tasks/T24). `font-variant-numeric: tabular-nums` in
-   app.css bleibt deshalb wirkungslos, schützt aber die Ersatzschrift. */
-
-@font-face {
-  font-family: 'Cairo Variable';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 200 1000;
-  src: url('../node_modules/@fontsource-variable/cairo/files/cairo-latin-ext-wght-normal.woff2')
-    format('woff2-variations');
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
-    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
-    U+A720-A7FF;
-}
+   Ziffern: Archivo hat tabellarische Ziffern (tnum), app.css setzt sie für Zahlen. Die Achse
+   wdth macht große Zahlen schmal (--num-stretch), Text bleibt bei 100 %. Auswahl und Messung:
+   docs/designsprache.md, Schriftprüfung. */
 
 @font-face {
-  font-family: 'Cairo Variable';
+  font-family: 'Archivo Variable';
   font-style: normal;
   font-display: swap;
-  font-weight: 200 1000;
-  src: url('../node_modules/@fontsource-variable/cairo/files/cairo-latin-wght-normal.woff2')
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('../node_modules/@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2')
     format('woff2-variations');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,

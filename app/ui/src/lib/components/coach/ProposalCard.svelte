@@ -183,8 +183,7 @@
   .proposal {
     margin-top: var(--space-3);
     padding: var(--space-4);
-    border-radius: var(--radius-panel);
-    box-shadow: 0 14px 28px -24px var(--shadow);
+    border-radius: var(--radius-card);
     animation: card-in 180ms var(--ease-out);
   }
 
@@ -216,7 +215,7 @@
 
   .why {
     margin: 0;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     line-height: var(--lh-body);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -225,7 +224,7 @@
   ul {
     margin: 0;
     padding-left: 18px;
-    font-size: var(--fs-dense);
+    font-size: var(--fs-body);
     line-height: var(--lh-body);
     overflow-wrap: anywhere;
   }

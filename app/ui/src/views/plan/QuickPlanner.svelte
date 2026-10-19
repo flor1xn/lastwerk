@@ -226,8 +226,8 @@
 
   .title {
     margin: 0 0 var(--space-4);
-    font-size: var(--fs-heading);
-    line-height: var(--lh-heading);
+    font-size: var(--fs-lead);
+    line-height: var(--lh-tight);
     letter-spacing: -0.01em;
   }
 
@@ -287,7 +287,7 @@
     background: var(--bg);
     color: var(--text);
     font-weight: var(--fw-semibold);
-    box-shadow: 0 1px 0 var(--card-edge);
+    box-shadow: 0 1px 0 var(--line);
   }
 
   .seg input {
@@ -333,7 +333,7 @@
     display: flex;
     align-items: baseline;
     gap: 4px;
-    font-size: var(--fs-metric-sm);
+    font-size: var(--fs-title);
     line-height: var(--lh-display);
     font-weight: var(--fw-bold);
     letter-spacing: var(--ls-display);

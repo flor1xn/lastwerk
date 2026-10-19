@@ -271,7 +271,7 @@
 
 <style>
   .recovery {
-    max-width: var(--page-max-wide);
+    max-width: var(--page-max);
   }
 
   .controls {

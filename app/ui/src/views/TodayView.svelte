@@ -97,7 +97,7 @@
   .today {
     display: flex;
     flex-direction: column;
-    max-width: var(--page-max-wide);
+    max-width: var(--page-max);
     container-type: inline-size;
   }
 
