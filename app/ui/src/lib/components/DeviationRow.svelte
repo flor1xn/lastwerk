@@ -92,7 +92,7 @@
     border-radius: 2px;
     background: var(--text-2);
     transform-origin: left center;
-    transition: transform 200ms var(--ease-out);
+    transition: transform 200ms var(--ease-in-out);
   }
 
   .bar i.below {

@@ -106,7 +106,7 @@
     width: calc(100% - 2px);
     height: 18px;
     pointer-events: none;
-    transition: transform 200ms var(--ease-out);
+    transition: transform 200ms var(--ease-in-out);
   }
 
   .marker {

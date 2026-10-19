@@ -157,3 +157,19 @@ B, mit zwei Anleihen aus A: die Entscheidung liest sich als ganzer Satz (Urteil 
 - Richtung (A, B, C oder Mischung) und Schrift wählt der Nutzer.
 - Strg+K als Palette für alles ersetzt E9 (Strg+K öffnet den Coach); braucht Zustimmung.
 - REA: nur wenn lokal eingerichtet. Mögliche Fragen: Kurven und Dauern beim Öffnen von Paletten und Seitenfenstern in installierten Programmen, Abstufung der Abstände.
+
+## 5. Umsetzung und Prüfung (19. Oktober 2026, T60 bis T66 Teil A)
+
+Umgesetzt in sechs Schnitten, jeder einzeln lauffähig und committet: Tokens und Schrift (T60), Leiste, schmales Layout und Befehlspalette (T61), Bausteine und Diagrammstil (T62), Heute als Tafel (T63), Verlauf und Plan (T64), Einstellungen, Coach-Fenster und Einrichtung (T65). Die Regeln stehen in SPEC 5.5.
+
+Prüfung (T66 Teil A):
+
+- **Tests.** 383 Komponenten- und Einheitentests, 35 Playwright-Tests (Deutsch und Englisch, alle Ansichten, Befehlspalette per Tastatur, Coach per Strg+J, kein waagerechtes Scrollen bei 360 px in Heute, Plan, Verlauf und Einstellungen). `sh scripts/check-all.sh` siehe Bericht des Pushs.
+- **Härtetest (break-ui).** Englisch bei 360 px mit `?dashboard=extreme&decision=worst` (Fitness 444, unbekannte Vorlage mit langer ID, zwei Gründe, zwei Regeln, fehlender Planbezug): kein Element läuft über, die Seite scrollt nicht waagerecht, die Vorlage bricht als lesbare ID um. Gefunden und behoben: Die Schiene der Bandskala verbreiterte die Seite (jetzt `overflow: clip`).
+- **Bewegung (review-animations).** Bestand: Druck auf Knöpfe (`scale(0.97)`, 120 ms), Tooltip der Leiste (300 ms Wartezeit, 120 ms Deckkraft), Coach-Fenster per Klick (200 ms, `--ease-drawer`, per Tastatur ohne Bewegung), Marke der Bandskala und Abweichungsbalken (200 ms), aufklappende Alternative (160 ms), Vorschlagskarte (180 ms), Pfeil der Wochenzeilen (160 ms). Palette, Reiter und Ansichtswechsel bewegen sich nicht. Befund und Korrektur: Marke und Balken bewegen sich auf der Fläche, deshalb `--ease-in-out` statt `--ease-out`. Offen, bewusst nicht gebaut: Folgetooltips ohne Wartezeit (nur mit Skript möglich, Nutzen gering bei fünf Punkten).
+- **Bildrate (animation-performance).** Gemessen mit `requestAnimationFrame` in Chromium ohne Fenster, 1440 mal 900: Coach-Fenster und Marke je 25 Bilder in 400 ms, Mittel 16,7 ms, höchstens 16,8 ms, auch bei vierfacher CPU-Drosselung. Beide Bewegungen nutzen nur `transform`. Grenze: Messung ohne echtes Fenster und ohne GPU des Zielrechners, die Sichtprüfung im Tauri-Fenster steht aus.
+- **Kontrast.** Gerechnet aus den Werten, die der Browser für die Tokens und die abgeleiteten Töne (`color-mix`) liefert. Dunkel: niedrigster Wert `--muted` auf `--panel-2` 5,71. Hell: niedrigster Wert `--ok` auf `--bg` 4,79, danach `--muted` auf `--panel-2` 5,07. Alle Textpaare erfüllen 4,5 zu 1.
+- **Bündelgröße** (`pnpm run build`). Vorher (Stand `1e5103a`): JavaScript 550,7 KB (gzip 178,2), CSS 69,3 KB (gzip 13,1), Schrift 50,5 KB in zwei Dateien. Nachher: JavaScript 577,8 KB (gzip 186,6), CSS 83,3 KB (gzip 15,1), Schrift 90,1 KB in einer Datei. Zusammen gzip und Schrift rund 50 KB mehr, davon 40 KB für die Breitenachse von Archivo. Alles bleibt lokal gebündelt (`font-src 'self'`).
+- **Vorher und nachher.** Bildpaare der eigenen Oberfläche liegen nur lokal im Scratchpad der Session, nicht im Repository.
+
+Teil B (REA) wartet auf die Einrichtung durch den Nutzer, siehe [T66](tasks/T66-design-pruefung.md).

@@ -1,5 +1,11 @@
 {
   "de": {
+    "1.3.0": [
+      "Neue Designsprache: Heute zeigt oben die Entscheidung des Tages mit Grund und darunter drei Instrumente für Form, Erholung und Woche. Die Form steht als Zahl und als Lage auf einer Skala von überlastet bis frisch, die Erholung als Abweichung von deinem eigenen Schnitt, die Woche als Tagessäulen mit gemacht, geplant und verpasst. Form-Verlauf, Rampe und Verteilung findest du im Verlauf unter Fortschritt.",
+      "Strg+K öffnet eine Befehlspalette: Ansichten, Reiter, Einstellungen und Aktivitäten finden, einen Plan erstellen oder dem Coach eine Frage stellen. Den Coach öffnest du jetzt mit Strg+J, G dann H, P, V oder E springt zu Heute, Plan, Verlauf oder Einstellungen, auf Heute öffnet B das Gespräch über die Entscheidung.",
+      "Neue Schrift Archivo mit schmalen Ziffern für große Zahlen, eine schmale Leiste statt der Seitenleiste und ein Layout, das auch in einem schmalen Fenster funktioniert: Unter 760 Pixel Breite liegt die Leiste unten.",
+      "Der Plan zeigt die laufende Woche zuerst, die übrigen Wochen als Zeilen zum Aufklappen. Die drei Fragen erscheinen nur noch ohne aktiven Plan oder über \"Neuer Plan\". Diagramme sind ruhiger: höchstens vier Gitterlinien, Monatsnamen an der Zeitachse und die Namen der Formbänder neben der Zeichenfläche."
+    ],
     "1.2.0": [
       "Aufgeräumte Navigation: Die Seitenleiste zeigt nur noch Heute, Plan und Verlauf, dazu die Einstellungen. Kalender mit Woche, Aktivitäten mit Detail, Fortschritt, Leistung und Körper mit Erholung und Gesundheit liegen als Reiter im Verlauf; die Einstellungen sind in vier Reiter geteilt. Sprache und Thema stellst du nur noch unter Einstellungen, App ein.",
       "Der Coach ist jetzt aus jeder Ansicht erreichbar: Knopf \"Coach\" in der Seitenleiste oder Strg+K öffnet ein Seitenfenster neben dem Inhalt. Der Coach weiß, welche Seite du ansiehst, und zeigt das in der Zeile \"Ich sehe\". Das Gespräch bleibt beim Schließen und beim Wechsel der Seite erhalten.",
@@ -42,6 +48,12 @@
     ]
   },
   "en": {
+    "1.3.0": [
+      "New design language: Today shows the decision of the day with its reason at the top and three instruments for form, recovery and week below. Form appears as a number and as a position on a scale from overreached to fresh, recovery as the deviation from your own average, the week as daily columns with done, planned and missed. Form history, ramp and distribution are now under History, Progress.",
+      "Ctrl+K opens a command palette: find views, tabs, settings and activities, create a plan or ask the coach a question. The coach now opens with Ctrl+J, G then H, P, V or E jumps to Today, Plan, History or Settings, and on Today B opens the conversation about the decision.",
+      "New typeface Archivo with narrow figures for large numbers, a slim rail instead of the sidebar and a layout that works in a narrow window: below 760 pixels the rail moves to the bottom.",
+      "The plan shows the current week first and the other weeks as rows to expand. The three questions only appear without an active plan or after \"New plan\". Charts are calmer: at most four grid lines, month names on the time axis and the names of the form bands next to the plot."
+    ],
     "1.2.0": [
       "A tidier navigation: the sidebar now shows only Today, Plan and History, plus Settings. Calendar with week view, activities with detail, progress, performance and body with recovery and health are tabs inside History; Settings is split into four tabs. Language and theme now live only under Settings, App.",
       "The coach is now available from every view: the \"Coach\" button in the sidebar or Ctrl+K opens a side panel next to the content. The coach knows which page you are looking at and shows it in the \"I see\" line. The conversation is kept when you close the panel or switch pages.",

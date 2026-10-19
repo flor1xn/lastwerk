@@ -2,7 +2,7 @@
 
 | Feld | Wert |
 |---|---|
-| Status | offen |
+| Status | blockiert (Teil A erledigt 19. Oktober 2026, Teil B wartet auf REA) |
 | Meilenstein | nach 1.0 |
 | cloudfähig | Teil A ja, Teil B nur lokal |
 | Voraussetzung | T60 bis T65 |
