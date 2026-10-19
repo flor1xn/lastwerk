@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { LoadInfo } from '../backend/types';
-  import { formatNumber } from '../format';
+  import { formatNumber, MISSING } from '../format';
   import { locale, t } from '../i18n';
   import { missingText } from '../load';
   import EstimatedBadge from './EstimatedBadge.svelte';
@@ -9,9 +9,12 @@
     load: LoadInfo;
     /** Methode (TSS, hrTSS, ...) hinter dem Wert zeigen. */
     showMethod?: boolean;
+    /** Dichte Liste: fehlender Wert als leiser Punkt, der Text bleibt für Bildschirmleser und
+     *  der Grund im Tooltip (T64). */
+    quiet?: boolean;
   }
 
-  let { load, showMethod = true }: Props = $props();
+  let { load, showMethod = true, quiet = false }: Props = $props();
 
   // Fehlt ein bestimmter Wert (T39), nennt der Tooltip ihn und wo er einzutragen ist.
   const reason = $derived.by(() => {
@@ -32,8 +35,10 @@
   </span>
 {:else}
   <!-- Fehlende Daten sind nie 0 (SPEC 5.4): Text statt Zahl, der Grund steht im Tooltip. -->
-  <span class="na" data-testid="load" data-status={load.status} title={reason}
-    >{$t('common.not_computable')}</span
+  <span class="na" class:quiet data-testid="load" data-status={load.status} title={reason}
+    >{#if quiet}<span aria-hidden="true">{MISSING}</span><span class="sr"
+        >{$t('common.not_computable')}</span
+      >{:else}{$t('common.not_computable')}{/if}</span
   >
 {/if}
 
@@ -52,5 +57,19 @@
   .na {
     color: var(--muted);
     font-style: italic;
+  }
+
+  .na.quiet {
+    font-style: normal;
+    cursor: help;
+  }
+
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 </style>

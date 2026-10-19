@@ -84,7 +84,7 @@
   .status {
     padding: 0 6px;
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-chip);
     font-size: var(--fs-label);
   }
 

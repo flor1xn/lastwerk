@@ -105,8 +105,9 @@
     min-height: 3px;
   }
 
+  /* Locker neutral, intensiv warm: keine Sportfarbe, damit Zonen nicht wie Radfahren aussehen. */
   .easy {
-    background: var(--form-fresh);
+    background: var(--text-2);
   }
 
   .hard {
@@ -196,7 +197,7 @@
   }
 
   .easy-sw {
-    background: var(--form-fresh);
+    background: var(--text-2);
   }
 
   .hard-sw {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PlanDetail } from '../backend/types';
+  import { localIso } from '../dates';
   import { formatDate, formatNumber } from '../format';
   import { locale, t } from '../i18n';
   import { planTotals } from '../plan';
@@ -14,6 +15,14 @@
   let { detail }: Props = $props();
 
   const plan = $derived(detail.plan);
+  // Laufende Woche (heute im Plan), sonst die erste: Sie steht ausgeklappt oben (T64).
+  const today = localIso();
+  const currentIndex = $derived(
+    Math.max(
+      0,
+      plan.weeks.findIndex((w) => w.days.some((d) => d.date === today)),
+    ),
+  );
   const totals = $derived(planTotals(plan));
   const goalLine = $derived(
     plan.goal.kind === 'event' && plan.goal.event_date
@@ -64,7 +73,19 @@
 
   <PlanWarnings warnings={plan.warnings} validation={detail.validation} />
 
-  <section class="panel" data-testid="plan-projection">
+  {#if plan.weeks[currentIndex]}
+    <PlanWeekCard week={plan.weeks[currentIndex]} index={currentIndex + 1} current />
+  {/if}
+
+  <div class="weeks" aria-label={$t('ui.plan.view.all_weeks')}>
+    {#each plan.weeks as week, i (week.week_start)}
+      {#if i !== currentIndex}
+        <PlanWeekCard {week} index={i + 1} />
+      {/if}
+    {/each}
+  </div>
+
+  <section class="section" data-testid="plan-projection">
     <h3>{$t('ui.plan.projection.title')}</h3>
     <p class="muted">
       {$t('ui.plan.projection.hint', {
@@ -74,17 +95,17 @@
     </p>
     <PmcChart history={detail.projection} height={220} label={$t('ui.plan.projection.title')} />
   </section>
-
-  {#each plan.weeks as week, i (week.week_start)}
-    <PlanWeekCard {week} index={i + 1} />
-  {/each}
 </div>
 
 <style>
   .plan {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--space-4);
+  }
+
+  .weeks {
+    border-top: 1px solid var(--line);
   }
 
   .head p {
@@ -95,7 +116,7 @@
     margin-left: 8px;
     padding: 0 6px;
     border: 1px solid var(--accent);
-    border-radius: 3px;
+    border-radius: var(--radius-chip);
     color: var(--accent);
     font-size: var(--fs-label);
     font-weight: 500;

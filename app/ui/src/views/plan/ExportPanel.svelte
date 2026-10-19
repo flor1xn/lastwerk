@@ -135,7 +135,7 @@
     margin: 6px 0;
     padding: 6px 10px;
     border: 1px solid var(--warn);
-    border-radius: 4px;
+    border-radius: var(--radius-chip);
   }
 
   .ok {

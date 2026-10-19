@@ -64,7 +64,7 @@
     display: block;
     height: 8px;
     min-width: 1px;
-    background: var(--accent);
+    background: var(--text-2);
     border-radius: 2px;
   }
 </style>

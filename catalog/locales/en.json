@@ -535,7 +535,9 @@
         "rest_day": "Rest day",
         "reasons": "Reasons",
         "explanation": "Explanation",
-        "totals": "{sessions} sessions, {minutes} minutes, planned load {load}"
+        "totals": "{sessions} sessions, {minutes} minutes, planned load {load}",
+        "current_week": "This week",
+        "all_weeks": "All weeks of the plan"
       },
       "warnings": {
         "title": "Warnings",
@@ -555,7 +557,8 @@
         "title": "Fitness, fatigue, form of the plan weeks",
         "hint": "Forecast from the planned daily loads, starting the day before with fitness {ctl} and fatigue {atl}."
       },
-      "talk_to_coach": "Talk to the coach about the plan"
+      "talk_to_coach": "Talk to the coach about the plan",
+      "new_plan": "New plan"
     },
     "export": {
       "title": "Export and backup",

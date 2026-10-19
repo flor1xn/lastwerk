@@ -19,6 +19,9 @@
   const inputsLoader = new Loader<PlanningInputs>();
   const detailLoader = new Loader<PlanDetail>();
   let actionError = $state<unknown>(null);
+  // Die drei Fragen stehen nur ohne aktiven Plan oder nach "Neuer Plan" (T64, SPEC 5.5). Einmal
+  // offen, bleiben sie offen, damit ein eben erstellter Plan seine Bestätigung zeigen kann.
+  let plannerOpen = $state<boolean | null>(null);
 
   $effect(() => {
     void $dataVersion;
@@ -32,6 +35,7 @@
   $effect(() => {
     const list = listLoader.data;
     if (!list) return;
+    if (untrack(() => plannerOpen) === null) plannerOpen = !list.some((p) => p.status === 'active');
     const current = untrack(() => get(selectedPlanId));
     if (current !== null && list.some((p) => p.id === current)) return;
     selectedPlanId.set((list.find((p) => p.status === 'active') ?? list[0])?.id ?? null);
@@ -105,7 +109,7 @@
   <!-- Einspaltig (T43): Das Gespräch liegt im Seitenfenster des Coachs, nicht mehr hier. -->
   <div class="layout">
     <div class="main">
-      {#if inputsLoader.data}
+      {#if inputsLoader.data && plannerOpen}
         <!-- Die Fragen starten neu, wenn die Daten von außen wechseln (Wiederherstellung). -->
         {#key $dataVersion}
           <QuickPlanner inputs={inputsLoader.data} oncreated={created} />
@@ -119,6 +123,11 @@
         <ErrorNote error={detailLoader.error} />
       {:else if detailLoader.data}
         <div class="talk">
+          {#if !plannerOpen}
+            <button type="button" onclick={() => (plannerOpen = true)} data-testid="plan-new">
+              {$t('ui.plan.new_plan')}
+            </button>
+          {/if}
           <button type="button" onclick={() => openCoach()} data-testid="plan-talk-coach">
             {$t('ui.plan.talk_to_coach')}
           </button>
@@ -178,7 +187,9 @@
 
   .talk {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
+    gap: var(--space-2);
   }
 
   .fine {

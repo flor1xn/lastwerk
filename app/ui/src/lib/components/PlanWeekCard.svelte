@@ -15,37 +15,40 @@
     week: PlanWeek;
     /** Nummer der Woche im Plan, ab 1. */
     index: number;
+    /** Laufende Woche: ausgeklappt und hervorgehoben (T64, SPEC 5.5). Die übrigen Wochen sind
+     *  Zeilen, die man aufklappt. */
+    current?: boolean;
   }
 
-  let { week, index }: Props = $props();
+  let { week, index, current = false }: Props = $props();
 
   const reasons = $derived((week.reason_keys ?? []).map((k) => keyText($locale, k)));
 </script>
 
-<section class="panel" data-testid="plan-week" data-phase={week.phase}>
-  <header>
-    <h3>{$t('ui.plan.view.week', { n: index })}</h3>
-    <span class="range"
-      >{$t('ui.plan.view.week_range', {
-        from: formatDate(week.week_start, $locale),
-        to: formatDate(addDays(week.week_start, 6), $locale),
-      })}</span
+{#snippet head()}
+  <h3>{$t('ui.plan.view.week', { n: index })}</h3>
+  <span class="range"
+    >{$t('ui.plan.view.week_range', {
+      from: formatDate(week.week_start, $locale),
+      to: formatDate(addDays(week.week_start, 6), $locale),
+    })}</span
+  >
+  <span class="phase" data-testid="plan-phase">{$t(`ui.plan.phase.${week.phase}`)}</span>
+  <span class="kpis">
+    <span
+      ><span class="muted">{$t('ui.plan.view.target')}</span>
+      <strong data-testid="week-target">{formatNumber(week.target_load, $locale, 1)}</strong></span
     >
-    <span class="phase" data-testid="plan-phase">{$t(`ui.plan.phase.${week.phase}`)}</span>
-    <span class="kpis">
-      <span
-        ><span class="muted">{$t('ui.plan.view.target')}</span>
-        <strong data-testid="week-target">{formatNumber(week.target_load, $locale, 1)}</strong
-        ></span
-      >
-      <span
-        ><span class="muted">{$t('ui.plan.view.planned')}</span>
-        <strong data-testid="week-planned">{formatNumber(weekPlannedLoad(week), $locale, 1)}</strong
-        ></span
-      >
-      <span class="muted">{$t('ui.plan.view.minutes', { n: weekMinutes(week) })}</span>
-    </span>
-  </header>
+    <span
+      ><span class="muted">{$t('ui.plan.view.planned')}</span>
+      <strong data-testid="week-planned">{formatNumber(weekPlannedLoad(week), $locale, 1)}</strong
+      ></span
+    >
+    <span class="muted">{$t('ui.plan.view.minutes', { n: weekMinutes(week) })}</span>
+  </span>
+{/snippet}
+
+{#snippet body()}
   {#if reasons.length > 0}
     <ul class="reasons" data-testid="week-reasons" aria-label={$t('ui.plan.view.reasons')}>
       {#each reasons as r, i (i)}
@@ -94,10 +97,44 @@
       {/each}
     </tbody>
   </table>
-</section>
+{/snippet}
+
+{#if current}
+  <section class="week current" data-testid="plan-week" data-phase={week.phase} data-current="true">
+    <p class="now">{$t('ui.plan.view.current_week')}</p>
+    <header>{@render head()}</header>
+    {@render body()}
+  </section>
+{:else}
+  <details class="week" data-testid="plan-week" data-phase={week.phase}>
+    <summary>{@render head()}</summary>
+    {@render body()}
+  </details>
+{/if}
 
 <style>
-  header {
+  .week {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .week.current {
+    padding: var(--space-4) var(--space-5) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--panel);
+  }
+
+  .now {
+    margin: 0 0 var(--space-1);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-label);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  header,
+  summary {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -105,11 +142,49 @@
     margin-bottom: 4px;
   }
 
+  summary {
+    min-height: 44px;
+    align-items: center;
+    margin: 0;
+    padding: var(--space-2) 0;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Pfeil zeigt, dass die Zeile aufklappt; er dreht sich, sonst bewegt sich nichts. */
+  summary::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-right: 2px;
+    border-right: 1.5px solid var(--muted);
+    border-bottom: 1.5px solid var(--muted);
+    transform: rotate(-45deg);
+    transition: transform 160ms var(--ease-out);
+  }
+
+  details[open] > summary::before {
+    transform: rotate(45deg);
+  }
+
+  details[open] {
+    padding-bottom: var(--space-3);
+  }
+
+  summary h3,
+  header h3 {
+    margin: 0;
+  }
+
   .phase {
     padding: 0 6px;
     border: 1px solid var(--border);
-    border-radius: 3px;
-    background: var(--panel-2);
+    border-radius: var(--radius-chip);
+    font-size: var(--fs-small);
   }
 
   .kpis {
@@ -155,14 +230,16 @@
   .intensity {
     padding: 0 5px;
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-chip);
     color: var(--muted);
     font-size: var(--fs-label);
   }
 
+  /* Hart ist kein Fehler: Text und kräftiger Rand statt Warnfarbe. */
   .intensity.hard {
-    border-color: var(--danger);
-    color: var(--danger);
+    border-color: var(--text-2);
+    color: var(--text);
+    font-weight: var(--fw-semibold);
   }
 
   .why {

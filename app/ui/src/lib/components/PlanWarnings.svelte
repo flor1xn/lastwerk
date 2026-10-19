@@ -101,7 +101,7 @@
   .code {
     padding: 0 5px;
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-chip);
     font-variant-numeric: tabular-nums;
   }
 

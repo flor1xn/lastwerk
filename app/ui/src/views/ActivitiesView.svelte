@@ -129,10 +129,14 @@
             }}
           >
             <td>{formatDate(a.local_date, $locale)}</td>
-            <td>{$t(`ui.sport.${a.sport}`)}</td>
+            <td
+              ><span class="sport-dot" style:background={`var(--sport-${a.sport})`}></span>{$t(
+                `ui.sport.${a.sport}`,
+              )}</td
+            >
             <td class="num">{formatDuration(a.duration_s)}</td>
             <td class="num">{formatDistance(a.distance_m, $locale)}</td>
-            <td><LoadCell load={a.load} /></td>
+            <td><LoadCell load={a.load} quiet /></td>
             <td class="num"
               >{a.load.intensity_factor === null
                 ? MISSING
@@ -213,7 +217,17 @@
   .flag {
     padding: 0 5px;
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-chip);
     font-size: var(--fs-label);
+  }
+
+  /* Sportfarbe als kleine Marke vor dem Namen: Identität, kein Zustand. */
+  .sport-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    border-radius: 2px;
+    vertical-align: 0;
   }
 </style>

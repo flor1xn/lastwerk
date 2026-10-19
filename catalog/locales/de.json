@@ -535,7 +535,9 @@
         "rest_day": "Ruhetag",
         "reasons": "Begründung",
         "explanation": "Erklärung",
-        "totals": "{sessions} Einheiten, {minutes} Minuten, geplante Last {load}"
+        "totals": "{sessions} Einheiten, {minutes} Minuten, geplante Last {load}",
+        "current_week": "Diese Woche",
+        "all_weeks": "Alle Wochen des Plans"
       },
       "warnings": {
         "title": "Warnungen",
@@ -555,7 +557,8 @@
         "title": "Fitness, Ermüdung, Form der Planwochen",
         "hint": "Vorausberechnung aus den geplanten Tageslasten, Start am Vortag mit Fitness {ctl} und Ermüdung {atl}."
       },
-      "talk_to_coach": "Mit dem Coach über den Plan sprechen"
+      "talk_to_coach": "Mit dem Coach über den Plan sprechen",
+      "new_plan": "Neuer Plan"
     },
     "export": {
       "title": "Export und Sicherung",

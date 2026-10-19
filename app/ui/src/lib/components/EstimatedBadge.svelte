@@ -12,7 +12,7 @@
     margin-left: 4px;
     padding: 0 4px;
     border: 1px solid var(--warn);
-    border-radius: 3px;
+    border-radius: var(--radius-chip);
     color: var(--warn);
     font-size: var(--fs-label);
     line-height: 14px;
