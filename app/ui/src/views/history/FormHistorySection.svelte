@@ -27,12 +27,12 @@
     : $garminSync.kind === 'running'
       ? $t('ui.dash.form.loading')
       : $t('ui.dash.form.empty')}
-  testid="today-form"
+  testid="dash-form"
 >
   {#if form && state}
     <StatRow>
       <Metric
-        size="xl"
+        size="lg"
         value={formatNumber(form.tsb, $locale, 0)}
         valueTestid="form-value"
         label={$t('ui.week.tsb')}
@@ -51,7 +51,7 @@
         bands
         height={260}
         label={$t('ui.week.pmc_title')}
-        testid="today-pmc"
+        testid="dash-pmc"
       />
     </div>
     {#if dash.projection.length > 0}

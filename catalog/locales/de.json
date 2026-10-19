@@ -390,7 +390,6 @@
       }
     },
     "lead": {
-      "today": "Deine Einheit für heute und wie erholt du dafür bist.",
       "week": "Was diese Woche geleistet wurde und wie sich die Last verteilt.",
       "plan": "Drei Antworten genügen für einen Wochenplan, alles Weitere klärst du im Gespräch mit dem Coach.",
       "activities": "Alle importierten Aktivitäten, Duplikate sind gekennzeichnet.",
@@ -602,24 +601,6 @@
     "dash": {
       "today": "Heute",
       "projection": "Prognose",
-      "lead": {
-        "form": {
-          "fresh": "deine Form ist frisch",
-          "balanced": "deine Form ist ausgewogen",
-          "loaded": "deine Form ist belastet",
-          "overloaded": "deine Form ist überlastet"
-        },
-        "readiness": {
-          "normal": "deine Erholungswerte liegen im Rahmen deines Schnitts",
-          "low": "deine Erholungswerte liegen unter deinem Schnitt"
-        },
-        "plan_hard": "heute steht eine harte Einheit im Plan",
-        "plan_easy": "heute steht eine lockere Einheit im Plan",
-        "plan_rest": "heute ist im Plan frei",
-        "and": "und",
-        "plan_lighten": "für heute rät Lastwerk zu einer leichteren Einheit als geplant",
-        "plan_keep_easy": "heute bleibt es bei einer lockeren Einheit"
-      },
       "statement": {
         "ramp": {
           "no_data": "Für die Rampe fehlt noch eine Woche Verlauf.",
@@ -1463,11 +1444,60 @@
     },
     "instrument": {
       "form": {
-        "scale_label": "Formzustand {state} auf der Skala von überlastet bis frisch"
+        "scale_label": "Formzustand {state} auf der Skala von überlastet bis frisch",
+        "title": "Form",
+        "ctl": "Fitness",
+        "atl": "Ermüdung",
+        "spark_label": "Form (TSB) der letzten sechs Wochen",
+        "more": "Verlauf mit Prognose"
       },
       "week": {
         "rest": "Ruhetag",
-        "load_of_day": "Last {load}"
+        "load_of_day": "Last {load}",
+        "sessions_until_yesterday": "Einheiten bis gestern",
+        "sessions": "Einheiten",
+        "load_of": "von {planned} Last",
+        "load": "Last",
+        "missed": "verpasst",
+        "no_plan": "ohne Plan",
+        "more": "Kalender",
+        "sessions_planned": "Einheiten geplant diese Woche"
+      },
+      "head": {
+        "week": "Woche {n} von {of}"
+      },
+      "decision": {
+        "min": "min",
+        "load": "Last",
+        "instead": "statt",
+        "why": "Warum"
+      },
+      "recovery": {
+        "title": "Erholung zu deinem Schnitt",
+        "state": {
+          "normal": "Im Rahmen deines Schnitts",
+          "low": "Deutlich unter deinem Schnitt"
+        },
+        "more": "Erholung über Wochen"
+      },
+      "start": {
+        "title": "So startest du",
+        "done": "Erledigt",
+        "data": {
+          "name": "Daten holen",
+          "hint": "Verbinde Garmin oder füge FIT-Dateien hinzu. Daraus entstehen Form und Erholung.",
+          "action": "Zu den Daten"
+        },
+        "plan": {
+          "name": "Plan in drei Fragen",
+          "hint": "Ziel, Stunden je Woche und Trainingstage. Danach steht hier jeden Tag, was ansteht und warum.",
+          "action": "Plan erstellen"
+        },
+        "coach": {
+          "name": "Coach einrichten (freiwillig)",
+          "hint": "Ein lokales Sprachmodell erklärt Entscheidungen und schlägt Änderungen vor. Lastwerk plant auch ohne.",
+          "action": "Zum Coach"
+        }
       }
     }
   },

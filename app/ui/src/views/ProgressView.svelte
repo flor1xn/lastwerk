@@ -29,6 +29,9 @@
   } from '../lib/progress';
   import { dataVersion, resolvedTheme } from '../lib/state';
   import CalendarSection from './history/CalendarSection.svelte';
+  import DistributionSection from './history/DistributionSection.svelte';
+  import FormHistorySection from './history/FormHistorySection.svelte';
+  import RampSection from './history/RampSection.svelte';
 
   // Fortschritt (T32): dieses Jahr gegen das Vorjahr bis zum selben Tag, Wochenumfang über
   // 52 Wochen, Monate über 24 Monate. Die Oberfläche summiert nur (lib/progress.ts).
@@ -43,7 +46,8 @@
     void loader.run(() => getBackend().getProgress(today));
   });
 
-  // Belastungskalender der letzten 365 Tage (seit T44 hier statt auf "Heute").
+  // Form-Verlauf, Rampe und Verteilung (seit T63) und der Belastungskalender der letzten 365 Tage
+  // (seit T44) stehen hier statt auf "Heute": Sie sind Trends, keine Frage des Tages.
   const dashLoader = new Loader<Dashboard>();
   $effect(() => {
     void $dataVersion;
@@ -125,6 +129,14 @@
 {:else}
   <div class="page progress" data-testid="progress">
     <p class="page-lead" data-testid="lead">{lead}</p>
+
+    {#if dashLoader.data}
+      <FormHistorySection dash={dashLoader.data} />
+      <div class="pair">
+        <RampSection dash={dashLoader.data} />
+        <DistributionSection dash={dashLoader.data} />
+      </div>
+    {/if}
 
     <div class="controls">
       <Segmented
@@ -268,6 +280,23 @@
 {/if}
 
 <style>
+  .progress {
+    container-type: inline-size;
+  }
+
+  /* Rampe und Verteilung nebeneinander, jeder Abschnitt trägt seine Linie oben. */
+  .pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: var(--space-7);
+  }
+
+  @container (min-width: 760px) {
+    .pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   .progress {
     max-width: var(--page-max);
   }

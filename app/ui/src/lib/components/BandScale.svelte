@@ -56,9 +56,12 @@
 </div>
 
 <style>
+  /* clip statt hidden: Die verschobene Schiene ragt sonst rechts heraus und verbreitert die
+     Seite, ohne dass ein Rollbereich entsteht. */
   .band-scale {
     position: relative;
     padding-top: 6px;
+    overflow: clip;
   }
 
   .track,
@@ -99,8 +102,8 @@
   .rail {
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
+    left: 1px;
+    width: calc(100% - 2px);
     height: 18px;
     pointer-events: none;
     transition: transform 200ms var(--ease-out);

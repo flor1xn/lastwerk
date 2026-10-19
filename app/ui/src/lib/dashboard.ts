@@ -8,7 +8,6 @@
 import type {
   AdherenceCode,
   DashAdherence,
-  DashDecision,
   Dashboard,
   DashDistribution,
   DashEfficiency,
@@ -142,57 +141,6 @@ export function calendarStatement(
     days,
     total: formatNumber(total, locale, 0),
   });
-}
-
-// --- Kopfzeile: Form, Bereitschaft und Plan in einem Satz ----------------------------------
-
-export type PlanToday = 'none' | 'rest' | 'easy' | 'hard' | 'lighten' | 'keep_easy';
-
-/**
- * Der Plan von heute für die Ein-Satz-Aussage, gelesen aus der Tagesentscheidung (T44): Rät sie
- * zu leichter oder locker, sagt der Kopf das, sonst nennt er die geplante Einheit.
- */
-export function planTodayOf(decision: DashDecision): PlanToday {
-  switch (decision.state) {
-    case 'decision.no_plan':
-      return 'none';
-    case 'decision.rest':
-      return 'rest';
-    case 'decision.lighten':
-      return 'lighten';
-    case 'decision.keep_easy':
-      return 'keep_easy';
-    case 'decision.already_adjusted':
-      return 'easy';
-    case 'decision.as_planned':
-      return decision.main?.hard ? 'hard' : 'easy';
-  }
-}
-
-/** Fügt Satzteile mit Komma und "und" vor dem letzten Teil zusammen. */
-export function joinParts(parts: string[], and: string): string {
-  if (parts.length <= 1) return parts[0] ?? '';
-  return `${parts.slice(0, -1).join(', ')} ${and} ${parts[parts.length - 1]}`;
-}
-
-/**
- * Ein Satz, der Form, Bereitschaft und den Plan von heute verbindet. Fehlt die Form, bleibt es
- * bei der festen Aussage der Seite. Jeder Teil entfällt, wenn die Daten ihn nicht hergeben.
- */
-export function leadSentence(
-  form: FormCode | null,
-  readiness: DashReadiness | null,
-  plan: PlanToday,
-  tr: Translate,
-): string {
-  if (form === null) return tr('ui.lead.today');
-  const parts = [tr(`ui.dash.lead.${form}`)];
-  if (readiness && readiness.state !== 'readiness.no_data') {
-    parts.push(tr(`ui.dash.lead.${readiness.state}`));
-  }
-  if (plan !== 'none') parts.push(tr(`ui.dash.lead.plan_${plan}`));
-  const sentence = joinParts(parts, tr('ui.dash.lead.and'));
-  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`;
 }
 
 // --- Coach-Erkenntnisse (T44) ---------------------------------------------------------------

@@ -12,7 +12,6 @@ import {
   DECISION_MISSING,
   INSIGHT_CODES,
   VARIANT_KINDS,
-  type DashDecision,
   type DashPowerDuration,
   type DashReadiness,
 } from './backend/types';
@@ -27,10 +26,7 @@ import {
   formName,
   heatThresholds,
   insightStatement,
-  joinParts,
   lastPart,
-  leadSentence,
-  planTodayOf,
   levelOf,
   powerCurveStatement,
   powerCurveSummary,
@@ -87,12 +83,8 @@ describe('Aussagen aus Zustandscodes', () => {
       expect(hasKey('en', statementKey(code)), `en:${code}`).toBe(true);
     }
     for (const code of FORM_CODES) {
-      expect(hasKey('de', `ui.dash.lead.${code}`), code).toBe(true);
-      expect(hasKey('en', `ui.dash.lead.${code}`), code).toBe(true);
       expect(hasKey('de', `ui.form.${formName(code)}_hint`), code).toBe(true);
-    }
-    for (const code of ['readiness.normal', 'readiness.low']) {
-      expect(hasKey('de', `ui.dash.lead.${code}`), code).toBe(true);
+      expect(hasKey('en', `ui.form.${formName(code)}_hint`), code).toBe(true);
     }
   });
 
@@ -190,34 +182,6 @@ describe('Gesamturteil der Leistungskurve', () => {
     expect(powerCurveSummary([duration('power_curve.flat'), duration('power_curve.no_data')])).toBe(
       'power_curve.flat',
     );
-  });
-});
-
-describe('Ein-Satz-Aussage', () => {
-  it('verbindet Form, Erholung und Plan', () => {
-    expect(
-      leadSentence('form.balanced', readiness({ state: 'readiness.low' }), 'hard', tr('de')),
-    ).toBe(
-      'Deine Form ist ausgewogen, deine Erholungswerte liegen unter deinem Schnitt und heute steht eine harte Einheit im Plan.',
-    );
-    expect(leadSentence('form.fresh', readiness(), 'easy', tr('en'))).toBe(
-      "Your form is fresh, your recovery values are within your usual range and today's plan has an easy session.",
-    );
-  });
-
-  it('lässt Teile weg, die die Daten nicht hergeben', () => {
-    expect(leadSentence('form.loaded', null, 'none', tr('de'))).toBe('Deine Form ist belastet.');
-    expect(
-      leadSentence('form.loaded', readiness({ state: 'readiness.no_data' }), 'rest', tr('de')),
-    ).toBe('Deine Form ist belastet und heute ist im Plan frei.');
-    expect(leadSentence(null, null, 'hard', tr('de'))).toBe(tr('de')('ui.lead.today'));
-  });
-
-  it('fügt Satzteile zusammen', () => {
-    expect(joinParts([], 'und')).toBe('');
-    expect(joinParts(['a'], 'und')).toBe('a');
-    expect(joinParts(['a', 'b'], 'und')).toBe('a und b');
-    expect(joinParts(['a', 'b', 'c'], 'und')).toBe('a, b und c');
   });
 });
 
@@ -349,38 +313,6 @@ describe('Tagesentscheidung und Erkenntnisse (T44)', () => {
       for (const m of DECISION_MISSING) expect(hasKey(lang, `ui.decision.missing.${m}`)).toBe(true);
       for (const k of VARIANT_KINDS) expect(hasKey(lang, `ui.decision.kind.${k}`)).toBe(true);
       for (const c of INSIGHT_CODES) expect(hasKey(lang, `ui.insight.ask.${c}`), c).toBe(true);
-    }
-  });
-
-  it('liest den Plan von heute aus der Entscheidung', () => {
-    const d = (state: DashDecision['state'], hard: boolean | null): DashDecision => ({
-      state,
-      main:
-        hard === null
-          ? null
-          : {
-              kind: 'planned',
-              sport: 'cycling',
-              template_id: 'bike.endurance.steady',
-              duration_min: 60,
-              hard,
-              planned_load: 40,
-            },
-      alternatives: [],
-      reasons: [],
-      rules: [],
-      missing: [],
-    });
-    expect(planTodayOf(d('decision.no_plan', null))).toBe('none');
-    expect(planTodayOf(d('decision.rest', null))).toBe('rest');
-    expect(planTodayOf(d('decision.lighten', null))).toBe('lighten');
-    expect(planTodayOf(d('decision.keep_easy', false))).toBe('keep_easy');
-    expect(planTodayOf(d('decision.already_adjusted', false))).toBe('easy');
-    expect(planTodayOf(d('decision.as_planned', true))).toBe('hard');
-    expect(planTodayOf(d('decision.as_planned', false))).toBe('easy');
-    for (const p of ['lighten', 'keep_easy'] as const) {
-      expect(hasKey('de', `ui.dash.lead.plan_${p}`)).toBe(true);
-      expect(hasKey('en', `ui.dash.lead.plan_${p}`)).toBe(true);
     }
   });
 

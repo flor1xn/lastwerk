@@ -390,7 +390,6 @@
       }
     },
     "lead": {
-      "today": "Your session for today and how recovered you are for it.",
       "week": "What was done this week and how the load is distributed.",
       "plan": "Three answers are enough for a weekly plan, the rest you work out in conversation with the coach.",
       "activities": "All imported activities, duplicates are marked.",
@@ -602,24 +601,6 @@
     "dash": {
       "today": "Today",
       "projection": "Projection",
-      "lead": {
-        "form": {
-          "fresh": "your form is fresh",
-          "balanced": "your form is balanced",
-          "loaded": "your form is loaded",
-          "overloaded": "your form is overloaded"
-        },
-        "readiness": {
-          "normal": "your recovery values are within your usual range",
-          "low": "your recovery values are below your average"
-        },
-        "plan_hard": "today's plan has a hard session",
-        "plan_easy": "today's plan has an easy session",
-        "plan_rest": "today is a rest day in the plan",
-        "and": "and",
-        "plan_lighten": "Lastwerk suggests an easier session than planned for today",
-        "plan_keep_easy": "today stays an easy session"
-      },
       "statement": {
         "ramp": {
           "no_data": "The ramp needs one more week of history.",
@@ -1463,11 +1444,60 @@
     },
     "instrument": {
       "form": {
-        "scale_label": "Form state {state} on the scale from overloaded to fresh"
+        "scale_label": "Form state {state} on the scale from overloaded to fresh",
+        "title": "Form",
+        "ctl": "Fitness",
+        "atl": "Fatigue",
+        "spark_label": "Form (TSB) over the last six weeks",
+        "more": "History with projection"
       },
       "week": {
         "rest": "Rest day",
-        "load_of_day": "load {load}"
+        "load_of_day": "load {load}",
+        "sessions_until_yesterday": "sessions until yesterday",
+        "sessions": "sessions",
+        "load_of": "of {planned} load",
+        "load": "load",
+        "missed": "missed",
+        "no_plan": "no plan",
+        "more": "Calendar",
+        "sessions_planned": "sessions planned this week"
+      },
+      "head": {
+        "week": "Week {n} of {of}"
+      },
+      "decision": {
+        "min": "min",
+        "load": "Load",
+        "instead": "instead of",
+        "why": "Why"
+      },
+      "recovery": {
+        "title": "Recovery against your average",
+        "state": {
+          "normal": "Within your average",
+          "low": "Clearly below your average"
+        },
+        "more": "Recovery over weeks"
+      },
+      "start": {
+        "title": "How to start",
+        "done": "Done",
+        "data": {
+          "name": "Get your data",
+          "hint": "Connect Garmin or add FIT files. Form and recovery come from them.",
+          "action": "Go to data"
+        },
+        "plan": {
+          "name": "Plan in three questions",
+          "hint": "Goal, hours per week and training days. Then this page shows every day what is due and why.",
+          "action": "Create plan"
+        },
+        "coach": {
+          "name": "Set up the coach (optional)",
+          "hint": "A local language model explains decisions and suggests changes. Lastwerk plans without it too.",
+          "action": "Go to coach"
+        }
       }
     }
   },

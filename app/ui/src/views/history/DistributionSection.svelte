@@ -17,7 +17,7 @@
 <Section
   label={$t('ui.dash.distribution.title')}
   statement={distributionStatement(d, $t, $locale)}
-  testid="today-distribution"
+  testid="dash-distribution"
 >
   {#if d.window_easy_percent !== null}
     <Metric

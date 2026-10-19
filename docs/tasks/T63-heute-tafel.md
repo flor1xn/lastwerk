@@ -2,7 +2,7 @@
 
 | Feld | Wert |
 |---|---|
-| Status | offen |
+| Status | erledigt |
 | Meilenstein | nach 1.0 |
 | cloudfähig | ja |
 | Voraussetzung | T61, T62 |

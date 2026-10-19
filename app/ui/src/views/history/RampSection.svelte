@@ -32,7 +32,7 @@
 <Section
   label={$t('ui.dash.ramp.title')}
   statement={rampStatement(ramp, $t, $locale)}
-  testid="today-ramp"
+  testid="dash-ramp"
 >
   {#if ramp.current !== null}
     <Metric

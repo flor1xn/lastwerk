@@ -606,6 +606,102 @@ th {
   color: var(--muted);
 }
 
+/* Instrument (Heute, T63): beantwortet eine Frage. Marke, große schmale Zahl, Zustand als
+   Wort, Belege darunter. Instrumente stehen nebeneinander, getrennt durch Haarlinien. */
+.instrument {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.inst-label {
+  margin: 0 0 var(--space-1);
+  font-size: var(--fs-label);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.inst-big {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--fs-metric);
+  line-height: 0.95;
+  font-weight: var(--fw-semibold);
+  font-stretch: var(--num-stretch);
+  letter-spacing: var(--ls-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.inst-big small {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  font-stretch: 100%;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.inst-big .of {
+  font-size: var(--fs-title);
+  color: var(--muted);
+  font-weight: var(--fw-medium);
+}
+
+.inst-block {
+  margin-top: var(--space-2);
+}
+
+.inst-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+
+.inst-pair b {
+  margin-right: 2px;
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-semibold);
+  font-stretch: var(--num-stretch);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.inst-empty {
+  margin: 0;
+  max-width: 40ch;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+/* Leiser Verweis in die Tiefe, unten im Instrument. */
+.inst-more {
+  align-self: flex-start;
+  min-height: 28px;
+  margin-top: var(--space-2);
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: var(--fs-small);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .inst-more:hover:not(:disabled) {
+    color: var(--text);
+  }
+}
+
 /* Erhobene Fläche: höchstens eine je Ansicht, für Dinge, die man anfasst (Tagesentscheidung,
    Vorschlag des Coachs, Formulare des Planers). Flach, mit Rand, ohne Schatten. */
 .card {
