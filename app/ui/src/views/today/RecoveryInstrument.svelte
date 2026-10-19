@@ -130,8 +130,6 @@
 
   .adjusted {
     margin: var(--space-1) 0 0;
-    padding-left: var(--space-3);
-    border-left: 2px solid var(--accent);
     max-width: 44ch;
     font-size: var(--fs-small);
     font-weight: var(--fw-medium);

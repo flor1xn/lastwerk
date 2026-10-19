@@ -173,3 +173,7 @@ Prüfung (T66 Teil A):
 - **Vorher und nachher.** Bildpaare der eigenen Oberfläche liegen nur lokal im Scratchpad der Session, nicht im Repository.
 
 Teil B (REA) wartet auf die Einrichtung durch den Nutzer, siehe [T66](tasks/T66-design-pruefung.md).
+
+## 6. Nachbesserung: Farbkanten (19. Oktober 2026)
+
+Der Nutzer fand die Kästen mit farbigem Streifen links zu sehr nach Standard-KI. Der Skill `apple-design` kam in `.claude/skills/` hinzu. Entfernt: Limettenkante des Entscheidungsstreifens, Warnkante der Coach-Einrichtung, Zitatlinie der Coach-Antwort, Sportkante der Kalenderchips und der Legende, Limettenkante der Anpassung in Erholung, Linie der Alternativen (jetzt leise Fläche). Die Sportfarbe steht im Kalender als Tönung der ganzen Fläche, der Sportname bleibt Text. Geblieben: Marken der Navigation, der Reiter und der Palette als Zustandsanzeige (SPEC 5.5, Regel 7).

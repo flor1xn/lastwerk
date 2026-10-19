@@ -489,9 +489,8 @@
 
   .setup .reason {
     padding: var(--space-2) var(--space-3);
-    border-left: 3px solid var(--warn);
     background: var(--panel-2);
-    border-radius: 0 8px 8px 0;
+    border-radius: 10px;
   }
 
   .setup-actions {
@@ -614,8 +613,7 @@
 
   .coach .bubble {
     max-width: 100%;
-    padding-left: var(--space-3);
-    border-left: 2px solid var(--line);
+    padding-left: 0;
     border-radius: 0;
   }
 

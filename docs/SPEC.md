@@ -1150,6 +1150,7 @@ Stand 19. Oktober 2026, Entscheidungen E12 bis E14 des Nutzers. Bestandsaufnahme
 4. Limette heißt "jetzt": Urteil des Tages, Primäraktion, Fokus, aktive Navigation. Datenreihen sind neutral oder tragen ihre Sportfarbe.
 5. Zustand als Wort und Lage auf einer Skala, nie als Farbe allein, nie als Ampel.
 6. Bewegung erklärt eine Veränderung, sonst steht alles still. Was oft passiert, bewegt sich nicht.
+7. Keine Farbkanten an Flächen: Kein Kasten, Hinweis oder Chip trägt einen farbigen Streifen an einer Seite. Hierarchie entsteht aus Fläche (`--panel`, `--panel-2`), Abstand und Schrift; Sportfarbe als leichte Tönung, Zustand als Text. Ausnahmen sind reine Zustandsmarken der Navigation (aktiver Punkt der Leiste, aktiver Reiter, gewählte Zeile der Palette). Grund: Der Streifen ist ein verbreitetes Merkmal generierter Oberflächen und fügt dem Inhalt nichts hinzu (Skill `apple-design`, Abschnitt Hierarchie und Einfachheit). Nachtrag zu T66, 19. Oktober 2026.
 7. Tastatur zuerst: Befehlspalette für alles, Kürzel sichtbar an der Aktion.
 8. Schmal ist kein Sonderfall: jede Ansicht ab 360 px ohne waagerechtes Scrollen.
 

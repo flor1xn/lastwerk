@@ -11,12 +11,14 @@
 | `find-animation-opportunities` | Stellen finden, wo Bewegung etwas bringt, und solche, wo nicht |
 | `animation-performance` | Ruckelnde Animation beheben |
 | `animation-vocabulary` | Richtige Begriffe für Bewegung |
+| `apple-design` | Hierarchie über Fläche, Abstand und Schrift statt Rahmen und Farbe; Bewegung, Reduced Motion, Typografie. Bei Gestaltungsprüfung der Oberfläche |
 | `break-ui` | Oberfläche mit Extremdaten (lange Namen, leere Listen, große Zahlen) prüfen |
 
-Bewusst nicht übernommen: `animate-expo`, `mobile-native`, `write-swift` (andere Plattformen), `apple-design`, `ask-sonner` (React-Bibliothek), `pick-ui-library` (würde Abhängigkeiten vorschlagen, die nach `CLAUDE.md` einen Vermerk in der Task-Datei brauchen), `prototype`.
+Bewusst nicht übernommen: `animate-expo`, `mobile-native`, `write-swift` (andere Plattformen), `ask-sonner` (React-Bibliothek), `pick-ui-library` (würde Abhängigkeiten vorschlagen, die nach `CLAUDE.md` einen Vermerk in der Task-Datei brauchen), `prototype`.
 
 ## Grenzen für Lastwerk
 
+- `apple-design` gilt für Hierarchie, Typografie und Bewegung. Gesten, Federn und `backdrop-filter` nur, wo SPEC 5.5 sie vorsieht; keine Dekoration, kein Netz.
 - Keine neue Abhängigkeit nur wegen eines Skills. Bewegung zuerst mit CSS, wie `animate` es selbst verlangt.
 - Keine Netzwerkzugriffe aus dem Frontend (SPEC 10), also keine Remote-Schriften, keine Beispielseiten, die nachladen.
 - Die Skills nennen teils Bibliotheken für React. Lastwerk nutzt Svelte 5, das Prinzip gilt, der Code wird übersetzt.

@@ -232,17 +232,6 @@
     overflow: hidden;
   }
 
-  /* Limettenkante: dieser Streifen ist das, was jetzt zählt. */
-  .strip::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--accent);
-  }
-
   .what,
   .why {
     display: flex;
@@ -402,8 +391,9 @@
   }
 
   .alt-detail {
-    padding-left: var(--space-3);
-    border-left: 2px solid var(--line);
+    padding: var(--space-2) var(--space-3);
+    border-radius: 10px;
+    background: var(--panel-2);
     max-width: var(--measure);
     overflow-wrap: anywhere;
   }

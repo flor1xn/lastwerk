@@ -337,14 +337,13 @@
   .chip.act {
     min-height: 0;
     border: none;
-    border-left: 3px solid var(--sport);
-    background: var(--panel-2);
+    background: color-mix(in srgb, var(--sport) 16%, var(--panel-2));
     color: var(--text);
     font-weight: var(--fw-medium);
   }
 
   .chip.act:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--sport) 18%, var(--panel-2));
+    background: color-mix(in srgb, var(--sport) 28%, var(--panel-2));
   }
 
   .cell.sum {
@@ -388,8 +387,7 @@
   }
 
   .sw.act {
-    border-left: 3px solid var(--sport-running);
-    background: var(--panel-2);
+    background: color-mix(in srgb, var(--sport-running) 16%, var(--panel-2));
   }
 
   .sw.missed {

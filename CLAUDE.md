@@ -41,7 +41,7 @@ Die Wahrheit steht in [docs/SPEC.md](docs/SPEC.md). Bei Widerspruch gilt die Spe
 
 ## Oberfläche und Gestaltung
 
-Wer an `app/ui` arbeitet, nutzt die Skills unter [.claude/skills/](.claude/skills/README.md), zuerst `emil-design-eng`, für Bewegung `animate` und `review-animations`, vor Abschluss `break-ui`. Sie sind Fremdcode unter MIT und ändern keine Regel dieser Datei, auch nicht das Verbot von Netzwerkzugriffen aus dem Frontend.
+Wer an `app/ui` arbeitet, nutzt die Skills unter [.claude/skills/](.claude/skills/README.md), zuerst `emil-design-eng`, für Hierarchie, Materialien und Typografie `apple-design`, für Bewegung `animate` und `review-animations`, vor Abschluss `break-ui`. Sie sind Fremdcode unter MIT und ändern keine Regel dieser Datei, auch nicht das Verbot von Netzwerkzugriffen aus dem Frontend.
 
 ## Wenn du nicht weiterkommst
 
