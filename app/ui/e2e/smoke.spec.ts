@@ -567,11 +567,11 @@ for (const lang of ['de', 'en'] as const) {
 }
 
 for (const lang of ['de', 'en'] as const) {
-  test(`Strg+K öffnet den Coach im Verlauf mit Kontextzeile (${lang})`, async ({ page }) => {
+  test(`Strg+J öffnet den Coach im Verlauf mit Kontextzeile (${lang})`, async ({ page }) => {
     await page.goto('/');
     if (lang === 'en') await toEnglish(page);
     await openHistoryTab(page, 'performance');
-    await page.keyboard.press('Control+k');
+    await page.keyboard.press('Control+j');
     const drawer = page.getByTestId('coach-drawer');
     await expect(drawer).toBeVisible();
     await expect(page.getByTestId('coach-context')).toHaveText(
@@ -583,11 +583,64 @@ for (const lang of ['de', 'en'] as const) {
       lang === 'de' ? 'Ich sehe: Verlauf · Fortschritt' : 'I see: History · Progress',
     );
     await shot(page, `12-coach-verlauf-${lang}`);
-    await page.keyboard.press('Control+k');
+    await page.keyboard.press('Control+j');
     await expect(drawer).toBeHidden();
     await expect(page.getByTestId('nav-coach')).toHaveAttribute('aria-expanded', 'false');
   });
 }
+
+for (const lang of ['de', 'en'] as const) {
+  test(`Strg+K öffnet die Befehlspalette, Eingabe springt oder fragt den Coach (${lang})`, async ({
+    page,
+  }) => {
+    await page.goto('/');
+    if (lang === 'en') await toEnglish(page);
+    await page.keyboard.press('Control+k');
+    const input = page.getByTestId('palette-input');
+    await expect(input).toBeFocused();
+    await input.fill(lang === 'de' ? 'leistung' : 'performance');
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('palette')).toHaveCount(0);
+    await expect(page.getByTestId('tab-history-performance')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+
+    await page.keyboard.press('Control+k');
+    await input.fill('xqzw warum so muede');
+    await expect(page.getByTestId('palette-option')).toHaveCount(1);
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('coach-drawer')).toHaveAttribute('data-open', 'true');
+    await expect(page.getByTestId('coach-message')).toHaveCount(0);
+
+    // Escape schließt die Palette, ohne etwas auszuführen.
+    await page.getByTestId('coach-close').click();
+    await page.keyboard.press('Control+k');
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('palette')).toHaveCount(0);
+    // G dann P springt zum Plan.
+    await page.keyboard.press('g');
+    await page.keyboard.press('p');
+    await expect(page.getByTestId('nav-plan')).toHaveAttribute('aria-current', 'page');
+  });
+}
+
+test('Schmal (360 px): keine Ansicht scrollt waagerecht, die Leiste liegt unten', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto('/?plan=laufend');
+  for (const v of ['today', 'plan', 'history', 'settings'] as const) {
+    await page.getByTestId(`nav-${v}`).click();
+    await page.waitForTimeout(300);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, v).toBeLessThanOrEqual(0);
+  }
+  const box = await page.getByTestId('nav-today').boundingBox();
+  expect(box!.y).toBeGreaterThan(700);
+});
 
 for (const lang of ['de', 'en'] as const) {
   test(`Tagesentscheidung und Erkenntnisse öffnen den Coach, ohne zu senden (${lang})`, async ({

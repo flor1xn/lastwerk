@@ -90,10 +90,10 @@ describe('Seitenfenster des Coachs', () => {
     expect(get(coachOpen)).toBe(false);
   });
 
-  it('öffnet mit Strg+K und Cmd+K, Esc schließt und gibt den Fokus zurück', async () => {
+  it('öffnet mit Strg+J und Cmd+J, Esc schließt und gibt den Fokus zurück', async () => {
     const toggle = await app();
     toggle.focus();
-    await fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    await fireEvent.keyDown(window, { key: 'j', ctrlKey: true });
     expect(get(coachOpen)).toBe(true);
     await release();
     await vi.waitFor(() => expect(document.activeElement).toBe(input()));
@@ -102,12 +102,12 @@ describe('Seitenfenster des Coachs', () => {
     expect(get(coachOpen)).toBe(false);
     await vi.waitFor(() => expect(document.activeElement).toBe(toggle));
 
-    await fireEvent.keyDown(window, { key: 'K', metaKey: true });
+    await fireEvent.keyDown(window, { key: 'J', metaKey: true });
     expect(get(coachOpen)).toBe(true);
-    await fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    await fireEvent.keyDown(window, { key: 'j', ctrlKey: true });
     expect(get(coachOpen)).toBe(false);
     // Ohne Strg oder Cmd passiert nichts.
-    await fireEvent.keyDown(window, { key: 'k' });
+    await fireEvent.keyDown(window, { key: 'j' });
     expect(get(coachOpen)).toBe(false);
   });
 
@@ -115,7 +115,7 @@ describe('Seitenfenster des Coachs', () => {
     await app();
     wizardOpen.set(true);
     await screen.findByTestId('wizard');
-    await fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    await fireEvent.keyDown(window, { key: 'j', ctrlKey: true });
     expect(get(coachOpen)).toBe(false);
   });
 

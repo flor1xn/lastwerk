@@ -17,7 +17,8 @@
       "plan": "Plan",
       "history": "History",
       "settings": "Settings",
-      "coach": "Coach"
+      "coach": "Coach",
+      "sync_label": "Sync with Garmin"
     },
     "history": {
       "tabs_label": "History sections",
@@ -920,8 +921,8 @@
       "drawer": {
         "close": "Close coach",
         "close_hint": "Close (Esc)",
-        "shortcut": "Open or close the coach (Ctrl+K, Cmd+K on Mac)",
-        "kbd": "Ctrl K"
+        "shortcut": "Open or close the coach (Ctrl+J, Cmd+J on Mac)",
+        "kbd": "Ctrl J"
       },
       "context": {
         "label": "I see: {where}",
@@ -1433,6 +1434,31 @@
       },
       "mark": {
         "hard": "hard"
+      }
+    },
+    "palette": {
+      "label": "Commands",
+      "placeholder": "Search commands, pages or activities",
+      "kbd": "Ctrl K",
+      "open": "Commands and search (Ctrl+K, Cmd+K on Mac)",
+      "hint": "Arrow keys select, Enter runs, Esc closes. Text without a match goes to the coach as a question.",
+      "ask": "Ask the coach: “{text}”",
+      "group": {
+        "go": "Go to",
+        "actions": "Actions",
+        "activities": "Activities",
+        "history": "History",
+        "settings": "Settings"
+      },
+      "cmd": {
+        "coach": "Open coach",
+        "new_plan": "Create plan"
+      },
+      "keywords": {
+        "settings_data": "Garmin FIT import backup MCP sync",
+        "settings_coach": "Ollama model local setup",
+        "settings_profile": "FTP threshold heart rate athlete PMC zones",
+        "settings_app": "language theme dark light update about"
       }
     }
   },

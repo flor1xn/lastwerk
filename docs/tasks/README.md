@@ -70,7 +70,7 @@ Status: `offen`, `in Arbeit`, `in Prüfung`, `blockiert`, `erledigt`. Wer einen 
 | [T58](T58-streckenform.md) | Streckenform ohne Kartenkacheln | nach 1.0 | offen | T31, T53 | ja | crates/fit, testkit, app |
 | [T59](T59-vergleich.md) | Aktivitäten vergleichen | nach 1.0 | offen | T31 | ja | app, catalog |
 | [T60](T60-design-tokens.md) | Tokens und Schrift der Designsprache "Instrument" | nach 1.0 | erledigt | keine | ja | app/ui, docs |
-| [T61](T61-geruest-palette.md) | Gerüst, schmales Layout und Befehlspalette | nach 1.0 | offen | T60 | ja | app/ui, catalog, docs |
+| [T61](T61-geruest-palette.md) | Gerüst, schmales Layout und Befehlspalette | nach 1.0 | erledigt | T60 | ja | app/ui, catalog, docs |
 | [T62](T62-bausteine-instrumente.md) | Bausteine und Diagrammstil | nach 1.0 | offen | T60 | ja | app/ui |
 | [T63](T63-heute-tafel.md) | Heute als Tafel | nach 1.0 | offen | T61, T62 | ja | app/ui, catalog, docs |
 | [T64](T64-verlauf-plan.md) | Verlauf und Plan in der neuen Sprache | nach 1.0 | offen | T62 | ja | app/ui, catalog |

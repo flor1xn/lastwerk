@@ -109,6 +109,9 @@ export const wizardOpen = writable(false);
  */
 export const coachReleased = writable(false);
 
+/** Die Befehlspalette ist offen (T61, E14). Modal, Strg+K öffnet und schließt sie. */
+export const paletteOpen = writable(false);
+
 /** Das Seitenfenster des Coachs ist offen (T43, E9). Nicht modal, der Inhalt bleibt bedienbar. */
 export const coachOpen = writable(false);
 

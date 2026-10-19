@@ -17,7 +17,8 @@
       "plan": "Plan",
       "history": "Verlauf",
       "settings": "Einstellungen",
-      "coach": "Coach"
+      "coach": "Coach",
+      "sync_label": "Abgleich mit Garmin"
     },
     "history": {
       "tabs_label": "Bereiche des Verlaufs",
@@ -920,8 +921,8 @@
       "drawer": {
         "close": "Coach schließen",
         "close_hint": "Schließen (Esc)",
-        "shortcut": "Coach öffnen oder schließen (Strg+K, am Mac Cmd+K)",
-        "kbd": "Strg K"
+        "shortcut": "Coach öffnen oder schließen (Strg+J, am Mac Cmd+J)",
+        "kbd": "Strg J"
       },
       "context": {
         "label": "Ich sehe: {where}",
@@ -1433,6 +1434,31 @@
       },
       "mark": {
         "hard": "hart"
+      }
+    },
+    "palette": {
+      "label": "Befehle",
+      "placeholder": "Befehl, Seite oder Aktivität suchen",
+      "kbd": "Strg K",
+      "open": "Befehle und Suche (Strg+K, am Mac Cmd+K)",
+      "hint": "Pfeiltasten wählen, Eingabe führt aus, Esc schließt. Text ohne Treffer geht als Frage an den Coach.",
+      "ask": "Coach fragen: „{text}“",
+      "group": {
+        "go": "Springen",
+        "actions": "Aktionen",
+        "activities": "Aktivitäten",
+        "history": "Verlauf",
+        "settings": "Einstellungen"
+      },
+      "cmd": {
+        "coach": "Coach öffnen",
+        "new_plan": "Plan erstellen"
+      },
+      "keywords": {
+        "settings_data": "Garmin FIT Import Sicherung MCP Abgleich",
+        "settings_coach": "Ollama Modell lokal einrichten",
+        "settings_profile": "FTP Schwelle Puls Athlet PMC Zonen",
+        "settings_app": "Sprache Thema dunkel hell Update Über"
       }
     }
   },
