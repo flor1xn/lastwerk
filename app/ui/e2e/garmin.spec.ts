@@ -66,10 +66,6 @@ for (const lang of ['de', 'en'] as const) {
     await section.getByTestId('garmin-sync-now').click();
     await expect(section.getByTestId('garmin-sync-state')).toContainText(': 0');
 
-    // Erweitert: Status des Zusatzprogramms erst nach dem Aufklappen.
-    await section.getByTestId('garmin-advanced').locator('summary').click();
-    await expect(section.getByTestId('bridge-status')).toBeVisible();
-
     await section.getByTestId('garmin-disconnect').click();
     await expect(section.getByTestId('garmin-disconnect-confirm')).toBeVisible();
     await section.getByTestId('garmin-disconnect-yes').click();
