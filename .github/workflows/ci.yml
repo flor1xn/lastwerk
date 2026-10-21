@@ -79,11 +79,6 @@ jobs:
         run: |
           sh scripts/check-privacy.sh
           sh scripts/test-check-privacy.sh
-      - name: Lockfile vorhanden?
-        id: lock
-        shell: bash
-        run: |
-          if [ -f Cargo.lock ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
       # Secret Service des Garmin-Schlüsselbunds über libdbus (T46, crates/garmin).
       - name: Systembibliothek libdbus (Linux)
         if: runner.os == 'Linux'
@@ -104,12 +99,6 @@ jobs:
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Tests
         run: cargo test --workspace --locked
-      - name: Cargo.lock als Artefakt (nur solange keins eingecheckt ist)
-        if: matrix.os == 'ubuntu-24.04' && steps.lock.outputs.present == 'false'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: cargo-lock
-          path: Cargo.lock
 
   supply-chain:
     name: Lizenzen und Quellen
@@ -144,11 +133,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Lockfile vorhanden?
-        id: lock
-        working-directory: .
-        run: |
-          if [ -f app/ui/pnpm-lock.yaml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: app/ui/package.json
@@ -156,11 +140,7 @@ jobs:
         with:
           node-version: 22
       - name: Abhängigkeiten (festgeschrieben)
-        if: hashFiles('app/ui/pnpm-lock.yaml') != ''
         run: pnpm install --frozen-lockfile
-      - name: Abhängigkeiten (erster Lauf ohne Lockfile)
-        if: hashFiles('app/ui/pnpm-lock.yaml') == ''
-        run: pnpm install --no-frozen-lockfile
       - name: Lint
         run: pnpm lint
       - name: Typprüfung
@@ -170,12 +150,6 @@ jobs:
       # SPEC 10.2: Sicherheitslücken in den Paketen, die in die App gehen.
       - name: Sicherheitslücken (pnpm audit)
         run: pnpm audit --prod
-      - name: pnpm-lock.yaml als Artefakt (nur solange keins eingecheckt ist)
-        if: steps.lock.outputs.present == 'false'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: pnpm-lock
-          path: app/ui/pnpm-lock.yaml
 
   # Tauri-Hülle und Oberfläche zusammen (T06, SPEC 12 M2). Eigener Job, weil nur dieser die
   # Systembibliotheken von Tauri braucht. `app/src-tauri` ist ein eigenes Cargo-Projekt außerhalb
@@ -216,13 +190,16 @@ jobs:
         run: pnpm --dir app/ui exec playwright install --with-deps chromium
       - name: Rauchtest (Playwright, blockiert fremde Hosts)
         run: pnpm --dir app/ui exec playwright test
+      # Nur bei Fehlschlag und kurz aufbewahrt: Artefakte zählten gegen den Speicher des
+      # kostenlosen Plans (21. Oktober 2026).
       - name: Screenshots der Oberfläche (synthetische Daten)
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-screenshots
           path: app/ui/test-results/
           if-no-files-found: ignore
+          retention-days: 3
       - name: Toolchain
         run: |
           # Version und Komponenten aus rust-toolchain.toml (fest, damit neue Lints nicht
@@ -244,11 +221,6 @@ jobs:
         working-directory: app/src-tauri
       - name: Debug-Build der App
         run: pnpm --dir app/ui tauri build --debug
-      - name: Debug-Binary als Artefakt
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: lastwerk-app-debug-linux
-          path: app/src-tauri/target/debug/lastwerk-app
       - name: Start für fünf Sekunden
         shell: bash
         env:

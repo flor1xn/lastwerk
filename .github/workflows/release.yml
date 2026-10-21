@@ -10,7 +10,7 @@ on:
     tags: ['v*']
   # Manueller Start mit dem Tag als Eingabe, für Cloud-Sessions, die keinen Tag pushen können
   # (Umgebung bricht Tag-Pushes ab, 15. Oktober 2026). GitHub legt den Tag beim Veröffentlichen
-  # des Entwurfs selbst an (publish-release.yml). Nur auf main zugelassen (Job check-tag).
+  # des Entwurfs selbst an (auf GitHub von Hand). Nur auf main zugelassen (Job check-tag).
   workflow_dispatch:
     inputs:
       tag:
@@ -180,6 +180,8 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.files }}
           if-no-files-found: error
+          # Nur Zwischenablage bis zum Job release, die Dateien liegen danach am Release.
+          retention-days: 1
 
   # Erzeugt die Release-Notizen aus catalog/changelog.json. Nur Lesezugriff, keine Geheimnisse.
   notes:
@@ -216,6 +218,7 @@ jobs:
           name: release-notes
           path: release-notes/
           if-no-files-found: error
+          retention-days: 1
 
   # Legt den Entwurf an. Einziger Job mit Schreibrecht, er führt keinen Code aus dem Repository
   # aus, sondern lädt nur die Artefakte des Laufs und legt sie an den Release.
@@ -269,7 +272,7 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           # Beim Tag-Push muss der Tag existieren; sonst zeigt der Entwurf auf den Commit des
-          # Builds, GitHub legt den Tag beim Veröffentlichen an (publish-release.yml oder unten).
+          # Builds, GitHub legt den Tag beim Veröffentlichen an (von Hand oder unten).
           if [ "$EVENT" != "push" ]; then
             ref_args=(--target "$REF_SHA")
           else
@@ -285,7 +288,7 @@ jobs:
       - name: Veröffentlichen
         if: inputs.publish
         run: |
-          # Nur beim Aufruf aus auto-release.yml. Wie publish-release.yml: GitHub legt den Tag
+          # Nur beim Aufruf aus auto-release.yml. GitHub legt den Tag
           # auf dem Ziel-Commit an, --latest macht ihn zum Ziel von releases/latest (Updater).
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,url
