@@ -743,12 +743,6 @@
       "disconnect_no": "Cancel",
       "disconnected": "Disconnected. To revoke access completely, also do so in your Garmin account settings.",
       "locked_until": "Requests paused until {time} because Garmin throttled several times.",
-      "advanced": "Advanced",
-      "bridge_title": "Companion program bridge/",
-      "bridge_hint": "Only for the frozen companion program: what is in the exchange folder?",
-      "bridge_has_data": "The companion program delivers data: {days} days of recovery, {files} FIT files.",
-      "bridge_no_data": "No data in the exchange folder.",
-      "bridge_refresh": "Check status",
       "code": {
         "connected": "Signed in to Garmin.",
         "cancelled": "Sign-in cancelled. The window was closed.",

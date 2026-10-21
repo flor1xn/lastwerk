@@ -103,26 +103,6 @@ describe('Einstellungen, Abschnitt Garmin', () => {
       expect(screen.getByTestId('garmin-sync-state').textContent).toContain('drosselt'),
     );
   });
-
-  it('zeigt den Status des Zusatzprogramms nur unter "Erweitert"', async () => {
-    const backend = mock();
-    backend.bridgeStatus = {
-      has_data: true,
-      recovery_days: 3,
-      activity_files: 2,
-      last_day: '2026-10-13',
-    };
-    const spy = vi.spyOn(backend, 'getBridgeStatus');
-    render(SettingsView);
-    const advanced = (await screen.findByTestId('garmin-advanced')) as HTMLDetailsElement;
-    expect(advanced.open).toBe(false);
-    expect(spy).not.toHaveBeenCalled();
-    advanced.open = true;
-    await fireEvent(advanced, new Event('toggle'));
-    await waitFor(() =>
-      expect(screen.getByTestId('bridge-status').textContent).toContain('3 Tage Erholung'),
-    );
-  });
 });
 
 describe('Seitenleiste und Start', () => {

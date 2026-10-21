@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getBackend } from '../../lib/backend';
-  import type { BridgeStatus, Settings } from '../../lib/backend/types';
+  import type { Settings } from '../../lib/backend/types';
   import { errorKey } from '../../lib/errors';
   import { formatDate } from '../../lib/format';
   import { disconnectGarmin, garminStatus, garminSync, runGarminSync } from '../../lib/garmin';
@@ -9,8 +9,7 @@
   import SensitiveShares from './SensitiveShares.svelte';
 
   // Abschnitt "Garmin" der Einstellungen (T23, SPEC 5.6, 10.1: jede Verbindung ist hier
-  // sichtbar). Trennen fragt nach. Der Status des eingefrorenen Zusatzprogramms steht nur noch
-  // unter "Erweitert" und wird erst beim Aufklappen gelesen.
+  // sichtbar). Trennen fragt nach.
 
   interface Props {
     settings: Settings;
@@ -23,7 +22,6 @@
   let busy = $state(false);
   let disconnected = $state(false);
   let errorMessage = $state<string | null>(null);
-  let bridge = $state<BridgeStatus | null>(null);
 
   const connected = $derived($garminStatus?.connected ?? false);
   const running = $derived($garminSync.kind === 'running');
@@ -69,18 +67,6 @@
     } finally {
       busy = false;
     }
-  }
-
-  async function loadBridge() {
-    try {
-      bridge = await getBackend().getBridgeStatus();
-    } catch (e) {
-      errorMessage = errorKey(e);
-    }
-  }
-
-  function onAdvancedToggle(event: Event & { currentTarget: HTMLDetailsElement }) {
-    if (event.currentTarget.open && bridge === null) void loadBridge();
   }
 </script>
 
@@ -165,29 +151,6 @@
   {#if errorMessage}
     <p class="error" role="alert" data-testid="garmin-error">{$t(errorMessage)}</p>
   {/if}
-
-  <details class="advanced" ontoggle={onAdvancedToggle} data-testid="garmin-advanced">
-    <summary>{$t('ui.garmin.advanced')}</summary>
-    <p class="label">{$t('ui.garmin.bridge_title')}</p>
-    <p class="muted hint">{$t('ui.garmin.bridge_hint')}</p>
-    <p class="hint" data-testid="bridge-status">
-      {#if bridge === null}
-        <span class="muted">{$t('common.loading')}</span>
-      {:else if bridge.has_data}
-        {$t('ui.garmin.bridge_has_data', {
-          days: bridge.recovery_days,
-          files: bridge.activity_files,
-        })}
-      {:else}
-        <span class="muted">{$t('ui.garmin.bridge_no_data')}</span>
-      {/if}
-    </p>
-    <p class="row">
-      <button onclick={() => void loadBridge()} data-testid="bridge-refresh">
-        {$t('ui.garmin.bridge_refresh')}
-      </button>
-    </p>
-  </details>
 </section>
 
 <style>
@@ -210,16 +173,6 @@
 
   .sensitive {
     margin-top: 16px;
-  }
-
-  .advanced {
-    margin-top: 16px;
-  }
-
-  .advanced summary {
-    cursor: pointer;
-    color: var(--muted);
-    font-size: var(--fs-small);
   }
 
   .label {

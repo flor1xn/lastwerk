@@ -743,12 +743,6 @@
       "disconnect_no": "Abbrechen",
       "disconnected": "Getrennt. Den Zugriff widerrufst du zusätzlich in den Kontoeinstellungen bei Garmin.",
       "locked_until": "Abrufe gesperrt bis {time}, weil Garmin mehrfach gedrosselt hat.",
-      "advanced": "Erweitert",
-      "bridge_title": "Zusatzprogramm bridge/",
-      "bridge_hint": "Nur für das eingefrorene Zusatzprogramm: Was liegt im Austauschordner?",
-      "bridge_has_data": "Das Zusatzprogramm liefert Daten: {days} Tage Erholung, {files} FIT-Dateien.",
-      "bridge_no_data": "Keine Daten im Austauschordner.",
-      "bridge_refresh": "Status prüfen",
       "code": {
         "connected": "Anmeldung bei Garmin erfolgreich.",
         "cancelled": "Anmeldung abgebrochen. Das Fenster wurde geschlossen.",
