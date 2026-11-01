@@ -34,7 +34,7 @@ jsonschema = { version = "0.58", default-features = false }
 lastwerk-testkit = { path = "../testkit" }
 # Nur in Tests: legt die Tabelle recovery_day an, die erst T14 migriert (SPEC 6.2). Dieselbe
 # Version und dieselben Features wie in lastwerk-store.
-rusqlite = { version = "0.40", default-features = false, features = ["bundled"] }
+rusqlite = { version = "0.41", default-features = false, features = ["bundled"] }
 
 [lints]
 workspace = true
