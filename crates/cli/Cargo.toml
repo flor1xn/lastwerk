@@ -30,7 +30,7 @@ chrono = { version = "0.4", default-features = false, features = ["std", "clock"
 serde_json = "1.0"
 # Schema-Prüfung des Plans (SPEC 5.3, 7.1). Ohne Standardfeatures: keine Netzwerk- und
 # Dateiauflösung von Verweisen (`resolve-http`, `resolve-file`), das Schema ist eingebettet.
-jsonschema = { version = "0.58", default-features = false }
+jsonschema = { version = "0.60", default-features = false }
 # ICS-Erzeugung (SPEC 10.2). Der Parser gehört nur zu den Tests.
 icalendar = { version = "0.17", default-features = false }
 # Plan-ID als UUID v4. Der Zufall gehört in die CLI, `core` darf keinen erzeugen.
