@@ -16,7 +16,7 @@ chrono = { version = "0.4", default-features = false, features = ["std", "serde"
 thiserror = "2.0"
 # Schema-Prüfung der Antwort des Modells (SPEC 5.3, 9.4). Wie in cli: keine Auflösung von
 # Verweisen über Netzwerk oder Dateisystem.
-jsonschema = { version = "0.58", default-features = false }
+jsonschema = { version = "0.60", default-features = false }
 # Blockierender HTTP-Client zu Ollama und lokalen OpenAI-kompatiblen Servern (SPEC 5.3). Ohne
 # Standardfeatures: kein TLS, keine Kompression, kein JSON-Zwang. Nur `http` zu Loopback oder
 # bestätigten Hosts im lokalen Netz.
